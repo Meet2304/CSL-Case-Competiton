@@ -6,6 +6,7 @@ import { Money } from "@/components/ui/Money";
 import { AccountRow } from "@/components/web/AccountRow";
 import { WebCard } from "@/components/web/WebCard";
 import { WebHero } from "@/components/web/WebHero";
+import { WillReminder } from "@/components/will/WillReminder";
 import { creditCardAccounts, depositAccounts, offers, reminders, totals } from "@/data/mock";
 
 export const metadata: Metadata = { title: "Accounts" };
@@ -16,6 +17,10 @@ export default function WebAccountsPage() {
       <WebHero title="Welcome" />
 
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+        <div className="mb-6 empty:hidden">
+          <WillReminder variant="web" />
+        </div>
+
         <div className="mb-5 flex items-center gap-3">
           <h2 className="font-display text-2xl font-medium text-pnc-ink">Your Accounts</h2>
           <MockBadge />

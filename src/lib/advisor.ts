@@ -1,6 +1,6 @@
-import type { AdvisorCustomer, AdvisorNotification, LossEvent } from "@/data/types";
+import type { AdvisorCustomer, AdvisorNotification, LossEvent, WillStatus } from "@/data/types";
 import { outreachGuide } from "@/data/bereavement";
-import { daysBetween, formatDate } from "@/lib/format";
+import { daysBetween, formatCompactMoney, formatDate } from "@/lib/format";
 
 /** The most recent loss event the advisor has not finished following up on. */
 export function openLoss(customer: AdvisorCustomer): LossEvent | undefined {
@@ -50,10 +50,14 @@ export function advisorStats(customers: AdvisorCustomer[], todayIso: string) {
   };
 }
 
-/** Urgent loss notifications (newest first) followed by routine ones. */
+/**
+ * Urgent loss notifications (newest first), then the assistant's
+ * high-priority will recommendations, then routine ones.
+ */
 export function buildNotifications(
   customers: AdvisorCustomer[],
   routine: AdvisorNotification[],
+  todayIso: string,
 ): AdvisorNotification[] {
   const losses: AdvisorNotification[] = customers.flatMap((c) => {
     const loss = openLoss(c);
@@ -74,7 +78,97 @@ export function buildNotifications(
     ];
   });
   const byDate = (a: AdvisorNotification, b: AdvisorNotification) => b.date.localeCompare(a.date);
-  return [...losses.sort(byDate), ...[...routine].sort(byDate)];
+  return [
+    ...losses.sort(byDate),
+    ...willNotifications(customers, todayIso),
+    ...[...routine].sort(byDate),
+  ];
+}
+
+// ---------------------------------------------------------------------------
+// Will recommendations (advisor assistant). Every customer should have a will;
+// the assistant ranks who needs one most from relationship value and household.
+
+/** At or above this relationship value a missing will is high priority. */
+export const WILL_HIGH_PRIORITY_VALUE = 5_000_000;
+/** At or above this value (or with children) a missing will is medium priority. */
+export const WILL_MEDIUM_PRIORITY_VALUE = 1_000_000;
+
+export type WillPriority = "high" | "medium" | "low";
+export type WillAdvice = { priority: WillPriority; reasons: string[] };
+
+/**
+ * Why and how urgently the advisor should raise a will with this customer, or
+ * `undefined` when a will is already on file. `status` overrides the mock
+ * record (the demo customer's live status comes from the browser).
+ */
+export function willAdvice(
+  c: AdvisorCustomer,
+  status: WillStatus = c.will.status,
+): WillAdvice | undefined {
+  if (status === "on-file") return undefined;
+  const value = formatCompactMoney(c.relationshipValue);
+  const hasChild = c.household.some((m) => m.relationship === "Child");
+  const hasSpouse = c.household.some((m) => m.relationship === "Spouse");
+  const loss = openLoss(c);
+
+  const reasons: string[] = [];
+  if (status === "in-progress") {
+    reasons.push(
+      `Started a will${c.will.updated ? ` on ${formatDate(c.will.updated, "medium")}` : ""} but hasn't finished it`,
+    );
+  }
+  if (c.relationshipValue >= WILL_HIGH_PRIORITY_VALUE) {
+    reasons.push(
+      `${value} relationship — without a will, state intestacy law decides who inherits an estate this size`,
+    );
+  } else if (c.relationshipValue >= WILL_MEDIUM_PRIORITY_VALUE) {
+    reasons.push(
+      `${value} relationship — large enough that a will and a beneficiary review are strongly advised`,
+    );
+  } else {
+    reasons.push(`${value} relationship — every customer benefits from a basic will`);
+  }
+  if (hasChild) reasons.push("Has a child — a will is where a guardian is named");
+  if (loss?.relationship === "Spouse")
+    reasons.push("Recently lost a spouse — any existing plan likely names them");
+  else if (hasSpouse) reasons.push("Married — mirror wills can cover both spouses in one sitting");
+
+  const priority: WillPriority =
+    c.relationshipValue >= WILL_HIGH_PRIORITY_VALUE
+      ? "high"
+      : c.relationshipValue >= WILL_MEDIUM_PRIORITY_VALUE || hasChild
+        ? "medium"
+        : "low";
+  return { priority, reasons };
+}
+
+export const willFollowUpSteps = [
+  "Raise estate planning at the next review",
+  "Point the customer to the Will tab on their Family page to start a free will",
+  "Offer an introduction to a PNC trust & estate specialist",
+];
+
+/** One assistant suggestion per high-priority customer without a will on file. */
+export function willNotifications(
+  customers: AdvisorCustomer[],
+  todayIso: string,
+): AdvisorNotification[] {
+  return customers
+    .map((c) => ({ c, advice: willAdvice(c) }))
+    .filter(({ advice }) => advice?.priority === "high")
+    .sort((a, b) => b.c.relationshipValue - a.c.relationshipValue)
+    .map(({ c, advice }) => ({
+      id: `n-will-${c.id}`,
+      kind: "will" as const,
+      customerId: c.id,
+      title: "Will recommended",
+      summary: `${c.name} · ${formatCompactMoney(c.relationshipValue)} · ${c.will.status === "in-progress" ? "will not finished" : "no will on file"}`,
+      body: `Assistant suggestion: ${firstName(c.name)} should have a will. ${advice!.reasons.join(". ")}. Next review ${formatDate(c.nextReview, "medium")}.`,
+      date: todayIso,
+      urgent: false,
+      steps: willFollowUpSteps,
+    }));
 }
 
 /** Anchor id for a customer's row, used by "View customer" links. */

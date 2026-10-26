@@ -18,6 +18,8 @@ export const routes = {
   family: "/family",
   /** Surviving spouse's guided next steps after a loss in the family. */
   nextSteps: "/next-steps",
+  /** The Will tab of the family dashboard. */
+  familyWill: "/family#will",
   /** Advisor (bank representative) home dashboard. */
   advisor: "/advisor",
 } as const;
