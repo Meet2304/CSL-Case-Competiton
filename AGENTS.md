@@ -49,6 +49,11 @@ and mobile views stay in one design language.
   `WebHeader.tsx` and `BottomTabBar.tsx`.
 - **Sign off with `SignOffButton`** (a Server Action form), never a `<Link>` —
   link prefetching must never be able to end a session.
+- **Advisor assistant is simulated.** Recommendations, the loss guide, Q&A and
+  engagement plans come from rules in `src/lib/assistant.ts` over the profiles in
+  `src/data/clients.ts` (keep each profile's PNC holdings summing to the
+  customer's `relationshipValue`). Label assistant output with `AssistantMark` /
+  `AssistantPanel` so it's never mistaken for account data.
 - **Advisor attention logic** lives in `src/lib/advisor.ts`; drive UI from
   `openLoss` / `needsAttention` / `sortByAttention` / `buildNotifications` rather
   than re-implementing the rules in components.

@@ -9,8 +9,10 @@ import { WebCard } from "@/components/web/WebCard";
 import { WebHero } from "@/components/web/WebHero";
 import { advisor } from "@/data/advisor";
 import { AdvisorStats } from "./AdvisorStats";
+import { ClientSearch } from "./ClientSearch";
 import { CustomerList } from "./CustomerList";
 import { CustomerTable } from "./CustomerTable";
+import { DailyBrief } from "./DailyBrief";
 import { NotificationList } from "./NotificationList";
 import { OutreachBanner } from "./OutreachBanner";
 import { RecordPassingPanel } from "./RecordPassingPanel";
@@ -39,7 +41,9 @@ export function WebAdvisorHome() {
           <RecordPassingPanel className="w-full @3xl:w-auto" />
         </div>
 
+        <ClientSearch customers={customers} className="max-w-2xl" />
         <OutreachBanner />
+        <DailyBrief customers={customers} />
         <AdvisorStats stats={stats} />
 
         <div className="grid items-start gap-6 lg:grid-cols-[1fr_22rem]">
@@ -104,7 +108,9 @@ export function MobileAdvisorHome() {
       </MobileHeader>
 
       <div className="@container space-y-4 px-3 pt-4">
+        <ClientSearch customers={customers} />
         <OutreachBanner />
+        <DailyBrief customers={customers} />
         <RecordPassingPanel />
         <MobileCard>
           <h2 className="flex items-center justify-between border-b border-pnc-line px-4 py-3 font-semibold">
