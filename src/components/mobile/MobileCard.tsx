@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { ChevronRight, EllipsisVertical, type LucideIcon } from "lucide-react";
+import { ChevronRight, EllipsisVertical, LogOut, type LucideIcon } from "lucide-react";
+import { SignOffButton } from "@/components/shared/SignOffButton";
 import { IconChip } from "@/components/ui/IconChip";
 import { cn } from "@/lib/format";
 
@@ -46,6 +47,18 @@ export function MobileIconRow({ icon, label, tint, href = "#" }: { icon: LucideI
       <button type="button" aria-label={`More options for ${label}`} className="p-2 text-pnc-ink">
         <EllipsisVertical className="size-5" />
       </button>
+    </li>
+  );
+}
+
+/** "Sign Off" row in the same style as MobileIconRow. */
+export function MobileSignOffRow() {
+  return (
+    <li className="group flex items-center gap-4 pl-4 pr-2">
+      <IconChip icon={LogOut} />
+      <SignOffButton className="flex flex-1 items-center border-b border-pnc-line py-5 text-left text-[17px] group-last:border-b-0">
+        Sign Off
+      </SignOffButton>
     </li>
   );
 }

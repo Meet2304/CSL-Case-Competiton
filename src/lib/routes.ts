@@ -14,6 +14,8 @@ export const routes = {
   deposit: "/deposit",
   more: "/more",
   help: "/help",
+  /** Advisor (bank representative) home dashboard. */
+  advisor: "/advisor",
 } as const;
 
 export type View = "web" | "mobile";

@@ -2,28 +2,35 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CircleDollarSign, House, Medal, Menu, ReceiptText } from "lucide-react";
+import { CircleDollarSign, House, Medal, Menu, ReceiptText, type LucideIcon } from "lucide-react";
+import type { Role } from "@/data/types";
 import { cn } from "@/lib/format";
 import { routes, toPublicPath } from "@/lib/routes";
 
-const tabs = [
-  { label: "Accounts", href: routes.accounts, icon: House, also: [] },
-  { label: "Pay & Transfer", href: routes.payTransfer, icon: CircleDollarSign, also: [] },
-  { label: "Rewards", href: routes.rewards, icon: Medal, also: [] },
-  { label: "Deposit", href: routes.deposit, icon: ReceiptText, also: [] },
-  // Card Details lives under More in the native app.
-  { label: "More", href: routes.more, icon: Menu, also: [routes.cards] },
-];
+type Tab = { label: string; href: string; icon: LucideIcon; also?: string[] };
 
-export function BottomTabBar() {
+const tabsByRole: Record<Role, Tab[]> = {
+  customer: [
+    { label: "Accounts", href: routes.accounts, icon: House },
+    { label: "Pay & Transfer", href: routes.payTransfer, icon: CircleDollarSign },
+    { label: "Rewards", href: routes.rewards, icon: Medal },
+    { label: "Deposit", href: routes.deposit, icon: ReceiptText },
+    // Card Details lives under More in the native app.
+    { label: "More", href: routes.more, icon: Menu, also: [routes.cards] },
+  ],
+  // Advisors only have the home dashboard for now; add tabs here.
+  advisor: [{ label: "Home", href: routes.advisor, icon: House }],
+};
+
+export function BottomTabBar({ variant = "customer" }: { variant?: Role }) {
   const pathname = toPublicPath(usePathname());
   return (
     <nav className="relative z-20 shrink-0 bg-pnc-blue-800 pb-[max(env(safe-area-inset-bottom),0.5rem)] md:pb-6">
-      <ul className="grid grid-cols-5">
-        {tabs.map(({ label, href, icon: Icon, also }) => {
+      <ul className="flex justify-around">
+        {tabsByRole[variant].map(({ label, href, icon: Icon, also = [] }) => {
           const active = [href, ...also].some((p) => pathname.startsWith(p));
           return (
-            <li key={href}>
+            <li key={href} className="flex-1">
               <Link
                 href={href}
                 aria-current={active ? "page" : undefined}

@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, CircleUserRound } from "lucide-react";
 import { PncLogo } from "@/components/brand/PncLogo";
+import { SignOffButton } from "@/components/shared/SignOffButton";
+import type { Role } from "@/data/types";
 import { cn } from "@/lib/format";
 import { routes, toPublicPath } from "@/lib/routes";
 
@@ -16,15 +18,23 @@ const payTransferLinks = [
   { label: "Wires", href: `${routes.payTransfer}#wires` },
 ];
 
-const navItems = [
-  { label: "Accounts", href: routes.accounts },
-  { label: "Pay & Transfer", href: routes.payTransfer, menu: payTransferLinks },
-  { label: "Cards", href: routes.cards },
-  { label: "Rewards", href: routes.rewards },
-  { label: "Help", href: routes.help },
-];
+type NavItem = { label: string; href: string; menu?: { label: string; href: string }[] };
 
-export function WebHeader() {
+const navByRole: Record<Role, NavItem[]> = {
+  customer: [
+    { label: "Accounts", href: routes.accounts },
+    { label: "Pay & Transfer", href: routes.payTransfer, menu: payTransferLinks },
+    { label: "Cards", href: routes.cards },
+    { label: "Rewards", href: routes.rewards },
+    { label: "Help", href: routes.help },
+  ],
+  // Advisors only have the home dashboard for now; add sections here.
+  advisor: [{ label: "Home", href: routes.advisor }],
+};
+
+export function WebHeader({ variant = "customer" }: { variant?: Role }) {
+  const navItems = navByRole[variant];
+  const home = navItems[0].href;
   const pathname = toPublicPath(usePathname());
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const navRef = useRef<HTMLElement>(null);
@@ -40,7 +50,7 @@ export function WebHeader() {
   return (
     <header className="bg-pnc-navy text-white">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 px-4 sm:px-6 md:h-16 md:flex-nowrap">
-        <Link href={routes.accounts} className="flex h-14 shrink-0 items-center md:h-auto">
+        <Link href={home} className="flex h-14 shrink-0 items-center md:h-auto">
           <PncLogo tone="light" size="sm" />
         </Link>
 
@@ -96,13 +106,9 @@ export function WebHeader() {
           })}
         </nav>
 
-        <Link
-          href={routes.signOn}
-          aria-label="Profile and sign off"
-          className="ml-auto shrink-0 text-white/90 hover:text-white md:ml-0"
-        >
+        <SignOffButton className="ml-auto shrink-0 text-white/90 hover:text-white md:ml-0">
           <CircleUserRound className="size-7" strokeWidth={1.5} />
-        </Link>
+        </SignOffButton>
       </div>
     </header>
   );

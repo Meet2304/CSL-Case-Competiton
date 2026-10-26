@@ -26,6 +26,9 @@
   --color-pnc-positive: #1f7a3a;
   --color-pnc-toggle: #34c759;
   --color-pnc-badge: #d0021b; /* notification count */
+  --color-attention: #b42318; /* advisor: customer needs attention (e.g. a loss) */
+  --color-attention-bg: #fef3f2;
+  --color-attention-line: #fecdca;
   --color-mock: #8a5a00; /* mock-data labelling */
   --color-mock-bg: #fff4d6;
   --color-mock-line: #f0c75e;

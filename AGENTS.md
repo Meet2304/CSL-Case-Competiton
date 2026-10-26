@@ -16,7 +16,8 @@ its own git worktree/branch — keep changes scoped and follow these rules so th
 and mobile views stay in one design language.
 
 - **Mock data only.** Every name, balance and account number lives in
-  `src/data/mock.ts` (shapes in `src/data/types.ts`). Never hard-code figures in
+  `src/data/mock.ts` (customer), `src/data/advisor.ts` (advisor) or
+  `src/data/users.ts` (demo logins); shapes are in `src/data/types.ts`. Never hard-code figures in
   components. Keep names obviously fake (e.g. "Jordan Sample", "Sample Grocer",
   account numbers x0001–x0099).
 - **Label mock data.** Any section that shows figures gets a `MockBadge`.
@@ -40,5 +41,16 @@ and mobile views stay in one design language.
   the other view in `src/proxy.ts`. Top-level web pages get a nav entry in
   `WebHeader.tsx`; mobile headers pad their top with `var(--status-h)` (handled by
   `MobileHeader`).
+- **Two roles: customer and advisor.** The sign-on User ID sets a role cookie
+  (`src/lib/auth.ts`); `src/proxy.ts` keeps each role on its own pages.
+  Customer pages live in `app/web/(signed-in)/` and `app/mobile/(tabs)/`; advisor
+  pages live under `app/web/advisor/` and `app/mobile/advisor/` (public URL
+  `/advisor/...`). Advisor-only nav items go in the `advisor` entries of
+  `WebHeader.tsx` and `BottomTabBar.tsx`.
+- **Sign off with `SignOffButton`** (a Server Action form), never a `<Link>` —
+  link prefetching must never be able to end a session.
+- **Advisor attention logic** lives in `src/lib/advisor.ts`; drive UI from
+  `openLoss` / `needsAttention` / `sortByAttention` / `buildNotifications` rather
+  than re-implementing the rules in components.
 - Before finishing: `npm run typecheck`, `npm run lint` and `npm run build` must pass
   (the same checks run in GitHub Actions CI on every PR — `.github/workflows/ci.yml`).
