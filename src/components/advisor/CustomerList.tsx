@@ -4,10 +4,12 @@ import { AttentionIcon } from "@/components/advisor/AttentionIcon";
 import { Pagination, usePagination } from "@/components/advisor/Pagination";
 import { useCustomerJump } from "@/components/advisor/useCustomerJump";
 import { WillStatus } from "@/components/advisor/WillStatus";
+import Link from "next/link";
 import { Money } from "@/components/ui/Money";
 import { MOCK_AS_OF } from "@/data/mock";
 import type { AdvisorCustomer } from "@/data/types";
 import { customerAnchor, lossTag, openLoss } from "@/lib/advisor";
+import { routes } from "@/lib/routes";
 import { cn, daysBetween, formatDate, relativeDay } from "@/lib/format";
 
 const PAGE_SIZE = 6;
@@ -41,7 +43,12 @@ export function CustomerList({ customers }: { customers: AdvisorCustomer[] }) {
                 )}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[15px] font-semibold text-pnc-link">{c.name}</p>
+                <Link
+                  href={routes.advisorClient(c.id)}
+                  className="block truncate text-[15px] font-semibold text-pnc-link"
+                >
+                  {c.name}
+                </Link>
                 <p className="truncate text-xs text-pnc-muted">
                   {c.segment} · {c.accountCount} accounts
                 </p>

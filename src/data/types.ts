@@ -142,6 +142,81 @@ export type AdvisorCustomer = {
   will: WillRecord;
 };
 
+// ---------------------------------------------------------------------------
+// Client profiles behind the advisor's Client Summary and assistant.
+
+export type ClientMemberStatus = "Living" | "Deceased";
+
+/** A person in (or close to) the client's household, with estate-relevant roles. */
+export type ClientMember = {
+  name: string;
+  relationship: FamilyRelationship | "Self" | "Grandchild" | "Sibling-in-law" | "Attorney";
+  age?: number;
+  status: ClientMemberStatus;
+  /** ISO date of death, for deceased members. */
+  died?: string;
+  /** e.g. "Executor of Riley's will", "Successor trustee". */
+  roles: string[];
+  /** One line the advisor should know, e.g. "Lives in Denver; speaks weekly with Avery". */
+  note?: string;
+  contact?: string;
+};
+
+export type HoldingType =
+  | "Checking"
+  | "Savings"
+  | "Money market"
+  | "CD"
+  | "Brokerage"
+  | "Traditional IRA"
+  | "Roth IRA"
+  | "401(k) rollover IRA"
+  | "Inherited IRA"
+  | "Trust"
+  | "529 plan"
+  | "Life insurance"
+  | "Credit card";
+
+export type Ownership = "Individual" | "Joint" | "Trust" | "Custodial";
+
+export type Holding = {
+  id: string;
+  name: string;
+  last4?: string;
+  type: HoldingType;
+  /** Negative for balances owed. */
+  value: number;
+  ownership: Ownership;
+  /** Names of the legal owners (trustees for a trust). */
+  owners: string[];
+  /** Named beneficiaries (POD/TOD or retirement designations), primary first. */
+  beneficiaries?: string[];
+  /** Held outside PNC; tracked for planning, not counted in the relationship. */
+  external?: boolean;
+};
+
+export type Interaction = {
+  date: string; // ISO date
+  channel: "Phone" | "Email" | "In person" | "Video" | "Text";
+  summary: string;
+};
+
+export type ClientProfile = {
+  customerId: string;
+  age: number;
+  occupation: string;
+  city: string;
+  clientSince: number;
+  contactPreference: "Phone" | "Email" | "In person" | "Text";
+  riskProfile: "Conservative" | "Moderate" | "Growth";
+  goals: string[];
+  /** Advisor's private notes, newest first. */
+  notes: string[];
+  members: ClientMember[];
+  holdings: Holding[];
+  interactions: Interaction[];
+};
+
 export type AdvisorNotificationKind = "loss" | "review" | "deposit" | "document";
 
 export type AdvisorNotification = {

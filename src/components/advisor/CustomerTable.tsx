@@ -4,10 +4,12 @@ import { AttentionIcon } from "@/components/advisor/AttentionIcon";
 import { Pagination, usePagination } from "@/components/advisor/Pagination";
 import { useCustomerJump } from "@/components/advisor/useCustomerJump";
 import { WillStatus } from "@/components/advisor/WillStatus";
+import Link from "next/link";
 import { Money } from "@/components/ui/Money";
 import { MOCK_AS_OF } from "@/data/mock";
 import type { AdvisorCustomer } from "@/data/types";
 import { customerAnchor, lossTag, openLoss } from "@/lib/advisor";
+import { routes } from "@/lib/routes";
 import { cn, daysBetween, formatDate, relativeDay } from "@/lib/format";
 
 const PAGE_SIZE = 8;
@@ -85,9 +87,13 @@ export function CustomerTable({ customers }: { customers: AdvisorCustomer[] }) {
                     )}
                   </td>
                   <td className="py-4 pr-4">
-                    <span className="block truncate font-semibold text-pnc-link" title={c.name}>
+                    <Link
+                      href={routes.advisorClient(c.id)}
+                      className="block truncate font-semibold text-pnc-link hover:underline"
+                      title={c.name}
+                    >
                       {c.name}
-                    </span>
+                    </Link>
                     {c.household.length > 0 && (
                       <span className="block text-xs leading-snug text-pnc-muted">
                         {c.household

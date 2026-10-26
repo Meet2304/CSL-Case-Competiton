@@ -22,6 +22,8 @@ export const routes = {
   familyWill: "/family#will",
   /** Advisor (bank representative) home dashboard. */
   advisor: "/advisor",
+  /** Advisor: one client's summary, family, loss guide and assistant. */
+  advisorClient: (id: string) => `/advisor/clients/${id}`,
 } as const;
 
 export type View = "web" | "mobile";

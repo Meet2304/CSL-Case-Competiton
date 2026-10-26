@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { MOCK_AS_OF } from "@/data/mock";
 import type { AdvisorNotification, AdvisorNotificationKind } from "@/data/types";
-import { customerAnchor } from "@/lib/advisor";
+import { routes } from "@/lib/routes";
 import { cn, formatDate, relativeDay } from "@/lib/format";
 
 const icons: Record<AdvisorNotificationKind, LucideIcon> = {
@@ -128,10 +128,10 @@ export function NotificationList({
                 </>
               )}
               <a
-                href={`#${customerAnchor(n.customerId)}`}
+                href={`${routes.advisorClient(n.customerId)}${n.kind === "loss" ? "#loss" : ""}`}
                 className="mt-3 inline-flex items-center gap-1 font-semibold text-pnc-link hover:underline"
               >
-                {n.urgent ? "Go to customer" : "View customer"}{" "}
+                {n.kind === "loss" ? "Open loss guide" : "View client"}{" "}
                 <ArrowRight className="size-3.5" aria-hidden="true" />
               </a>
             </div>

@@ -125,6 +125,29 @@ signing out of the advisor view and into the customer view in the same browser.
 _Reset demo_ (advisor) clears it; _Reset demo progress_ (Next steps) keeps the
 recorded death but clears the flows.
 
+## Advisor assistant (simulated) — `/advisor/clients/[id]`
+
+The advisor dashboard opens with **search** (clients or family members; press
+`/`) and a **daily briefing** of who needs attention and why. Every client name,
+search result and notification opens that client's **summary**, with tabs:
+
+- **Overview** — profile, goals, recent contact, and what matters now.
+- **Assets & advice** — holdings with owners and beneficiaries, plus
+  recommendations for each (retitling, beneficiary updates, inherited IRAs,
+  probate, idle cash...), each with its steps and the facts it's based on.
+- **Family** — everyone tied to the accounts, with roles (executor, trustee, heir).
+- **Loss guide** (only while a loss is open) — who died and what they held, how
+  to approach the bereaved client and each heir, a 12-month plan, and advice
+  personalized from the client's notes and accounts.
+- **Ask** — questions about the client, answered with what was checked and sources.
+- **Engagement** — next best action, contact cadence, talking points and a draft.
+
+The assistant is **simulated**: `src/lib/assistant.ts` is a rules engine over the
+mock profiles in `src/data/clients.ts` (hand-written for Morgan Placeholder and
+Avery Example; generated for everyone else so totals match the table). Every
+assistant panel is labeled "Simulated". It handles deaths recorded at runtime,
+including when the customer themself died (it then works with the next of kin).
+
 ## Structure
 
 ```
