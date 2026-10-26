@@ -1,4 +1,5 @@
 import type { AdvisorCustomer, AdvisorNotification, LossEvent } from "@/data/types";
+import { outreachGuide } from "@/data/bereavement";
 import { daysBetween, formatDate } from "@/lib/format";
 
 /** The most recent loss event the advisor has not finished following up on. */
@@ -68,6 +69,7 @@ export function buildNotifications(
         date: loss.date,
         urgent: true,
         steps: lossFollowUpSteps,
+        outreach: outreachGuide(c.name, loss.memberName).script,
       },
     ];
   });
@@ -78,4 +80,31 @@ export function buildNotifications(
 /** Anchor id for a customer's row, used by "View customer" links. */
 export function customerAnchor(id: string): string {
   return `customer-${id}`;
+}
+
+/** Recorded loss as entered by the bank (see src/lib/bereavement.ts). */
+type RecordedLossInput = Pick<LossEvent, "date" | "relationship" | "memberName" | "reportedVia"> & {
+  id: string;
+  customerId: string;
+};
+
+/** Adds losses recorded by the bank to the advisor's customer book. */
+export function withRecordedLosses(
+  customers: AdvisorCustomer[],
+  recorded: RecordedLossInput[],
+): AdvisorCustomer[] {
+  if (recorded.length === 0) return customers;
+  return customers.map((c) => {
+    const extra = recorded
+      .filter((r) => r.customerId === c.id)
+      .map<LossEvent>((r) => ({
+        id: `rec-${r.id}`,
+        date: r.date,
+        relationship: r.relationship,
+        memberName: r.memberName,
+        reportedVia: r.reportedVia,
+        followUpComplete: false,
+      }));
+    return extra.length ? { ...c, lossEvents: [...c.lossEvents, ...extra] } : c;
+  });
 }

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ClipboardList, EllipsisVertical } from "lucide-react";
+import { EllipsisVertical } from "lucide-react";
+import { RemindersPill } from "@/components/bereavement/BereavementReminders";
 import { MobileHeader } from "@/components/mobile/MobileHeader";
 import { NoticeCarousel } from "@/components/mobile/NoticeCarousel";
 import { WalletCard } from "@/components/mobile/WalletCard";
@@ -31,17 +32,7 @@ export default function MobileAccountsPage() {
             </p>
           </>
         }
-        right={
-          <a
-            href="#"
-            className="relative mb-1 flex items-center gap-1.5 rounded-lg bg-white/15 px-3 py-1.5 text-sm"
-          >
-            <ClipboardList className="size-4" /> Reminders
-            <span className="absolute -right-2 -top-2.5 grid size-5 place-items-center rounded-full bg-pnc-badge text-[11px] font-bold">
-              {reminders.length}
-            </span>
-          </a>
-        }
+        right={<RemindersPill count={reminders.length} />}
       >
         <NoticeCarousel notices={securityNotices} />
       </MobileHeader>

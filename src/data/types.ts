@@ -141,6 +141,8 @@ export type AdvisorNotification = {
   urgent: boolean;
   /** Suggested next steps (shown for urgent notifications). */
   steps?: string[];
+  /** Suggested wording for a humane first call (loss notifications). */
+  outreach?: string;
 };
 
 // ---------------------------------------------------------------------------
