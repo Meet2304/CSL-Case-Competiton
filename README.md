@@ -9,7 +9,8 @@ Experience + Advisor Workbench). **Every figure on screen is mock data.**
 ```bash
 npm install
 npm run dev        # http://localhost:3000
-npm run build      # production build + type check
+npm run typecheck  # next typegen + tsc
+npm run build      # production build
 npm run lint
 ```
 
