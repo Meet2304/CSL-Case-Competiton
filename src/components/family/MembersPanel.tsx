@@ -6,7 +6,15 @@ import type { FamilyMember, FamilyMemberRelationship } from "@/data/types";
 import { isAdminMember, livingAdmins, relationships, roleById } from "@/lib/family";
 import { cn } from "@/lib/format";
 import { useFamily } from "./FamilyProvider";
-import { Avatar, fieldInput, fieldLabel, linkButton, primaryButton, secondaryButton, StatusBadge } from "./parts";
+import {
+  Avatar,
+  fieldInput,
+  fieldLabel,
+  linkButton,
+  primaryButton,
+  secondaryButton,
+  StatusBadge,
+} from "./parts";
 
 /** Family members: add, assign roles, remove. */
 export function MembersPanel() {
@@ -21,7 +29,8 @@ export function MembersPanel() {
     <div>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <p className="max-w-xl text-sm text-pnc-muted">
-          Admins can add people to the family and choose their role. You can have more than one admin.
+          Admins can add people to the family and choose their role. You can have more than one
+          admin.
         </p>
         <button type="button" onClick={() => setAdding(true)} className={primaryButton}>
           <UserPlus className="size-4" aria-hidden="true" /> Add family member
@@ -42,7 +51,14 @@ export function MembersPanel() {
                   <Avatar member={m} index={index} />
                   <span className="min-w-0">
                     <span className="flex flex-wrap items-center gap-2">
-                      <span className={cn("font-semibold", deceased ? "text-pnc-muted" : "text-pnc-ink")}>{m.name}</span>
+                      <span
+                        className={cn(
+                          "font-semibold",
+                          deceased ? "text-pnc-muted" : "text-pnc-ink",
+                        )}
+                      >
+                        {m.name}
+                      </span>
                       {isSelf && <span className="text-xs text-pnc-muted">(you)</span>}
                       <StatusBadge status={m.status} />
                     </span>
@@ -58,7 +74,9 @@ export function MembersPanel() {
                   <select
                     value={m.roleId}
                     disabled={deceased}
-                    onChange={(e) => dispatch({ type: "setMemberRole", memberId: m.id, roleId: e.target.value })}
+                    onChange={(e) =>
+                      dispatch({ type: "setMemberRole", memberId: m.id, roleId: e.target.value })
+                    }
                     className="rounded-md border border-pnc-line bg-white px-2.5 py-1.5 text-sm text-pnc-ink outline-none focus:border-pnc-link disabled:bg-pnc-surface disabled:text-pnc-muted"
                   >
                     {state.roles.map((r) => (
@@ -114,7 +132,8 @@ function AddMemberForm({ onDone }: { onDone: () => void }) {
           : null,
   };
   const role = roleById(state, form.roleId);
-  const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => setForm((f) => ({ ...f, [key]: value }));
+  const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) =>
+    setForm((f) => ({ ...f, [key]: value }));
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -144,7 +163,9 @@ function AddMemberForm({ onDone }: { onDone: () => void }) {
         <ArrowLeft className="size-4" aria-hidden="true" /> All members
       </button>
       <h3 className="mt-3 text-xl font-semibold text-pnc-ink">Add family member</h3>
-      <p className="mt-1 text-sm text-pnc-muted">They&apos;ll get an email invitation to set up their own sign-on.</p>
+      <p className="mt-1 text-sm text-pnc-muted">
+        They&apos;ll get an email invitation to set up their own sign-on.
+      </p>
 
       <div className="mt-5 grid max-w-2xl gap-4 @xl:grid-cols-2">
         <div>
@@ -210,7 +231,12 @@ function AddMemberForm({ onDone }: { onDone: () => void }) {
           <label htmlFor={`${id}-role`} className={fieldLabel}>
             Role
           </label>
-          <select id={`${id}-role`} value={form.roleId} onChange={(e) => set("roleId", e.target.value)} className={fieldInput}>
+          <select
+            id={`${id}-role`}
+            value={form.roleId}
+            onChange={(e) => set("roleId", e.target.value)}
+            className={fieldInput}
+          >
             {state.roles.map((r) => (
               <option key={r.id} value={r.id}>
                 {r.name}
@@ -220,8 +246,8 @@ function AddMemberForm({ onDone }: { onDone: () => void }) {
           {role && (
             <p className="mt-2 flex gap-2 rounded-md bg-pnc-surface px-3 py-2 text-xs text-pnc-muted">
               <Info className="mt-px size-3.5 shrink-0" aria-hidden="true" />
-              {role.description || "No description for this role."} Change what each role can see and control in the
-              Roles &amp; access tab.
+              {role.description || "No description for this role."} Change what each role can see
+              and control in the Roles &amp; access tab.
             </p>
           )}
         </div>

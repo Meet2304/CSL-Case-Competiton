@@ -7,8 +7,14 @@ import { WebHero } from "@/components/web/WebHero";
 export const metadata: Metadata = { title: "Help" };
 
 const faqs = [
-  { q: "How do I reset my password?", a: "Select “Forgot User ID or Password?” on the sign-on page and follow the steps." },
-  { q: "When will my transfer arrive?", a: "Transfers between PNC accounts are usually immediate. External transfers can take 1–3 business days." },
+  {
+    q: "How do I reset my password?",
+    a: "Select “Forgot User ID or Password?” on the sign-on page and follow the steps.",
+  },
+  {
+    q: "When will my transfer arrive?",
+    a: "Transfers between PNC accounts are usually immediate. External transfers can take 1–3 business days.",
+  },
   { q: "How do I lock my card?", a: "Go to Cards, choose a card, and turn on Lock card." },
 ];
 
@@ -22,13 +28,18 @@ export default function WebHelpPage() {
           <div className="px-5 pt-4">
             <label className="flex items-center gap-2 rounded-md border border-pnc-line px-3 py-2 text-sm text-pnc-muted">
               <Search className="size-4" />
-              <input className="w-full bg-transparent outline-none" placeholder="Search help topics" />
+              <input
+                className="w-full bg-transparent outline-none"
+                placeholder="Search help topics"
+              />
             </label>
           </div>
           <div className="divide-y divide-pnc-line px-5 py-2">
             {faqs.map((f) => (
               <details key={f.q} className="group py-3">
-                <summary className="cursor-pointer list-none font-semibold text-pnc-link">{f.q}</summary>
+                <summary className="cursor-pointer list-none font-semibold text-pnc-link">
+                  {f.q}
+                </summary>
                 <p className="mt-2 text-sm text-pnc-muted">{f.a}</p>
               </details>
             ))}

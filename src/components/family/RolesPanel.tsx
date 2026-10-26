@@ -21,8 +21,10 @@ export function RolesPanel() {
     <div>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <p className="max-w-xl text-sm text-pnc-muted">
-          Roles decide what each family member can <strong className="font-semibold text-pnc-ink">see</strong> and{" "}
-          <strong className="font-semibold text-pnc-ink">control</strong>, asset by asset. Admins always have full access.
+          Roles decide what each family member can{" "}
+          <strong className="font-semibold text-pnc-ink">see</strong> and{" "}
+          <strong className="font-semibold text-pnc-ink">control</strong>, asset by asset. Admins
+          always have full access.
         </p>
         <button type="button" onClick={() => setEditing("new")} className={primaryButton}>
           <Plus className="size-4" aria-hidden="true" /> Create role
@@ -32,7 +34,9 @@ export function RolesPanel() {
       <ul className="mt-4 grid gap-3 @3xl:grid-cols-2">
         {state.roles.map((role) => {
           const summary = roleSummary(state, role);
-          const members = state.members.filter((m) => m.roleId === role.id && m.status !== "Deceased");
+          const members = state.members.filter(
+            (m) => m.roleId === role.id && m.status !== "Deceased",
+          );
           return (
             <li key={role.id}>
               <button
@@ -41,14 +45,20 @@ export function RolesPanel() {
                 className="flex h-full w-full items-start gap-3 rounded-md border border-pnc-line bg-white p-4 text-left transition-colors hover:border-pnc-link focus-visible:outline-2 focus-visible:outline-pnc-link"
               >
                 <span className="grid size-10 shrink-0 place-items-center rounded-full bg-pnc-blue-50 text-pnc-blue-700">
-                  {role.isAdmin ? <ShieldCheck className="size-5" aria-hidden="true" /> : <UserRound className="size-5" aria-hidden="true" />}
+                  {role.isAdmin ? (
+                    <ShieldCheck className="size-5" aria-hidden="true" />
+                  ) : (
+                    <UserRound className="size-5" aria-hidden="true" />
+                  )}
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="flex flex-wrap items-center gap-2">
                     <span className="font-semibold text-pnc-ink">{role.name}</span>
                     {role.builtIn && <Pill tone="blue">Built-in</Pill>}
                   </span>
-                  <span className="mt-0.5 line-clamp-2 block text-sm text-pnc-muted">{role.description || "No description"}</span>
+                  <span className="mt-0.5 line-clamp-2 block text-sm text-pnc-muted">
+                    {role.description || "No description"}
+                  </span>
                   <span className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-pnc-muted">
                     <span>
                       {members.length} {members.length === 1 ? "member" : "members"}

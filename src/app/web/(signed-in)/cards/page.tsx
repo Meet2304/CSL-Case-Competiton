@@ -10,7 +10,12 @@ import { formatDate } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Cards" };
 
-const manageLinks = ["Replace card", "Digital wallets", "Merchants storing your card", "Travel notifications"];
+const manageLinks = [
+  "Replace card",
+  "Digital wallets",
+  "Merchants storing your card",
+  "Travel notifications",
+];
 
 export default function WebCardsPage() {
   return (
@@ -24,7 +29,10 @@ export default function WebCardsPage() {
         </div>
 
         {creditCardAccounts.map((card) => (
-          <section key={card.id} className="grid gap-6 rounded-md bg-white p-5 shadow-card md:grid-cols-[14rem_1fr_16rem]">
+          <section
+            key={card.id}
+            className="grid gap-6 rounded-md bg-white p-5 shadow-card md:grid-cols-[14rem_1fr_16rem]"
+          >
             <CardArt style={card.cardStyle} last4={card.last4} />
 
             <div>
@@ -34,17 +42,23 @@ export default function WebCardsPage() {
               <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3">
                 <div>
                   <dt className="text-pnc-muted">Current Balance</dt>
-                  <dd className="text-lg font-semibold"><Money value={card.balance} /></dd>
+                  <dd className="text-lg font-semibold">
+                    <Money value={card.balance} />
+                  </dd>
                 </div>
                 <div>
                   <dt className="text-pnc-muted">Available Credit</dt>
-                  <dd className="text-lg font-semibold"><Money value={card.availableCredit} /></dd>
+                  <dd className="text-lg font-semibold">
+                    <Money value={card.availableCredit} />
+                  </dd>
                 </div>
                 <div>
                   <dt className="text-pnc-muted">Minimum Due</dt>
                   <dd className="font-semibold">
                     <Money value={card.minimumDue} />{" "}
-                    <span className="text-xs font-normal text-pnc-muted">by {formatDate(card.dueDate)}</span>
+                    <span className="text-xs font-normal text-pnc-muted">
+                      by {formatDate(card.dueDate)}
+                    </span>
                   </dd>
                 </div>
               </dl>
@@ -55,7 +69,10 @@ export default function WebCardsPage() {
               <ul className="divide-y divide-pnc-line border-t border-pnc-line">
                 {manageLinks.map((label) => (
                   <li key={label}>
-                    <a href="#" className="flex items-center justify-between py-2.5 hover:text-pnc-link">
+                    <a
+                      href="#"
+                      className="flex items-center justify-between py-2.5 hover:text-pnc-link"
+                    >
                       {label} <ChevronRight className="size-4 text-pnc-link" />
                     </a>
                   </li>

@@ -19,7 +19,10 @@ export default function WebAdvisorHomePage() {
 
   return (
     <>
-      <WebHero title={`Welcome, ${advisor.firstName}`} subtitle={`${advisor.title} · ${advisor.team}`} />
+      <WebHero
+        title={`Welcome, ${advisor.firstName}`}
+        subtitle={`${advisor.title} · ${advisor.team}`}
+      />
 
       <div className="mx-auto max-w-6xl space-y-6 px-4 py-8 sm:px-6">
         <div className="flex items-center gap-3">

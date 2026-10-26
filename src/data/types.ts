@@ -204,7 +204,8 @@ export const assetCategories = [
 export type AssetCategory = (typeof assetCategories)[number];
 
 /** How an asset legally passes when an owner dies. Drives the required steps. */
-export type SuccessionMethod = "joint" | "pod" | "tod" | "retirement" | "trust" | "estate" | "close";
+export type SuccessionMethod =
+  "joint" | "pod" | "tod" | "retirement" | "trust" | "estate" | "close";
 
 export type SuccessionStep = { id: string; label: string; detail: string };
 

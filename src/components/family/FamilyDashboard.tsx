@@ -88,7 +88,10 @@ export function FamilyDashboard() {
 
       <dl className="mt-4 grid grid-cols-2 gap-3 @3xl:grid-cols-4">
         {stats.map(({ label, value, icon: Icon }) => (
-          <div key={label} className="flex items-center gap-3 rounded-md bg-white px-4 py-3 shadow-card">
+          <div
+            key={label}
+            className="flex items-center gap-3 rounded-md bg-white px-4 py-3 shadow-card"
+          >
             <span className="grid size-10 shrink-0 place-items-center rounded-full bg-pnc-blue-50 text-pnc-blue-700">
               <Icon className="size-5" strokeWidth={1.75} aria-hidden="true" />
             </span>
@@ -101,7 +104,11 @@ export function FamilyDashboard() {
       </dl>
 
       <section className="mt-6 rounded-md bg-white shadow-card">
-        <div role="tablist" aria-label="Family dashboard" className="no-scrollbar flex overflow-x-auto border-b border-pnc-line px-2">
+        <div
+          role="tablist"
+          aria-label="Family dashboard"
+          className="no-scrollbar flex overflow-x-auto border-b border-pnc-line px-2"
+        >
           {tabs.map((t, i) => {
             const selected = tab === t.id;
             return (
@@ -127,7 +134,12 @@ export function FamilyDashboard() {
             );
           })}
         </div>
-        <div id={`${baseId}-panel`} role="tabpanel" aria-labelledby={`${baseId}-tab-${tab}`} className="p-4 @3xl:p-5">
+        <div
+          id={`${baseId}-panel`}
+          role="tabpanel"
+          aria-labelledby={`${baseId}-tab-${tab}`}
+          className="p-4 @3xl:p-5"
+        >
           {tab === "overview" && <OverviewPanel />}
           {tab === "members" && <MembersPanel />}
           {tab === "roles" && <RolesPanel />}

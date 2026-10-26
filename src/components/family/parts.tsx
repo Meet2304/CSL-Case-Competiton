@@ -12,14 +12,24 @@ const avatarTones = [
   "bg-pnc-positive-bg text-pnc-positive",
 ];
 
-export function Avatar({ member, index = 0, size = "md" }: { member: FamilyMember; index?: number; size?: "sm" | "md" }) {
+export function Avatar({
+  member,
+  index = 0,
+  size = "md",
+}: {
+  member: FamilyMember;
+  index?: number;
+  size?: "sm" | "md";
+}) {
   return (
     <span
       title={member.name}
       className={cn(
         "grid shrink-0 place-items-center rounded-full font-semibold",
         size === "sm" ? "size-7 text-[11px] ring-2 ring-white" : "size-10 text-sm",
-        member.status === "Deceased" ? "bg-pnc-chip text-pnc-muted" : avatarTones[index % avatarTones.length],
+        member.status === "Deceased"
+          ? "bg-pnc-chip text-pnc-muted"
+          : avatarTones[index % avatarTones.length],
       )}
     >
       {initials(member.name)}
@@ -28,7 +38,13 @@ export function Avatar({ member, index = 0, size = "md" }: { member: FamilyMembe
 }
 
 /** Overlapping avatars, e.g. "who can see this asset". */
-export function AvatarStack({ members, indexOf }: { members: FamilyMember[]; indexOf: (m: FamilyMember) => number }) {
+export function AvatarStack({
+  members,
+  indexOf,
+}: {
+  members: FamilyMember[];
+  indexOf: (m: FamilyMember) => number;
+}) {
   if (members.length === 0) return <span className="text-xs text-pnc-muted">No one</span>;
   return (
     <span className="flex -space-x-1.5" aria-label={members.map((m) => m.name).join(", ")}>
@@ -47,13 +63,24 @@ const statusStyles: Record<FamilyMemberStatus, string> = {
 
 export function StatusBadge({ status }: { status: FamilyMemberStatus }) {
   return (
-    <span className={cn("inline-flex whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold", statusStyles[status])}>
+    <span
+      className={cn(
+        "inline-flex whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold",
+        statusStyles[status],
+      )}
+    >
       {status === "Invited" ? "Invite sent" : status}
     </span>
   );
 }
 
-export function Pill({ children, tone = "neutral" }: { children: ReactNode; tone?: "neutral" | "blue" | "attention" }) {
+export function Pill({
+  children,
+  tone = "neutral",
+}: {
+  children: ReactNode;
+  tone?: "neutral" | "blue" | "attention";
+}) {
   return (
     <span
       className={cn(
@@ -89,4 +116,5 @@ export const primaryButton =
   "inline-flex items-center justify-center gap-1.5 rounded-full bg-pnc-blue-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-pnc-blue-800 disabled:opacity-50";
 export const secondaryButton =
   "inline-flex items-center justify-center gap-1.5 rounded-full border border-pnc-line bg-white px-5 py-2.5 text-sm font-semibold text-pnc-ink hover:border-pnc-link hover:text-pnc-link";
-export const linkButton = "inline-flex items-center gap-1 text-sm font-semibold text-pnc-link hover:underline disabled:text-pnc-muted disabled:no-underline";
+export const linkButton =
+  "inline-flex items-center gap-1 text-sm font-semibold text-pnc-link hover:underline disabled:text-pnc-muted disabled:no-underline";

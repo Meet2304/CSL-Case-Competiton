@@ -58,10 +58,15 @@ export function activeProcess(s: FamilyState, assetId: string): SuccessionProces
   return s.processes.find((p) => p.assetId === assetId && p.status === "in-progress");
 }
 
-export const isLocked = (s: FamilyState, assetId: string) => activeProcess(s, assetId) !== undefined;
+export const isLocked = (s: FamilyState, assetId: string) =>
+  activeProcess(s, assetId) !== undefined;
 
 /** What a member can actually do with an asset right now. */
-export function effectiveAccess(s: FamilyState, member: FamilyMember, asset: FamilyAsset): AssetAccess {
+export function effectiveAccess(
+  s: FamilyState,
+  member: FamilyMember,
+  asset: FamilyAsset,
+): AssetAccess {
   if (member.status === "Deceased") return NO_ACCESS;
   const base = roleAccess(roleById(s, member.roleId), asset.id);
   if (isLocked(s, asset.id) || asset.closed) return { ...base, transact: false, manage: false };
@@ -91,7 +96,11 @@ export function stepsFor(asset: FamilyAsset): SuccessionStep[] {
 }
 
 /** Who takes control of `asset` if `deceasedId` dies (empty for closing credit). */
-export function successorsFor(s: FamilyState, asset: FamilyAsset, deceasedId: string): FamilyMember[] {
+export function successorsFor(
+  s: FamilyState,
+  asset: FamilyAsset,
+  deceasedId: string,
+): FamilyMember[] {
   if (!asset.method || asset.method === "close") return [];
   const ids =
     asset.method === "joint" || asset.method === "trust"
@@ -131,7 +140,10 @@ export function familyReducer(s: FamilyState, action: FamilyAction): FamilyState
       return action.state;
 
     case "addMember":
-      return { ...s, members: [...s.members, { ...action.member, id: newId("m"), status: "Invited" }] };
+      return {
+        ...s,
+        members: [...s.members, { ...action.member, id: newId("m"), status: "Invited" }],
+      };
 
     case "setMemberRole": {
       const member = memberById(s, action.memberId);
@@ -139,7 +151,12 @@ export function familyReducer(s: FamilyState, action: FamilyAction): FamilyState
       // Never leave the family without a living admin.
       const losingAdmin = isAdminMember(s, member) && !roleById(s, action.roleId)?.isAdmin;
       if (losingAdmin && livingAdmins(s).length <= 1) return s;
-      return { ...s, members: s.members.map((m) => (m.id === action.memberId ? { ...m, roleId: action.roleId } : m)) };
+      return {
+        ...s,
+        members: s.members.map((m) =>
+          m.id === action.memberId ? { ...m, roleId: action.roleId } : m,
+        ),
+      };
     }
 
     case "removeMember": {
@@ -180,7 +197,9 @@ export function familyReducer(s: FamilyState, action: FamilyAction): FamilyState
       const complete = stepsFor(asset).every((step) => done.includes(step.id));
 
       const processes = s.processes.map((p) =>
-        p.id === process.id ? { ...p, completedStepIds: done, status: complete ? ("complete" as const) : p.status } : p,
+        p.id === process.id
+          ? { ...p, completedStepIds: done, status: complete ? ("complete" as const) : p.status }
+          : p,
       );
       if (!complete) return { ...s, processes };
 
@@ -199,7 +218,10 @@ export function familyReducer(s: FamilyState, action: FamilyAction): FamilyState
     case "saveRole": {
       const role = { ...action.role, id: action.role.id || newId("r") };
       const exists = s.roles.some((r) => r.id === role.id);
-      return { ...s, roles: exists ? s.roles.map((r) => (r.id === role.id ? role : r)) : [...s.roles, role] };
+      return {
+        ...s,
+        roles: exists ? s.roles.map((r) => (r.id === role.id ? role : r)) : [...s.roles, role],
+      };
     }
 
     case "deleteRole": {
@@ -213,4 +235,10 @@ export function familyReducer(s: FamilyState, action: FamilyAction): FamilyState
   }
 }
 
-export const relationships: FamilyMemberRelationship[] = ["Spouse", "Child", "Parent", "Sibling", "Other"];
+export const relationships: FamilyMemberRelationship[] = [
+  "Spouse",
+  "Child",
+  "Parent",
+  "Sibling",
+  "Other",
+];

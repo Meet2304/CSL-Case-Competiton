@@ -32,13 +32,20 @@ export function MemberFamilyView({ member }: { member: FamilyMember }) {
         if (items.length === 0) return null;
         return (
           <section key={category}>
-            <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-pnc-muted">{category}</h4>
+            <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-pnc-muted">
+              {category}
+            </h4>
             <ul className="divide-y divide-pnc-line rounded-md border border-pnc-line">
               {items.map(({ asset, access }) => (
-                <li key={asset.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
+                <li
+                  key={asset.id}
+                  className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3"
+                >
                   <span className="min-w-0 flex-1 basis-48 font-semibold text-pnc-ink">
                     {asset.name}
-                    {asset.last4 && <span className="text-xs font-normal text-pnc-muted"> x{asset.last4}</span>}
+                    {asset.last4 && (
+                      <span className="text-xs font-normal text-pnc-muted"> x{asset.last4}</span>
+                    )}
                   </span>
                   {/* Only the actions this member can take are rendered — never a disabled or "locked" control. */}
                   {(access.activity || access.transact || access.manage) && (

@@ -19,11 +19,18 @@ export default function WebPayTransferPage() {
       <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[1fr_24rem]">
         <div className="space-y-4">
           {payTransferGroups.map((group) => (
-            <section id={group.id} key={group.id} className="scroll-mt-6 rounded-md bg-white shadow-card">
+            <section
+              id={group.id}
+              key={group.id}
+              className="scroll-mt-6 rounded-md bg-white shadow-card"
+            >
               <ul className="divide-y divide-pnc-line">
                 {group.items.map((item) => (
                   <li key={item.id}>
-                    <a href="#" className="flex items-center gap-4 px-5 py-4 hover:bg-pnc-surface/70">
+                    <a
+                      href="#"
+                      className="flex items-center gap-4 px-5 py-4 hover:bg-pnc-surface/70"
+                    >
                       <IconChip icon={item.icon} tint={item.tint} />
                       <span className="flex-1">
                         <span className="block font-semibold">{item.label}</span>

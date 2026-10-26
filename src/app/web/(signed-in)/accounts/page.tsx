@@ -54,7 +54,10 @@ export default function WebAccountsPage() {
               aside={
                 <span className="flex items-baseline gap-6 text-sm text-pnc-muted">
                   Total Balance
-                  <Money value={totals.creditBalance} className="text-lg font-semibold text-pnc-ink" />
+                  <Money
+                    value={totals.creditBalance}
+                    className="text-lg font-semibold text-pnc-ink"
+                  />
                 </span>
               }
             >
@@ -114,7 +117,10 @@ export default function WebAccountsPage() {
                   <div className="text-sm">
                     <p className="font-semibold">{o.title}</p>
                     <p className="mt-1 leading-relaxed text-pnc-muted">{o.body}</p>
-                    <a href="#" className="mt-2 inline-block font-semibold text-pnc-link hover:underline">
+                    <a
+                      href="#"
+                      className="mt-2 inline-block font-semibold text-pnc-link hover:underline"
+                    >
                       {o.cta}
                     </a>
                   </div>

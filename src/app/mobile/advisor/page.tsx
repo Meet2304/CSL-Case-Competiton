@@ -11,7 +11,8 @@ import { buildNotifications, needsAttention, sortByAttention } from "@/lib/advis
 
 export const metadata: Metadata = { title: "Advisor Home" };
 
-const pill = "rounded-full bg-attention-bg px-2 py-0.5 text-xs font-semibold text-attention ring-1 ring-attention-line";
+const pill =
+  "rounded-full bg-attention-bg px-2 py-0.5 text-xs font-semibold text-attention ring-1 ring-attention-line";
 
 export default function MobileAdvisorHomePage() {
   const customers = sortByAttention(advisorCustomers);
@@ -29,7 +30,9 @@ export default function MobileAdvisorHomePage() {
         }
         title={
           <>
-            <h1 className="truncate text-[28px] font-bold leading-tight">Hello, {advisor.firstName}</h1>
+            <h1 className="truncate text-[28px] font-bold leading-tight">
+              Hello, {advisor.firstName}
+            </h1>
             <p className="flex items-center gap-2 text-xs font-semibold">
               {advisor.title} <MockBadge />
             </p>
@@ -39,7 +42,8 @@ export default function MobileAdvisorHomePage() {
         <MobileCard>
           <h2 className="flex items-center justify-between border-b border-pnc-line px-4 py-3 font-semibold">
             <span>
-              Notifications <span className="text-xs font-normal text-pnc-muted">({notifications.length})</span>
+              Notifications{" "}
+              <span className="text-xs font-normal text-pnc-muted">({notifications.length})</span>
             </span>
             {urgentCount > 0 && <span className={pill}>{urgentCount} urgent</span>}
           </h2>
@@ -51,7 +55,8 @@ export default function MobileAdvisorHomePage() {
         <MobileCard>
           <h2 className="flex items-center justify-between border-b border-pnc-line px-4 py-3 font-semibold">
             <span>
-              Your Customers <span className="text-xs font-normal text-pnc-muted">({customers.length})</span>
+              Your Customers{" "}
+              <span className="text-xs font-normal text-pnc-muted">({customers.length})</span>
             </span>
             {attentionCount > 0 && <span className={pill}>{attentionCount} need attention</span>}
           </h2>

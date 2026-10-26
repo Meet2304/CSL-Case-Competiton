@@ -39,7 +39,12 @@ export function BottomTabBar({ variant = "customer" }: { variant?: Role }) {
                   active && "font-bold text-white",
                 )}
               >
-                <Icon className="size-6" strokeWidth={active ? 2.25 : 1.5} fill={active ? "currentColor" : "none"} fillOpacity={active ? 0.25 : 0} />
+                <Icon
+                  className="size-6"
+                  strokeWidth={active ? 2.25 : 1.5}
+                  fill={active ? "currentColor" : "none"}
+                  fillOpacity={active ? 0.25 : 0}
+                />
                 {label}
               </Link>
             </li>

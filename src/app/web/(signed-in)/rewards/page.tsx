@@ -25,7 +25,10 @@ export default function WebRewardsPage() {
           </div>
           <div className="flex items-center gap-3">
             <MockBadge />
-            <a href="#" className="rounded-full bg-pnc-blue-700 px-6 py-2.5 text-sm font-semibold text-white hover:bg-pnc-blue-800">
+            <a
+              href="#"
+              className="rounded-full bg-pnc-blue-700 px-6 py-2.5 text-sm font-semibold text-white hover:bg-pnc-blue-800"
+            >
               View Rewards
             </a>
           </div>
@@ -56,7 +59,10 @@ export default function WebRewardsPage() {
                 <p className="mt-3 font-semibold">{o.cashBack}</p>
                 <p className="text-sm text-pnc-muted">{o.merchant}</p>
                 <p className="mt-1 text-xs text-pnc-muted">{o.expires}</p>
-                <a href="#" className="mt-3 inline-block rounded-full border border-pnc-link px-4 py-1 text-xs font-semibold text-pnc-link hover:bg-pnc-blue-50">
+                <a
+                  href="#"
+                  className="mt-3 inline-block rounded-full border border-pnc-link px-4 py-1 text-xs font-semibold text-pnc-link hover:bg-pnc-blue-50"
+                >
                   Learn More
                 </a>
               </li>

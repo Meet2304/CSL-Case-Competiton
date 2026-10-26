@@ -51,7 +51,9 @@ export function AccessMatrix({
     .filter((g) => g.items.length > 0);
 
   const disabledFor = (asset: FamilyAsset, key: keyof AssetAccess | "full") =>
-    readOnly || ((lockedIds.has(asset.id) || asset.closed === true) && (key === "transact" || key === "manage" || key === "full"));
+    readOnly ||
+    ((lockedIds.has(asset.id) || asset.closed === true) &&
+      (key === "transact" || key === "manage" || key === "full"));
 
   const label = (asset: FamilyAsset) => `${asset.name}${asset.last4 ? ` x${asset.last4}` : ""}`;
 
@@ -70,21 +72,45 @@ export function AccessMatrix({
             </colgroup>
             <thead>
               <tr className="bg-pnc-surface">
-                <th scope="colgroup" colSpan={2} className="rounded-tl-md px-4 py-2 text-left font-semibold text-pnc-ink">
+                <th
+                  scope="colgroup"
+                  colSpan={2}
+                  className="rounded-tl-md px-4 py-2 text-left font-semibold text-pnc-ink"
+                >
                   {category}
                 </th>
-                <th scope="colgroup" colSpan={2} className="border-l border-pnc-line px-2 py-2 text-center text-xs font-semibold uppercase tracking-wide text-pnc-muted">
+                <th
+                  scope="colgroup"
+                  colSpan={2}
+                  className="border-l border-pnc-line px-2 py-2 text-center text-xs font-semibold uppercase tracking-wide text-pnc-muted"
+                >
                   Visibility
                 </th>
-                <th scope="colgroup" colSpan={2} className="rounded-tr-md border-l border-pnc-line px-2 py-2 text-center text-xs font-semibold uppercase tracking-wide text-pnc-muted">
+                <th
+                  scope="colgroup"
+                  colSpan={2}
+                  className="rounded-tr-md border-l border-pnc-line px-2 py-2 text-center text-xs font-semibold uppercase tracking-wide text-pnc-muted"
+                >
                   Control
                 </th>
               </tr>
               <tr className="border-b border-pnc-line text-xs text-pnc-muted">
-                <th scope="col" className="px-4 py-2 text-left font-semibold">Asset</th>
-                <th scope="col" className="px-2 py-2 text-center font-semibold">Full</th>
+                <th scope="col" className="px-4 py-2 text-left font-semibold">
+                  Asset
+                </th>
+                <th scope="col" className="px-2 py-2 text-center font-semibold">
+                  Full
+                </th>
                 {columns.map((c, i) => (
-                  <th key={c.key} scope="col" title={c.hint} className={cn("px-2 py-2 text-center font-semibold", (i === 0 || i === 2) && "border-l border-pnc-line")}>
+                  <th
+                    key={c.key}
+                    scope="col"
+                    title={c.hint}
+                    className={cn(
+                      "px-2 py-2 text-center font-semibold",
+                      (i === 0 || i === 2) && "border-l border-pnc-line",
+                    )}
+                  >
                     {c.label}
                   </th>
                 ))}
@@ -116,7 +142,13 @@ export function AccessMatrix({
                       />
                     </td>
                     {columns.map((c, i) => (
-                      <td key={c.key} className={cn("px-2 py-2.5 text-center", (i === 0 || i === 2) && "border-l border-pnc-line")}>
+                      <td
+                        key={c.key}
+                        className={cn(
+                          "px-2 py-2.5 text-center",
+                          (i === 0 || i === 2) && "border-l border-pnc-line",
+                        )}
+                      >
                         <Checkbox
                           aria-label={`${c.label}: ${label(asset)}`}
                           checked={access[c.key]}
@@ -137,7 +169,9 @@ export function AccessMatrix({
       <div className="space-y-5 @2xl:hidden">
         {groups.map(({ category, items }) => (
           <section key={category}>
-            <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-pnc-muted">{category}</h4>
+            <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-pnc-muted">
+              {category}
+            </h4>
             <ul className="divide-y divide-pnc-line rounded-md border border-pnc-line">
               {items.map((asset) => {
                 const access = value(asset.id);
@@ -146,10 +180,13 @@ export function AccessMatrix({
                   <li key={asset.id} className="px-3 py-3">
                     <div className="flex items-start justify-between gap-3">
                       <span className="min-w-0">
-                        <span className="block text-sm font-semibold text-pnc-ink">{label(asset)}</span>
+                        <span className="block text-sm font-semibold text-pnc-ink">
+                          {label(asset)}
+                        </span>
                         {(locked || asset.closed) && (
                           <span className="flex items-center gap-1 text-xs text-pnc-muted">
-                            <Lock className="size-3" aria-hidden="true" /> {asset.closed ? "Closed" : "Control locked"}
+                            <Lock className="size-3" aria-hidden="true" />{" "}
+                            {asset.closed ? "Closed" : "Control locked"}
                           </span>
                         )}
                       </span>
@@ -172,7 +209,10 @@ export function AccessMatrix({
                             {title}
                           </p>
                           {cols.map((c) => (
-                            <label key={c.key} className="flex items-center gap-2 text-sm text-pnc-ink">
+                            <label
+                              key={c.key}
+                              className="flex items-center gap-2 text-sm text-pnc-ink"
+                            >
                               <Checkbox
                                 checked={access[c.key]}
                                 disabled={disabledFor(asset, c.key)}

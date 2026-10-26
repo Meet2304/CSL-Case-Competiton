@@ -34,10 +34,34 @@ export const depositAccounts: DepositAccount[] = [
     availableBalance: 12480.55,
     ledgerBalance: 12612.3,
     transactions: [
-      { id: "t1", date: "2026-10-24", description: "Sample Grocer #12", amount: -86.42, status: "Pending" },
-      { id: "t2", date: "2026-10-23", description: "Payroll — Demo Employer LLC", amount: 3250.0, status: "Posted" },
-      { id: "t3", date: "2026-10-22", description: "Online Transfer to Savings x0002", amount: -500.0, status: "Posted" },
-      { id: "t4", date: "2026-10-20", description: "Demo Coffee Roasters", amount: -6.75, status: "Posted" },
+      {
+        id: "t1",
+        date: "2026-10-24",
+        description: "Sample Grocer #12",
+        amount: -86.42,
+        status: "Pending",
+      },
+      {
+        id: "t2",
+        date: "2026-10-23",
+        description: "Payroll — Demo Employer LLC",
+        amount: 3250.0,
+        status: "Posted",
+      },
+      {
+        id: "t3",
+        date: "2026-10-22",
+        description: "Online Transfer to Savings x0002",
+        amount: -500.0,
+        status: "Posted",
+      },
+      {
+        id: "t4",
+        date: "2026-10-20",
+        description: "Demo Coffee Roasters",
+        amount: -6.75,
+        status: "Posted",
+      },
     ],
   },
   {
@@ -48,8 +72,20 @@ export const depositAccounts: DepositAccount[] = [
     availableBalance: 26180.28,
     ledgerBalance: 26180.28,
     transactions: [
-      { id: "t5", date: "2026-10-22", description: "Online Transfer from Checking x0001", amount: 500.0, status: "Posted" },
-      { id: "t6", date: "2026-09-30", description: "Interest Payment", amount: 41.19, status: "Posted" },
+      {
+        id: "t5",
+        date: "2026-10-22",
+        description: "Online Transfer from Checking x0001",
+        amount: 500.0,
+        status: "Posted",
+      },
+      {
+        id: "t6",
+        date: "2026-09-30",
+        description: "Interest Payment",
+        amount: 41.19,
+        status: "Posted",
+      },
     ],
   },
 ];
@@ -67,9 +103,27 @@ export const creditCardAccounts: CreditCardAccount[] = [
     rewardsBalance: 257.1,
     cardStyle: "cash-rewards",
     transactions: [
-      { id: "t7", date: "2026-10-24", description: "Example Fuel Station", amount: -48.1, status: "Pending" },
-      { id: "t8", date: "2026-10-21", description: "Sample Streaming Service", amount: -15.99, status: "Posted" },
-      { id: "t9", date: "2026-10-18", description: "Demo Home Goods", amount: -212.6, status: "Posted" },
+      {
+        id: "t7",
+        date: "2026-10-24",
+        description: "Example Fuel Station",
+        amount: -48.1,
+        status: "Pending",
+      },
+      {
+        id: "t8",
+        date: "2026-10-21",
+        description: "Sample Streaming Service",
+        amount: -15.99,
+        status: "Posted",
+      },
+      {
+        id: "t9",
+        date: "2026-10-18",
+        description: "Demo Home Goods",
+        amount: -212.6,
+        status: "Posted",
+      },
     ],
   },
   {
@@ -99,15 +153,33 @@ export const virtualWallet: { title: string; accounts: WalletSubAccount[] } = {
       availableBalance: -536.0,
       note: "Free Balance until Nov. 23",
     },
-    { id: "vw-reserve", label: "Reserve", last4: "0006", balance: 9274.33, availableBalance: 9274.33 },
+    {
+      id: "vw-reserve",
+      label: "Reserve",
+      last4: "0006",
+      balance: 9274.33,
+      availableBalance: 9274.33,
+    },
     { id: "vw-growth", label: "Growth", last4: "0007", balance: 827.45, availableBalance: 827.45 },
   ],
 };
 
 export const reminders: Reminder[] = [
-  { id: "r1", text: "Your Monthly Statement for Checking x0001 is ready.", linkText: "View statement" },
-  { id: "r2", text: "Your Cash Rewards Visa x0003 payment of $35.00 is due Nov. 14.", linkText: "Make a payment" },
-  { id: "r3", text: "Set up additional security alerts to help secure your accounts.", linkText: "Set up alerts" },
+  {
+    id: "r1",
+    text: "Your Monthly Statement for Checking x0001 is ready.",
+    linkText: "View statement",
+  },
+  {
+    id: "r2",
+    text: "Your Cash Rewards Visa x0003 payment of $35.00 is due Nov. 14.",
+    linkText: "Make a payment",
+  },
+  {
+    id: "r3",
+    text: "Set up additional security alerts to help secure your accounts.",
+    linkText: "Set up alerts",
+  },
 ];
 
 export const offers: Offer[] = [
@@ -151,10 +223,38 @@ export const rewardsProfile = {
 };
 
 export const billPayHistory: Payment[] = [
-  { id: "b1", payee: "Sample Web Services Inc", account: "From Checking x0001", date: "2026-10-15", amount: 250.0, status: "Complete" },
-  { id: "b2", payee: "Demo Streaming", account: "From Checking x0001", date: "2026-10-12", amount: 15.99, status: "Complete" },
-  { id: "b3", payee: "Example Energy Co.", account: "From Checking x0001", date: "2026-10-05", amount: 132.4, status: "Complete" },
-  { id: "b4", payee: "Sample Wireless", account: "From Checking x0001", date: "2026-11-02", amount: 74.0, status: "Scheduled" },
+  {
+    id: "b1",
+    payee: "Sample Web Services Inc",
+    account: "From Checking x0001",
+    date: "2026-10-15",
+    amount: 250.0,
+    status: "Complete",
+  },
+  {
+    id: "b2",
+    payee: "Demo Streaming",
+    account: "From Checking x0001",
+    date: "2026-10-12",
+    amount: 15.99,
+    status: "Complete",
+  },
+  {
+    id: "b3",
+    payee: "Example Energy Co.",
+    account: "From Checking x0001",
+    date: "2026-10-05",
+    amount: 132.4,
+    status: "Complete",
+  },
+  {
+    id: "b4",
+    payee: "Sample Wireless",
+    account: "From Checking x0001",
+    date: "2026-11-02",
+    amount: 74.0,
+    status: "Scheduled",
+  },
 ];
 
 export const totals = {

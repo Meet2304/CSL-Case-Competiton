@@ -39,7 +39,14 @@ export function RoleEditor({ role, onDone }: { role: FamilyRole | null; onDone: 
     if (nameError) return;
     dispatch({
       type: "saveRole",
-      role: { id: role?.id ?? "", name: trimmed, description: description.trim(), isAdmin: false, builtIn: false, access },
+      role: {
+        id: role?.id ?? "",
+        name: trimmed,
+        description: description.trim(),
+        isAdmin: false,
+        builtIn: false,
+        access,
+      },
     });
     onDone();
   }
@@ -64,8 +71,8 @@ export function RoleEditor({ role, onDone }: { role: FamilyRole | null; onDone: 
           <div>
             <p className="font-semibold">Admins have full access to every asset.</p>
             <p className="mt-1 text-pnc-muted">
-              They can add family members and assets, and decide what every other role can see and control. More than one
-              admin is allowed. Assign this role from the Members tab.
+              They can add family members and assets, and decide what every other role can see and
+              control. More than one admin is allowed. Assign this role from the Members tab.
             </p>
           </div>
         </div>
@@ -112,13 +119,17 @@ export function RoleEditor({ role, onDone }: { role: FamilyRole | null; onDone: 
 
       <h4 className="mt-6 text-base font-semibold text-pnc-ink">Segmented access control</h4>
       <p className="mb-3 mt-0.5 text-sm text-pnc-muted">
-        <strong className="font-semibold text-pnc-ink">Visibility</strong> decides what this role can see.{" "}
-        <strong className="font-semibold text-pnc-ink">Control</strong> decides what it can do. Any permission includes
-        viewing the balance.
+        <strong className="font-semibold text-pnc-ink">Visibility</strong> decides what this role
+        can see. <strong className="font-semibold text-pnc-ink">Control</strong> decides what it can
+        do. Any permission includes viewing the balance.
       </p>
       <AccessMatrix
         assets={state.assets}
-        value={(assetId) => (readOnly ? { view: true, activity: true, transact: true, manage: true } : (access[assetId] ?? NO_ACCESS))}
+        value={(assetId) =>
+          readOnly
+            ? { view: true, activity: true, transact: true, manage: true }
+            : (access[assetId] ?? NO_ACCESS)
+        }
         onChange={(assetId, next) => setAccess((prev) => ({ ...prev, [assetId]: next }))}
         readOnly={readOnly}
         lockedIds={lockedIds}

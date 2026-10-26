@@ -32,7 +32,11 @@ export function CardArt({
       )}
       aria-label={`${s.label} card ending ${last4}`}
     >
-      <svg aria-hidden="true" className="absolute -left-6 top-0 h-full w-3/4 opacity-25" viewBox="0 0 100 100">
+      <svg
+        aria-hidden="true"
+        className="absolute -left-6 top-0 h-full w-3/4 opacity-25"
+        viewBox="0 0 100 100"
+      >
         <path d="M0 0 L100 50 L0 100 Z" fill="#fff" />
       </svg>
       {compact ? (
@@ -41,16 +45,16 @@ export function CardArt({
           <span className="self-end text-[8px] font-black italic">VISA</span>
         </div>
       ) : (
-      <div className="relative flex h-full flex-col justify-between">
-        <span className="flex items-center gap-1 self-end text-[9px] font-semibold tracking-wide">
-          <PncMark size={10} /> PNC BANK
-        </span>
-        <span className="font-serif text-[10px] tracking-wide text-white/90">{s.label}</span>
-        <span className="flex items-end justify-between">
-          <span className="text-[10px] tabular-nums text-white/80">•••• {last4}</span>
-          <span className="font-sans text-sm font-black italic tracking-tight">VISA</span>
-        </span>
-      </div>
+        <div className="relative flex h-full flex-col justify-between">
+          <span className="flex items-center gap-1 self-end text-[9px] font-semibold tracking-wide">
+            <PncMark size={10} /> PNC BANK
+          </span>
+          <span className="font-serif text-[10px] tracking-wide text-white/90">{s.label}</span>
+          <span className="flex items-end justify-between">
+            <span className="text-[10px] tabular-nums text-white/80">•••• {last4}</span>
+            <span className="font-sans text-sm font-black italic tracking-tight">VISA</span>
+          </span>
+        </div>
       )}
     </div>
   );

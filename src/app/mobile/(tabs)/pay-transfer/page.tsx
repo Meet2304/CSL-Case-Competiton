@@ -29,7 +29,10 @@ export default function MobilePayTransferPage() {
           </h2>
           <ul>
             {billPayHistory.map((p) => (
-              <li key={p.id} className="mx-4 flex justify-between gap-3 border-b border-pnc-line py-3 text-sm last:border-b-0">
+              <li
+                key={p.id}
+                className="mx-4 flex justify-between gap-3 border-b border-pnc-line py-3 text-sm last:border-b-0"
+              >
                 <span>
                   <span className="block font-medium">{p.payee}</span>
                   <span className="block text-xs text-pnc-muted">

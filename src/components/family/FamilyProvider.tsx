@@ -56,7 +56,9 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
     dispatch({ type: "reset", state: initialFamilyState });
   };
 
-  return <FamilyContext.Provider value={{ state, dispatch, reset }}>{children}</FamilyContext.Provider>;
+  return (
+    <FamilyContext.Provider value={{ state, dispatch, reset }}>{children}</FamilyContext.Provider>
+  );
 }
 
 export function useFamily(): FamilyContextValue {

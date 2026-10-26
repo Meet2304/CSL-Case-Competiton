@@ -1,7 +1,15 @@
 "use client";
 
 import { useId, useState } from "react";
-import { ArrowRight, Banknote, CalendarClock, ChevronDown, FileCheck, HeartCrack, type LucideIcon } from "lucide-react";
+import {
+  ArrowRight,
+  Banknote,
+  CalendarClock,
+  ChevronDown,
+  FileCheck,
+  HeartCrack,
+  type LucideIcon,
+} from "lucide-react";
 import { MOCK_AS_OF } from "@/data/mock";
 import type { AdvisorNotification, AdvisorNotificationKind } from "@/data/types";
 import { customerAnchor } from "@/lib/advisor";
@@ -36,10 +44,7 @@ export function NotificationList({
         const open = openId === n.id;
         const panelId = `${baseId}-${n.id}`;
         return (
-          <li
-            key={n.id}
-            className={cn(n.urgent && "bg-attention-bg")}
-          >
+          <li key={n.id} className={cn(n.urgent && "bg-attention-bg")}>
             <button
               type="button"
               aria-expanded={open}
@@ -53,27 +58,43 @@ export function NotificationList({
               <span
                 className={cn(
                   "grid size-9 shrink-0 place-items-center rounded-full",
-                  n.urgent ? "bg-white text-attention ring-1 ring-attention-line" : "bg-pnc-chip text-pnc-blue-700",
+                  n.urgent
+                    ? "bg-white text-attention ring-1 ring-attention-line"
+                    : "bg-pnc-chip text-pnc-blue-700",
                 )}
               >
                 <Icon className="size-4.5" strokeWidth={1.75} aria-hidden="true" />
               </span>
               <span className="min-w-0 flex-1">
                 <span className="flex items-baseline justify-between gap-2">
-                  <span className={cn("truncate text-sm font-semibold", n.urgent ? "text-attention" : "text-pnc-ink")}>
+                  <span
+                    className={cn(
+                      "truncate text-sm font-semibold",
+                      n.urgent ? "text-attention" : "text-pnc-ink",
+                    )}
+                  >
                     {n.urgent && <span className="sr-only">Urgent: </span>}
                     {n.title}
                   </span>
-                  <time dateTime={n.date} title={formatDate(n.date, "medium")} className="shrink-0 text-xs text-pnc-muted">
+                  <time
+                    dateTime={n.date}
+                    title={formatDate(n.date, "medium")}
+                    className="shrink-0 text-xs text-pnc-muted"
+                  >
                     {relativeDay(n.date, MOCK_AS_OF)}
                   </time>
                 </span>
                 {/* Up to two lines so the key fact ("spouse passed away") is never cut off. */}
-                <span className="line-clamp-2 text-sm leading-snug text-pnc-muted">{n.summary}</span>
+                <span className="line-clamp-2 text-sm leading-snug text-pnc-muted">
+                  {n.summary}
+                </span>
               </span>
               <ChevronDown
                 aria-hidden="true"
-                className={cn("size-4 shrink-0 text-pnc-muted transition-transform", open && "rotate-180")}
+                className={cn(
+                  "size-4 shrink-0 text-pnc-muted transition-transform",
+                  open && "rotate-180",
+                )}
               />
             </button>
 
@@ -81,7 +102,9 @@ export function NotificationList({
               <p className="leading-relaxed text-pnc-ink">{n.body}</p>
               {n.steps && (
                 <>
-                  <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-pnc-muted">Suggested next steps</p>
+                  <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-pnc-muted">
+                    Suggested next steps
+                  </p>
                   <ol className="mt-1.5 space-y-1.5">
                     {n.steps.map((s, i) => (
                       <li key={s} className="flex gap-2 leading-snug">
@@ -98,7 +121,8 @@ export function NotificationList({
                 href={`#${customerAnchor(n.customerId)}`}
                 className="mt-3 inline-flex items-center gap-1 font-semibold text-pnc-link hover:underline"
               >
-                {n.urgent ? "Go to customer" : "View customer"} <ArrowRight className="size-3.5" aria-hidden="true" />
+                {n.urgent ? "Go to customer" : "View customer"}{" "}
+                <ArrowRight className="size-3.5" aria-hidden="true" />
               </a>
             </div>
           </li>

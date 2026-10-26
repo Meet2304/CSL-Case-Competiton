@@ -62,5 +62,7 @@ and mobile views stay in one design language.
   renders only what the member can see and the actions they can take: no "view
   only" labels, disabled/locked controls, hidden-asset counts, or other members'
   roles. Explanations of limits belong only in admin UI.
-- Before finishing: `npm run typecheck`, `npm run lint` and `npm run build` must pass
+- **Formatting:** Prettier (`.prettierrc.json`, print width 100). Run `npm run format`
+  before committing.
+- Before finishing: `npm run format:check`, `npm run typecheck`, `npm run lint` and `npm run build` must pass
   (the same checks run in GitHub Actions CI on every PR — `.github/workflows/ci.yml`).
