@@ -7,6 +7,7 @@ import { iconButton, MobileHeader } from "@/components/mobile/MobileHeader";
 import { MockBadge } from "@/components/mock/Mock";
 import { SignOffButton } from "@/components/shared/SignOffButton";
 import { advisor, advisorCustomers, routineNotifications } from "@/data/advisor";
+import { MOCK_AS_OF } from "@/data/mock";
 import { buildNotifications, needsAttention, sortByAttention } from "@/lib/advisor";
 
 export const metadata: Metadata = { title: "Advisor Home" };
@@ -16,7 +17,7 @@ const pill =
 
 export default function MobileAdvisorHomePage() {
   const customers = sortByAttention(advisorCustomers);
-  const notifications = buildNotifications(advisorCustomers, routineNotifications);
+  const notifications = buildNotifications(advisorCustomers, routineNotifications, MOCK_AS_OF);
   const urgentCount = notifications.filter((n) => n.urgent).length;
   const attentionCount = customers.filter(needsAttention).length;
 

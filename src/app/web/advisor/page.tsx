@@ -13,7 +13,7 @@ export const metadata: Metadata = { title: "Advisor Home" };
 
 export default function WebAdvisorHomePage() {
   const customers = sortByAttention(advisorCustomers);
-  const notifications = buildNotifications(advisorCustomers, routineNotifications);
+  const notifications = buildNotifications(advisorCustomers, routineNotifications, MOCK_AS_OF);
   const urgentCount = notifications.filter((n) => n.urgent).length;
   const stats = advisorStats(advisorCustomers, MOCK_AS_OF);
 

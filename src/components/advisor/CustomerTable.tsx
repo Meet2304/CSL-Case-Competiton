@@ -3,6 +3,7 @@
 import { AttentionIcon } from "@/components/advisor/AttentionIcon";
 import { Pagination, usePagination } from "@/components/advisor/Pagination";
 import { useCustomerJump } from "@/components/advisor/useCustomerJump";
+import { WillStatus } from "@/components/advisor/WillStatus";
 import { Money } from "@/components/ui/Money";
 import { MOCK_AS_OF } from "@/data/mock";
 import type { AdvisorCustomer } from "@/data/types";
@@ -29,14 +30,15 @@ export function CustomerTable({ customers }: { customers: AdvisorCustomer[] }) {
     <>
       <div className="overflow-x-auto">
         {/* Fixed layout keeps columns from shifting between pages. */}
-        <table className="w-full min-w-[42rem] table-fixed text-left text-sm">
+        <table className="w-full min-w-[52rem] table-fixed text-left text-sm">
           <colgroup>
-            <col className="w-16" />
+            <col className="w-14" />
             <col />
-            <col className="w-32" />
             <col className="w-28" />
             <col className="w-28" />
-            <col className="w-32" />
+            <col className="w-28" />
+            <col className="w-28" />
+            <col className="w-36" />
           </colgroup>
           <thead className="border-b border-pnc-line bg-pnc-surface/60">
             <tr>
@@ -55,8 +57,11 @@ export function CustomerTable({ customers }: { customers: AdvisorCustomer[] }) {
               <th scope="col" className={cn(th, "pr-4")}>
                 Last Contact
               </th>
-              <th scope="col" className={cn(th, "pr-5")}>
+              <th scope="col" className={cn(th, "pr-4")}>
                 Next Review
+              </th>
+              <th scope="col" className={cn(th, "pr-5")}>
+                Will
               </th>
             </tr>
           </thead>
@@ -119,7 +124,7 @@ export function CustomerTable({ customers }: { customers: AdvisorCustomer[] }) {
                       {relativeDay(c.lastContact, MOCK_AS_OF)}
                     </span>
                   </td>
-                  <td className="py-4 pr-5">
+                  <td className="py-4 pr-4">
                     <time dateTime={c.nextReview} className="block text-pnc-ink">
                       {formatDate(c.nextReview, "medium")}
                     </time>
@@ -128,6 +133,9 @@ export function CustomerTable({ customers }: { customers: AdvisorCustomer[] }) {
                         {relativeDay(c.nextReview, MOCK_AS_OF)}
                       </span>
                     )}
+                  </td>
+                  <td className="py-4 pr-5">
+                    <WillStatus customer={c} />
                   </td>
                 </tr>
               );

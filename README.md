@@ -85,6 +85,27 @@ signed-in customer (Jordan) is an admin of the _Sample Family_.
 - Changes are saved in the browser (`localStorage`); **Reset demo** restores
   the seed data in `src/data/family.ts`.
 
+### Will tab — `/family#will`
+
+Every customer should have a will. The **Will** tab (deep link `/family#will`)
+shows the will taking shape as a document, then opens an 8-step planner
+(Basics → Nominees → Assets → Residuary → Gifts → Funeral → Provisions →
+Review) that starts from the family on file and renders a draft will.
+Until a will is on file, the Accounts dashboard shows a reminder.
+
+- **Executing a will.** Once a will is on file, any family member it names as
+  executor or beneficiary sees _"Jordan Sample named you in their will"_ with
+  **Begin will execution** (try **Preview as → Casey Sample** on the Overview
+  tab). That starts an estate checklist: the executor ticks off each step and
+  everyone named follows along. Only the executor sees the testator's accounts.
+- **Advisors** see each household's will status in the customer table, and the
+  assistant (`willAdvice` / `willNotifications` in `src/lib/advisor.ts`)
+  recommends a will by relationship value and household.
+- No backend: the will, its status and any execution live in `localStorage`,
+  so a will finished as `customer` shows as on file when you sign in as
+  `advisor` in the same browser. **Start over** at the bottom of the planner
+  clears it.
+
 ## Structure
 
 ```
@@ -103,6 +124,8 @@ src/
     family/           FamilyProvider (state + persistence), FamilyDashboard (tabs) and its
                       Overview / Members / Roles (RoleEditor, AccessMatrix) panels and
                       MemberFamilyView (what non-admins see)
+    will/             WillTab (overview), WillPlanner + screens/, WillDocument (the will as a
+                      sheet), WillExecution (begin + track execution), WillReminder
     mock/             MockBadge
     ui/               Money, IconChip, Toggle, CardArt (shared by both views)
     shared/           catalog.ts (Pay & Transfer options), CardLockRow
@@ -114,12 +137,14 @@ src/
     advisor.ts        advisor profile, assigned customers, loss events, notifications
     users.ts          demo sign-on User IDs and roles
     family.ts         family seed data + legal steps and timelines per succession method
+    will.ts           will planner reference data (placeholder charities, institutions, states)
   lib/format.ts       money/date formatting, cn()
   lib/routes.ts       public URL map + toPublicPath()
   lib/session.ts      session cookie + role helpers (shared by proxy and actions)
   lib/auth.ts         signIn / signOff Server Actions
   lib/advisor.ts      attention sorting + notification building
   lib/family.ts       family access rules, succession rules and the state reducer
+  lib/will/           planner flow + validation, will text generator, roles/estate steps, storage
 ```
 
 See `AGENTS.md` for the conventions to follow when extending the app.
