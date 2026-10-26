@@ -16,6 +16,8 @@ export const routes = {
   help: "/help",
   /** Customer family dashboard (members, roles, asset access, succession). */
   family: "/family",
+  /** Surviving spouse's guided next steps after a loss in the family. */
+  nextSteps: "/next-steps",
   /** The Will tab of the family dashboard. */
   familyWill: "/family#will",
   /** Advisor (bank representative) home dashboard. */

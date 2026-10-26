@@ -8,7 +8,6 @@ import {
   ChevronDown,
   FileCheck,
   HeartCrack,
-  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 import { MOCK_AS_OF } from "@/data/mock";
@@ -21,7 +20,6 @@ const icons: Record<AdvisorNotificationKind, LucideIcon> = {
   review: CalendarClock,
   deposit: Banknote,
   document: FileCheck,
-  will: Sparkles,
 };
 
 /**
@@ -117,6 +115,16 @@ export function NotificationList({
                       </li>
                     ))}
                   </ol>
+                </>
+              )}
+              {n.outreach && (
+                <>
+                  <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-pnc-muted">
+                    Suggested first call
+                  </p>
+                  <blockquote className="mt-1.5 rounded-md bg-white px-3 py-2 italic leading-relaxed text-pnc-ink ring-1 ring-attention-line">
+                    {n.outreach}
+                  </blockquote>
                 </>
               )}
               <a

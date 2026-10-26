@@ -98,13 +98,32 @@ Until a will is on file, the Accounts dashboard shows a reminder.
   **Begin will execution** (try **Preview as → Casey Sample** on the Overview
   tab). That starts an estate checklist: the executor ticks off each step and
   everyone named follows along. Only the executor sees the testator's accounts.
-- **Advisors** see each household's will status in the customer table, and the
-  assistant (`willAdvice` / `willNotifications` in `src/lib/advisor.ts`)
-  recommends a will by relationship value and household.
+- **Advisors** see each household's will status in the customer table.
 - No backend: the will, its status and any execution live in `localStorage`,
   so a will finished as `customer` shows as on file when you sign in as
   `advisor` in the same browser. **Start over** at the bottom of the planner
   clears it.
+
+## Loss in the family — bank, advisor and surviving spouse
+
+1. **Bank / advisor** (`advisor`): _Record a death notice_ on the advisor home
+   (defaults to Casey Sample, Jordan's spouse). The household moves to the top
+   with the attention icon, an urgent notification appears, and an outreach
+   banner recommends a personal call with suggested first words.
+2. **Customer** (`customer`, Jordan): a soft red strip appears under the
+   navigation (above the tab bar on phones), Reminders shows _Action needed_,
+   and a **Next steps** page (`/next-steps`) opens: a Today → Event timeline,
+   _Key assets_ (joint account, life insurance, IRA) and _Secondary assets_,
+   plus support resources and people.
+3. **Transfer flows:** _Joint checking/savings_ and _401(k)/IRA_ are fully
+   guided — each document is tagged _Upload_, _Filled in for you_ or _You fill
+   in_; the death certificate is uploaded once and reused. Other assets have a
+   placeholder flow. _Send to PNC_ → _In review_ → (demo) _simulate approval_.
+
+State is kept in the browser (`src/lib/bereavement.ts`) so the demo works by
+signing out of the advisor view and into the customer view in the same browser.
+_Reset demo_ (advisor) clears it; _Reset demo progress_ (Next steps) keeps the
+recorded death but clears the flows.
 
 ## Structure
 
@@ -137,12 +156,15 @@ src/
     advisor.ts        advisor profile, assigned customers, loss events, notifications
     users.ts          demo sign-on User IDs and roles
     family.ts         family seed data + legal steps and timelines per succession method
+    bereavement.ts    transfer flows, key/secondary asset groups, resources, outreach wording
     will.ts           will planner reference data (placeholder charities, institutions, states)
   lib/format.ts       money/date formatting, cn()
   lib/routes.ts       public URL map + toPublicPath()
   lib/session.ts      session cookie + role helpers (shared by proxy and actions)
   lib/auth.ts         signIn / signOff Server Actions
-  lib/advisor.ts      attention sorting + notification building
+  lib/advisor.ts      attention sorting + notification building (+ bank-recorded losses)
+  lib/bereavement.ts  bereavement demo store (recorded deaths, certificate, flow progress)
+  lib/transfer.ts     derived step/flow completion for the transfer flows
   lib/family.ts       family access rules, succession rules and the state reducer
   lib/will/           planner flow + validation, will text generator, roles/estate steps, storage
 ```

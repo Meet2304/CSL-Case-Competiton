@@ -62,6 +62,11 @@ and mobile views stay in one design language.
   renders only what the member can see and the actions they can take: no "view
   only" labels, disabled/locked controls, hidden-asset counts, or other members'
   roles. Explanations of limits belong only in admin UI.
+- **Bereavement journey:** deaths recorded by the bank and the survivor's flow
+  progress live in `src/lib/bereavement.ts` (`useBereavement`, `bereavementActions`).
+  Flow content is data in `src/data/bereavement.ts`; completion is derived in
+  `src/lib/transfer.ts` — don't store "done" flags. Customer-facing copy about a
+  loss must stay gentle: condolence first, no pressure, nothing urgent today.
 - **Formatting:** Prettier (`.prettierrc.json`, print width 100). Run `npm run format`
   before committing.
 - Before finishing: `npm run format:check`, `npm run typecheck`, `npm run lint` and `npm run build` must pass

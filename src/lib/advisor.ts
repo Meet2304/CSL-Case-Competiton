@@ -1,5 +1,6 @@
-import type { AdvisorCustomer, AdvisorNotification, LossEvent, WillStatus } from "@/data/types";
-import { daysBetween, formatCompactMoney, formatDate } from "@/lib/format";
+import type { AdvisorCustomer, AdvisorNotification, LossEvent } from "@/data/types";
+import { outreachGuide } from "@/data/bereavement";
+import { daysBetween, formatDate } from "@/lib/format";
 
 /** The most recent loss event the advisor has not finished following up on. */
 export function openLoss(customer: AdvisorCustomer): LossEvent | undefined {
@@ -49,127 +50,115 @@ export function advisorStats(customers: AdvisorCustomer[], todayIso: string) {
   };
 }
 
-/**
- * Urgent loss notifications (newest first), then the assistant's
- * high-priority will recommendations, then routine ones.
- */
+/** Urgent loss notifications (newest first) followed by routine ones. */
 export function buildNotifications(
   customers: AdvisorCustomer[],
   routine: AdvisorNotification[],
-  todayIso: string,
 ): AdvisorNotification[] {
   const losses: AdvisorNotification[] = customers.flatMap((c) => {
     const loss = openLoss(c);
     if (!loss) return [];
+    const self = loss.relationship === "Self";
+    const contact = lossContact(c, loss);
+    const died = `passed away on ${formatDate(loss.date, "medium")}. Reported via ${loss.reportedVia.toLowerCase()}.`;
     return [
       {
         id: `n-loss-${loss.id}`,
         kind: "loss" as const,
         customerId: c.id,
-        title: "Loss of a family member",
-        summary: `${c.name} · ${loss.relationship.toLowerCase()} passed away`,
-        body: `${loss.memberName}, ${firstName(c.name)}'s ${loss.relationship.toLowerCase()}, passed away on ${formatDate(loss.date, "medium")}. Reported via ${loss.reportedVia.toLowerCase()}. Reach out to ${firstName(c.name)} and take the next steps below.`,
+        title: self ? "Customer passed away" : "Loss of a family member",
+        summary: self
+          ? `${c.name} · passed away`
+          : `${c.name} · ${loss.relationship.toLowerCase()} passed away`,
+        body: self
+          ? `${c.name} ${died} ${contact ? `Reach out to ${contact.name} (${contact.relationship.toLowerCase()}) and take the next steps below.` : "Work with the estate's executor on the next steps below."}`
+          : `${loss.memberName}, ${firstName(c.name)}'s ${loss.relationship.toLowerCase()}, ${died} Reach out to ${firstName(c.name)} and take the next steps below.`,
         date: loss.date,
         urgent: true,
         steps: lossFollowUpSteps,
+        outreach: contact ? outreachGuide(contact.name, loss.memberName).script : undefined,
       },
     ];
   });
   const byDate = (a: AdvisorNotification, b: AdvisorNotification) => b.date.localeCompare(a.date);
-  return [
-    ...losses.sort(byDate),
-    ...willNotifications(customers, todayIso),
-    ...[...routine].sort(byDate),
-  ];
-}
-
-// ---------------------------------------------------------------------------
-// Will recommendations (advisor assistant). Every customer should have a will;
-// the assistant ranks who needs one most from relationship value and household.
-
-/** At or above this relationship value a missing will is high priority. */
-export const WILL_HIGH_PRIORITY_VALUE = 5_000_000;
-/** At or above this value (or with children) a missing will is medium priority. */
-export const WILL_MEDIUM_PRIORITY_VALUE = 1_000_000;
-
-export type WillPriority = "high" | "medium" | "low";
-export type WillAdvice = { priority: WillPriority; reasons: string[] };
-
-/**
- * Why and how urgently the advisor should raise a will with this customer, or
- * `undefined` when a will is already on file. `status` overrides the mock
- * record (the demo customer's live status comes from the browser).
- */
-export function willAdvice(
-  c: AdvisorCustomer,
-  status: WillStatus = c.will.status,
-): WillAdvice | undefined {
-  if (status === "on-file") return undefined;
-  const value = formatCompactMoney(c.relationshipValue);
-  const hasChild = c.household.some((m) => m.relationship === "Child");
-  const hasSpouse = c.household.some((m) => m.relationship === "Spouse");
-  const loss = openLoss(c);
-
-  const reasons: string[] = [];
-  if (status === "in-progress") {
-    reasons.push(
-      `Started a will${c.will.updated ? ` on ${formatDate(c.will.updated, "medium")}` : ""} but hasn't finished it`,
-    );
-  }
-  if (c.relationshipValue >= WILL_HIGH_PRIORITY_VALUE) {
-    reasons.push(
-      `${value} relationship — without a will, state intestacy law decides who inherits an estate this size`,
-    );
-  } else if (c.relationshipValue >= WILL_MEDIUM_PRIORITY_VALUE) {
-    reasons.push(
-      `${value} relationship — large enough that a will and a beneficiary review are strongly advised`,
-    );
-  } else {
-    reasons.push(`${value} relationship — every customer benefits from a basic will`);
-  }
-  if (hasChild) reasons.push("Has a child — a will is where a guardian is named");
-  if (loss?.relationship === "Spouse")
-    reasons.push("Recently lost a spouse — any existing plan likely names them");
-  else if (hasSpouse) reasons.push("Married — mirror wills can cover both spouses in one sitting");
-
-  const priority: WillPriority =
-    c.relationshipValue >= WILL_HIGH_PRIORITY_VALUE
-      ? "high"
-      : c.relationshipValue >= WILL_MEDIUM_PRIORITY_VALUE || hasChild
-        ? "medium"
-        : "low";
-  return { priority, reasons };
-}
-
-export const willFollowUpSteps = [
-  "Raise estate planning at the next review",
-  "Point the customer to the Will tab on their Family page to start a free will",
-  "Offer an introduction to a PNC trust & estate specialist",
-];
-
-/** One assistant suggestion per high-priority customer without a will on file. */
-export function willNotifications(
-  customers: AdvisorCustomer[],
-  todayIso: string,
-): AdvisorNotification[] {
-  return customers
-    .map((c) => ({ c, advice: willAdvice(c) }))
-    .filter(({ advice }) => advice?.priority === "high")
-    .sort((a, b) => b.c.relationshipValue - a.c.relationshipValue)
-    .map(({ c, advice }) => ({
-      id: `n-will-${c.id}`,
-      kind: "will" as const,
-      customerId: c.id,
-      title: "Will recommended",
-      summary: `${c.name} · ${formatCompactMoney(c.relationshipValue)} · ${c.will.status === "in-progress" ? "will not finished" : "no will on file"}`,
-      body: `Assistant suggestion: ${firstName(c.name)} should have a will. ${advice!.reasons.join(". ")}. Next review ${formatDate(c.nextReview, "medium")}.`,
-      date: todayIso,
-      urgent: false,
-      steps: willFollowUpSteps,
-    }));
+  return [...losses.sort(byDate), ...[...routine].sort(byDate)];
 }
 
 /** Anchor id for a customer's row, used by "View customer" links. */
 export function customerAnchor(id: string): string {
   return `customer-${id}`;
+}
+
+// ---------------------------------------------------------------------------
+// Deaths recorded by the bank. A death is recorded against one customer as a
+// single unit; its impact on families is assessed afterwards from the
+// household records, never entered at intake.
+
+/** Short tag for a loss, e.g. "Loss of spouse" or "Customer passed away". */
+export function lossTag(loss: LossEvent): string {
+  return loss.relationship === "Self"
+    ? "Customer passed away"
+    : `Loss of ${loss.relationship.toLowerCase()}`;
+}
+
+/**
+ * Who the advisor should contact about a loss: the primary customer, or —
+ * when the primary customer is the one who died — their next of kin.
+ */
+export function lossContact(
+  c: AdvisorCustomer,
+  loss: LossEvent,
+): { name: string; relationship: string } | undefined {
+  if (loss.relationship !== "Self") return { name: c.name, relationship: "Customer" };
+  const order = ["Spouse", "Child", "Parent", "Sibling"];
+  const kin = [...c.household].sort(
+    (a, b) => order.indexOf(a.relationship) - order.indexOf(b.relationship),
+  )[0];
+  return kin && { name: kin.name, relationship: kin.relationship };
+}
+
+/** Every individual the bank serves: primary customers and their household members. */
+export function customerDirectory(customers: AdvisorCustomer[]): string[] {
+  const names = new Set(customers.flatMap((c) => [c.name, ...c.household.map((m) => m.name)]));
+  const last = (n: string) => n.split(" ").at(-1) ?? n;
+  return [...names].sort((a, b) => last(a).localeCompare(last(b)) || a.localeCompare(b));
+}
+
+export type LossImpact = { customer: AdvisorCustomer; relationship: LossEvent["relationship"] };
+
+/** How one customer's death affects each household they belong to. */
+export function assessImpact(customers: AdvisorCustomer[], personName: string): LossImpact[] {
+  return customers.flatMap<LossImpact>((c) => {
+    if (c.name === personName) return [{ customer: c, relationship: "Self" }];
+    const member = c.household.find((m) => m.name === personName);
+    return member ? [{ customer: c, relationship: member.relationship }] : [];
+  });
+}
+
+/** A death as recorded by the bank (see src/lib/bereavement.ts). */
+type RecordedDeath = Pick<LossEvent, "date" | "reportedVia"> & { id: string; personName: string };
+
+/** Adds the assessed impact of recorded deaths to the advisor's customer book. */
+export function withRecordedLosses(
+  customers: AdvisorCustomer[],
+  recorded: RecordedDeath[],
+): AdvisorCustomer[] {
+  if (recorded.length === 0) return customers;
+  const extra = new Map<string, LossEvent[]>();
+  for (const r of recorded) {
+    for (const { customer, relationship } of assessImpact(customers, r.personName)) {
+      const event: LossEvent = {
+        id: `rec-${r.id}-${customer.id}`,
+        date: r.date,
+        relationship,
+        memberName: r.personName,
+        reportedVia: r.reportedVia,
+        followUpComplete: false,
+      };
+      extra.set(customer.id, [...(extra.get(customer.id) ?? []), event]);
+    }
+  }
+  return customers.map((c) =>
+    extra.has(c.id) ? { ...c, lossEvents: [...c.lossEvents, ...extra.get(c.id)!] } : c,
+  );
 }

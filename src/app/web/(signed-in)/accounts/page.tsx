@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { BereavementReminderItem } from "@/components/bereavement/BereavementReminders";
 import { PiggyBank } from "lucide-react";
 import { MockBadge } from "@/components/mock/Mock";
 import { Money } from "@/components/ui/Money";
@@ -93,6 +94,7 @@ export default function WebAccountsPage() {
               }
             >
               <ul className="divide-y divide-pnc-line">
+                <BereavementReminderItem />
                 {reminders.map((r) => (
                   <li key={r.id} className="px-5 py-3.5 text-sm leading-relaxed">
                     {r.text}{" "}

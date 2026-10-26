@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, CircleUserRound } from "lucide-react";
+import { useHouseholdLoss } from "@/components/bereavement/useHouseholdLoss";
 import { PncLogo } from "@/components/brand/PncLogo";
 import { SignOffButton } from "@/components/shared/SignOffButton";
 import type { Role } from "@/data/types";
@@ -34,7 +35,16 @@ const navByRole: Record<Role, NavItem[]> = {
 };
 
 export function WebHeader({ variant = "customer" }: { variant?: Role }) {
-  const navItems = navByRole[variant];
+  const { loss } = useHouseholdLoss();
+  // While a loss in the household is being settled, customers get a "Next steps" entry.
+  const navItems =
+    variant === "customer" && loss
+      ? [
+          navByRole.customer[0],
+          { label: "Next steps", href: routes.nextSteps },
+          ...navByRole.customer.slice(1),
+        ]
+      : navByRole[variant];
   const home = navItems[0].href;
   const pathname = toPublicPath(usePathname());
   const [openMenu, setOpenMenu] = useState<string | null>(null);
