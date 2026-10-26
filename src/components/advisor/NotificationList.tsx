@@ -8,7 +8,6 @@ import {
   ChevronDown,
   FileCheck,
   HeartCrack,
-  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 import { MOCK_AS_OF } from "@/data/mock";
@@ -21,7 +20,6 @@ const icons: Record<AdvisorNotificationKind, LucideIcon> = {
   review: CalendarClock,
   deposit: Banknote,
   document: FileCheck,
-  will: Sparkles,
 };
 
 /**

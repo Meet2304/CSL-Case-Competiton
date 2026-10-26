@@ -98,9 +98,7 @@ Until a will is on file, the Accounts dashboard shows a reminder.
   **Begin will execution** (try **Preview as → Casey Sample** on the Overview
   tab). That starts an estate checklist: the executor ticks off each step and
   everyone named follows along. Only the executor sees the testator's accounts.
-- **Advisors** see each household's will status in the customer table, and the
-  assistant (`willAdvice` / `willNotifications` in `src/lib/advisor.ts`)
-  recommends a will by relationship value and household.
+- **Advisors** see each household's will status in the customer table.
 - No backend: the will, its status and any execution live in `localStorage`,
   so a will finished as `customer` shows as on file when you sign in as
   `advisor` in the same browser. **Start over** at the bottom of the planner

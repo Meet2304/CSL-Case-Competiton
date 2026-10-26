@@ -21,7 +21,7 @@ export function useAdvisorBook() {
   return useMemo(() => {
     const book = withRecordedLosses(advisorCustomers, losses);
     const customers = sortByAttention(book);
-    const notifications = buildNotifications(book, routineNotifications, MOCK_AS_OF);
+    const notifications = buildNotifications(book, routineNotifications);
     return {
       customers,
       notifications,

@@ -139,7 +139,7 @@ export type AdvisorCustomer = {
   will: WillRecord;
 };
 
-export type AdvisorNotificationKind = "loss" | "review" | "deposit" | "document" | "will";
+export type AdvisorNotificationKind = "loss" | "review" | "deposit" | "document";
 
 export type AdvisorNotification = {
   id: string;
