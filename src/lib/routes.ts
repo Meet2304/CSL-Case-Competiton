@@ -18,8 +18,10 @@ export const routes = {
   family: "/family",
   /** Surviving spouse's guided next steps after a loss in the family. */
   nextSteps: "/next-steps",
-  /** The Will tab of the family dashboard. */
-  familyWill: "/family#will",
+  /** The Will section of the Planning page. */
+  familyWill: "/plan#will",
+  /** Planning: your will and the beneficiaries on your accounts. */
+  plan: "/plan",
   /** Advisor (bank representative) home dashboard. */
   advisor: "/advisor",
   /** Advisor: one client's summary, family, loss guide and assistant. */

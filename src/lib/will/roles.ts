@@ -127,8 +127,9 @@ export function estateSteps(d: WillDraft): EstateStep[] {
 /** Assets the testator owns, split by whether the will decides who gets them. */
 export function assetsByRoute(family: FamilyState, testatorId: string) {
   const owned = family.assets.filter((a) => !a.closed && a.owners.includes(testatorId));
+  // A named beneficiary (e.g. on a life policy) takes the asset outside the will.
   const passesUnderWill = (a: FamilyAsset) =>
-    a.method === "estate" || (!a.method && a.owners.length === 1);
+    a.method === "estate" || (!a.method && a.owners.length === 1 && !a.successors?.length);
   return {
     underWill: owned.filter(passesUnderWill),
     outsideWill: owned.filter((a) => !passesUnderWill(a)),

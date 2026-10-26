@@ -2,51 +2,39 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-import { ChevronDown, CircleUserRound } from "lucide-react";
-import { useHouseholdLoss } from "@/components/bereavement/useHouseholdLoss";
+import { CircleUserRound } from "lucide-react";
 import { PncLogo } from "@/components/brand/PncLogo";
+import { useCustomerNav } from "@/components/customer/useCustomerNav";
 import { SignOffButton } from "@/components/shared/SignOffButton";
 import type { Role } from "@/data/types";
 import { cn } from "@/lib/format";
 import { routes, toPublicPath } from "@/lib/routes";
 
-const payTransferLinks = [
-  { label: "PNC Transfers", href: `${routes.payTransfer}#transfers` },
-  { label: "External Transfers", href: `${routes.payTransfer}#transfers` },
-  { label: "Send Money With Zelle®", href: `${routes.payTransfer}#zelle` },
-  { label: "Bill Pay", href: `${routes.payTransfer}#bill-pay` },
-  { label: "Wires", href: `${routes.payTransfer}#wires` },
-];
-
-type NavItem = { label: string; href: string; menu?: { label: string; href: string }[] };
-
-const navByRole: Record<Role, NavItem[]> = {
-  customer: [
-    { label: "Accounts", href: routes.accounts },
-    { label: "Pay & Transfer", href: routes.payTransfer, menu: payTransferLinks },
-    { label: "Cards", href: routes.cards },
-    { label: "Rewards", href: routes.rewards },
-    { label: "Family", href: routes.family },
-    { label: "Help", href: routes.help },
-  ],
-  advisor: [
-    { label: "Home", href: routes.advisor },
-    { label: "Rulebook", href: routes.advisorRules },
-  ],
+type NavItem = {
+  label: string;
+  href: string;
+  /** A count shown beside the label (e.g. reminders). */
+  badge?: number;
 };
 
+const advisorNav: NavItem[] = [
+  { label: "Home", href: routes.advisor },
+  { label: "Rulebook", href: routes.advisorRules },
+];
+
 export function WebHeader({ variant = "customer" }: { variant?: Role }) {
-  const { loss } = useHouseholdLoss();
-  // While a loss in the household is being settled, customers get a "Next steps" entry.
-  const navItems =
-    variant === "customer" && loss
-      ? [
-          navByRole.customer[0],
-          { label: "Next steps", href: routes.nextSteps },
-          ...navByRole.customer.slice(1),
-        ]
-      : navByRole[variant];
+  const nav = useCustomerNav();
+  // Customers: everyday banking lives under Accounts; the rest is about people and plans.
+  const navItems: NavItem[] =
+    variant === "advisor"
+      ? advisorNav
+      : [
+          { label: "Accounts", href: routes.accounts },
+          ...(nav.nextSteps ? [{ label: "Next steps", href: routes.nextSteps }] : []),
+          { label: "Family", href: routes.family },
+          { label: "Planning", href: routes.plan, badge: nav.reminders },
+          { label: "Help", href: routes.help },
+        ];
   const home = navItems[0].href;
   const pathname = toPublicPath(usePathname());
   // The longest matching entry wins, so /advisor/rules lights up Rulebook, not Home.
@@ -54,16 +42,6 @@ export function WebHeader({ variant = "customer" }: { variant?: Role }) {
     .map((i) => i.href)
     .filter((h) => pathname === h || pathname.startsWith(`${h}/`))
     .sort((a, b) => b.length - a.length)[0];
-  const [openMenu, setOpenMenu] = useState<string | null>(null);
-  const navRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    function onClick(e: MouseEvent) {
-      if (!navRef.current?.contains(e.target as Node)) setOpenMenu(null);
-    }
-    document.addEventListener("click", onClick);
-    return () => document.removeEventListener("click", onClick);
-  }, []);
 
   return (
     <header className="bg-pnc-navy text-white">
@@ -73,59 +51,38 @@ export function WebHeader({ variant = "customer" }: { variant?: Role }) {
         </Link>
 
         {/* Below md the nav drops to its own full-width row under the logo. */}
-        <nav
-          ref={navRef}
-          className="order-last -mx-3 flex h-11 w-full items-stretch md:order-none md:mx-0 md:ml-auto md:h-full md:w-auto"
-        >
+        <nav className="no-scrollbar order-last -mx-3 flex h-11 w-[calc(100%+1.5rem)] items-stretch overflow-x-auto md:order-none md:mx-0 md:ml-auto md:h-full md:w-auto">
           {navItems.map((item) => {
             const active = item.href === activeHref;
-            const isOpen = openMenu === item.label;
-            const itemClass = cn(
-              "relative flex items-center gap-1 whitespace-nowrap px-2 text-[13px] font-semibold text-white/90 hover:text-white sm:px-4 sm:text-sm",
-              active &&
-                "text-white after:absolute after:inset-x-2 after:bottom-0 after:h-[3px] after:rounded-t after:bg-pnc-orange sm:after:inset-x-4",
-            );
-
-            if (!item.menu) {
-              return (
-                <Link key={item.label} href={item.href} className={itemClass}>
-                  {item.label}
-                </Link>
-              );
-            }
-
             return (
-              <div key={item.label} className="relative flex">
-                <button
-                  type="button"
-                  className={itemClass}
-                  aria-expanded={isOpen}
-                  onClick={() => setOpenMenu(isOpen ? null : item.label)}
-                >
-                  {item.label}
-                  <ChevronDown className={cn("size-4 transition", isOpen && "rotate-180")} />
-                </button>
-                {isOpen && (
-                  <div className="absolute left-0 top-full z-20 w-60 overflow-hidden rounded-b-lg bg-white py-1 text-pnc-ink shadow-raised">
-                    {item.menu.map((link) => (
-                      <Link
-                        key={link.label}
-                        href={link.href}
-                        onClick={() => setOpenMenu(null)}
-                        className="block px-4 py-2.5 text-sm hover:bg-pnc-surface hover:text-pnc-link"
-                      >
-                        {link.label}
-                      </Link>
-                    ))}
-                  </div>
+              <Link
+                key={item.label}
+                href={item.href}
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "relative flex shrink-0 items-center gap-1.5 whitespace-nowrap px-2.5 text-[13px] font-semibold text-white/90 hover:text-white sm:px-4 sm:text-sm",
+                  active &&
+                    "text-white after:absolute after:inset-x-2.5 after:bottom-0 after:h-[3px] after:rounded-t after:bg-pnc-orange sm:after:inset-x-4",
                 )}
-              </div>
+              >
+                {item.label}
+                {item.badge ? (
+                  <span className="grid h-5 min-w-5 place-items-center rounded-full bg-pnc-orange px-1.5 text-[11px] font-bold text-white">
+                    {item.badge}
+                    <span className="sr-only"> {item.badge === 1 ? "reminder" : "reminders"}</span>
+                  </span>
+                ) : null}
+              </Link>
             );
           })}
         </nav>
 
-        <SignOffButton className="ml-auto shrink-0 text-white/90 hover:text-white md:ml-0">
-          <CircleUserRound className="size-7" strokeWidth={1.5} />
+        <SignOffButton
+          label={variant === "customer" ? `Sign off ${nav.first}` : "Sign off"}
+          className="ml-auto flex shrink-0 items-center gap-2 text-sm font-semibold text-white/90 hover:text-white md:ml-0"
+        >
+          {variant === "customer" && <span className="hidden lg:inline">{nav.first}</span>}
+          <CircleUserRound className="size-7" strokeWidth={1.5} aria-hidden="true" />
         </SignOffButton>
       </div>
     </header>

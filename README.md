@@ -43,88 +43,85 @@ it). A pinned mobile view on a wide screen is shown inside an iPhone frame.
 Sign-on decides the experience. Demo User IDs (any password; defined in
 `src/data/users.ts`):
 
-| User ID    | Role                                                      | Lands on                                              | Navigation                                                             |
-| ---------- | --------------------------------------------------------- | ----------------------------------------------------- | ---------------------------------------------------------------------- |
-| `customer` | Customer (Jordan Sample; spouse Casey)                    | `/accounts` — the banking dashboard                   | Accounts, Pay & Transfer, Cards, Rewards, Help (web) / 5 tabs (mobile) |
-| `advisor`  | Bank representative (Alex Example, Senior Wealth Advisor) | `/advisor` — Notifications + paginated Your Customers | Home, Rulebook                                                         |
+| User ID   | Who                                                       | Lands on    |
+| --------- | --------------------------------------------------------- | ----------- |
+| `jordan`  | Jordan Sample, 52                                         | `/accounts` |
+| `casey`   | Casey Sample, 49 — Jordan's spouse                        | `/accounts` |
+| `avery`   | Avery Sample, 17 — turns 18 on Nov 30, 2026               | `/accounts` |
+| `riley`   | Riley Sample, 14                                          | `/accounts` |
+| `advisor` | Bank representative (Alex Example, Senior Wealth Advisor) | `/advisor`  |
 
-The role is stored in a demo session cookie by the `signIn` Server Action
-(`src/lib/auth.ts`). `src/proxy.ts` then keeps each role on its own pages:
-signed-out visitors only see sign-on, advisors only see `/advisor`, customers
-never see `/advisor`. Sign off via the profile icon (web), the header button
-(mobile advisor) or More → Sign Off (mobile customer).
+All four customers read one shared household (`src/data/household.ts`): ten
+simple accounts (joint checking, savings, an IRA, a brokerage account, a credit
+card, a life policy held outside PNC, Casey's savings and Roth IRA, and the
+kids' custodial accounts). The session keeps the role (`pnc-session`) and the
+person (`pnc-person`); `src/proxy.ts` keeps each role on its own pages.
 
-**Loss of a family member.** Customers in `src/data/advisor.ts` carry
-`lossEvents`. Any event with `followUpComplete: false` automatically creates
-an urgent "Loss of a family member" notification with next steps and moves
-that customer to the top of the advisor's table with a needs-attention icon
-(`src/lib/advisor.ts`). Add a loss event to any customer to see it surface.
+Customer navigation: **Accounts · Family · Planning · Help** on laptops, and
+**Accounts · Family · Planning · More** on phones (Pay & Transfer, Cards,
+Rewards and Deposit live under More). **Next steps** appears for adults once
+the bank records a death in the household.
 
-## Family dashboard (customer) — `/family`
+## Accounts — `/accounts`
 
-Laptop: **Family** in the top nav. Phone: **More → Family Dashboard**. The
-signed-in customer (Jordan) is an admin of the _Sample Family_.
+Each person sees their own dashboard: reminders, the accounts they own, the
+accounts they manage for a child, and accounts shared with them through a
+family (with what they're allowed to do).
 
-- **Role-based access.** The built-in **Admin** role (more than one allowed)
-  can add members, add assets and manage access. Admins create member roles
-  (e.g. Adult child, Teen, Trusted advisor) in a segmented access editor:
-  per asset, **Visibility** (view balance, view activity) and **Control**
-  (transact, manage), plus a Full column. Any permission implies view balance.
-  The last living admin can't be demoted or removed, and you can't remove your
-  own admin access.
-- **Access limits are confidential to admins.** A non-admin member only sees
-  the assets shared with them and the actions they can take — nothing tells
-  them an asset or action is hidden. Admins check this with **Preview as**
-  (Overview tab), which renders that exact member view.
-- **Assets** are grouped into 13 categories (Joint checking/savings, Real
-  Estate, Brokerage account, 401(k) / IRA, Life insurance, Social Security,
-  Pension, Employer benefits, Vehicles, Digital assets, Business interests,
-  Debts, IP). _Add asset_ asks only for name, category, value, optional last 4
-  and owners.
-- The legal-process model (how each asset passes on death and its steps) is
-  kept in `src/data/family.ts` / `src/lib/family.ts` but is not shown in the UI.
-- Changes are saved in the browser (`localStorage`); **Reset demo** restores
-  the seed data in `src/data/family.ts`.
+**Reminders** (`src/lib/nudges.ts`) come from what's on file: write or finish
+a will, add a beneficiary to each account that can take one, and update a
+beneficiary who has died. Avery gets a heads-up about turning 18; Riley gets
+none. The count also shows on **Planning** in the navigation.
 
-### Will tab — `/family#will`
+## Family — `/family`
 
-Every customer should have a will. The **Will** tab (deep link `/family#will`)
-shows the will taking shape as a document, then opens an 8-step planner
-(Basics → Nominees → Assets → Residuary → Gifts → Funeral → Provisions →
-Review) that starts from the family on file and renders a draft will.
-Until a will is on file, the Accounts dashboard shows a reminder.
+A family is a group of people you trust with access to your finances. Anyone
+18 or over can **create a family** and becomes its admin; a person can belong
+to several families and switch between them. Jordan's _Sample Family_ is
+seeded: Jordan and Casey are admins, Avery can see the joint checking account,
+Riley sees nothing, and Dana (the estate attorney) is invited.
 
-- **Executing a will.** Once a will is on file, any family member it names as
-  executor or beneficiary sees _"Jordan Sample named you in their will"_ with
-  **Begin will execution** (try **Preview as → Casey Sample** on the Overview
-  tab). That starts an estate checklist: the executor ticks off each step and
-  everyone named follows along. Only the executor sees the testator's accounts.
-- **Advisors** see each household's will status in the customer table.
-- No backend: the will, its status and any execution live in `localStorage`,
-  so a will finished as `customer` shows as on file when you sign in as
-  `advisor` in the same browser. **Start over** at the bottom of the planner
-  clears it.
+- **Share an account** you own with a family, or stop sharing it. Nobody sees
+  a shared account until their role is given access.
+- **Members**: add people from your household in one tap, or invite someone
+  by email.
+- **Roles & access**: per account, **Visibility** (balance, activity) and
+  **Control** (transact, manage). The last admin can't be removed.
+- **Access limits are confidential to admins.** Members only see what they
+  can use; admins check it with **Preview as**.
+- Families keep working after a death: the person shows as deceased.
 
-## Loss in the family — bank, advisor and surviving spouse
+## Planning — `/plan`
 
-1. **Bank / advisor** (`advisor`): _Record a death notice_ on the advisor home
-   (defaults to Casey Sample, Jordan's spouse). The household moves to the top
-   with the attention icon, an urgent notification appears, and an outreach
-   banner recommends a personal call with suggested first words.
-2. **Customer** (`customer`, Jordan): a soft red strip appears under the
-   navigation (above the tab bar on phones), Reminders shows _Action needed_,
-   and a **Next steps** page (`/next-steps`) opens: a Today → Event timeline,
-   _Key assets_ (joint account, life insurance, IRA) and _Secondary assets_,
-   plus support resources and people.
-3. **Transfer flows:** _Joint checking/savings_ and _401(k)/IRA_ are fully
-   guided — each document is tagged _Upload_, _Filled in for you_ or _You fill
-   in_; the death certificate is uploaded once and reused. Other assets have a
-   placeholder flow. _Send to PNC_ → _In review_ → (demo) _simulate approval_.
+- **Your will** (`/plan#will`): an 8-step planner, pre-filled with your
+  household, saved per person as you go.
+- **Beneficiaries** (`/plan#beneficiaries`): name who inherits each account
+  that can take a beneficiary. Changes feed the reminders and, after a death,
+  decide whether an account passes directly or through the estate.
+- Under 18: a short note on what changes at 18.
 
-State is kept in the browser (`src/lib/bereavement.ts`) so the demo works by
-signing out of the advisor view and into the customer view in the same browser.
-_Reset demo_ (advisor) clears it; _Reset demo progress_ (Next steps) keeps the
-recorded death but clears the flows.
+## Loss in the family
+
+Nothing happens automatically. A death only exists once the bank records it.
+
+1. **Advisor** (`advisor`): _Record a death notice_ (defaults to Jordan).
+2. **Jordan's login** shows that the accounts are being settled.
+3. **Casey** sees a soft condolence strip and a **Next steps** page
+   (`src/lib/survivor.ts`), built from Jordan's accounts as they stand:
+   - _Coming to you_: a guided flow for each account that passes to Casey (the
+     joint account, the IRA, Riley's account as new custodian, and any
+     account where Jordan had named Casey as beneficiary). The life policy is
+     claimed with the insurer.
+   - _Handled through the estate_: accounts with no beneficiary, and the
+     credit card.
+   - The death certificate is uploaded once and reused. _Send to PNC_ leaves a
+     flow **In review**; nothing approves itself.
+   - If Jordan's will is on file and names Casey, the executor can begin
+     executing it from this page.
+4. **Avery and Riley** get a gentle message and nothing to do.
+
+State lives in the browser (`localStorage`). _Reset demo_ on the advisor home
+clears the recorded deaths, flows, families, beneficiary changes and wills.
 
 ## Advisor assistant (simulated) — `/advisor/clients/[id]`
 

@@ -117,6 +117,8 @@ export function WillPlanner(props: PlannerProps) {
 
 type PlannerProps = {
   accountHolder: string;
+  /** Person id of the testator; their will is saved under it. */
+  owner: string;
   /** Leave the planner (back to the will overview). Answers are already saved. */
   onExit: () => void;
   /** Family members offered as suggestions wherever the will names a person. */
@@ -127,9 +129,9 @@ type PlannerProps = {
 
 type State = { draft: WillDraft; progress: WillProgress; errors: Errors };
 
-function PlannerBody({ accountHolder, onExit, people = [], prefill }: PlannerProps) {
+function PlannerBody({ accountHolder, owner, onExit, people = [], prefill }: PlannerProps) {
   const [state, setState] = useState<State>(() => {
-    const saved = loadWill();
+    const saved = loadWill(owner);
     const fresh = !saved.progress;
     return {
       draft: fresh && prefill ? prefill(saved.draft) : saved.draft,
@@ -146,7 +148,7 @@ function PlannerBody({ accountHolder, onExit, people = [], prefill }: PlannerPro
     screens[Math.min(progress.furthest, screens.length - 1)].section,
   );
 
-  useEffect(() => saveWill({ draft, progress }), [draft, progress]);
+  useEffect(() => saveWill(owner, { draft, progress }), [owner, draft, progress]);
 
   // Bring the new screen's heading into view (the mobile view scrolls inside <main>).
   const scrollTop = () =>
@@ -174,6 +176,7 @@ function PlannerBody({ accountHolder, onExit, people = [], prefill }: PlannerPro
     draft,
     errors,
     accountHolder,
+    owner,
     people,
     update: (fn) =>
       setState((s) => {
@@ -202,7 +205,7 @@ function PlannerBody({ accountHolder, onExit, people = [], prefill }: PlannerPro
       scrollTop();
       return;
     }
-    if (readWillStatus() === null) setWillStatus("in-progress");
+    if (readWillStatus(owner) === null) setWillStatus(owner, "in-progress");
     move((s) => (s.progress.returnToReview ? REVIEW_SCREEN : nextScreen(s.draft, screen)));
   }
 
@@ -211,7 +214,7 @@ function PlannerBody({ accountHolder, onExit, people = [], prefill }: PlannerPro
       "Start over? This clears every answer saved for your will on this device.",
     );
     if (!sure) return;
-    resetWill();
+    resetWill(owner);
     const blank = emptyDraft();
     setState({ draft: prefill ? prefill(blank) : blank, progress: startProgress(), errors: {} });
     scrollTop();

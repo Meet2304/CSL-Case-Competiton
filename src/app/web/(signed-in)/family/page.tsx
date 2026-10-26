@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { FamilyDashboard } from "@/components/family/FamilyDashboard";
-import { FamilyProvider } from "@/components/family/FamilyProvider";
+import { FamilyHub } from "@/components/family/FamilyHub";
 import { WebHero } from "@/components/web/WebHero";
 
 export const metadata: Metadata = { title: "Family" };
@@ -10,12 +9,10 @@ export default function WebFamilyPage() {
     <>
       <WebHero
         title="Family"
-        subtitle="Decide who in your family can see and manage each account, and plan what happens next with your will."
+        subtitle="Choose the people you trust, and decide what each of them can see and do with your accounts."
       />
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-        <FamilyProvider>
-          <FamilyDashboard />
-        </FamilyProvider>
+        <FamilyHub />
       </div>
     </>
   );

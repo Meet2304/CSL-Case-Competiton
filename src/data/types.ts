@@ -89,6 +89,52 @@ export type DemoUser = {
   userId: string;
   role: Role;
   displayName: string;
+  /** For customers: who they are in the household (see src/data/household.ts). */
+  personId?: string;
+  /** Shown on the demo sign-on buttons, e.g. "Husband, 52". */
+  hint?: string;
+};
+
+// ---------------------------------------------------------------------------
+// The demo household: one source of truth for people and their accounts,
+// read by every customer login and by the advisor.
+
+export type HouseholdPerson = {
+  id: string;
+  name: string;
+  /** Relationship to the household's primary customer (Jordan). */
+  relationship: FamilyMemberRelationship;
+  birthdate: string; // ISO
+  email: string;
+  /** Free text under the name, e.g. "Estate attorney". */
+  note?: string;
+  /** Has an online banking login. */
+  login?: string;
+};
+
+export type AccountKind =
+  "checking" | "savings" | "ira" | "roth" | "brokerage" | "credit-card" | "life-insurance";
+
+/** One account (or policy) belonging to someone in the household. */
+export type BankAccount = {
+  id: string;
+  name: string;
+  last4?: string;
+  kind: AccountKind;
+  /** Negative for a balance owed. */
+  balance: number;
+  /** Person ids of the legal owners. */
+  owners: string[];
+  /** Adult who manages a minor's account until they turn 18. */
+  custodian?: string;
+  /**
+   * Payable- or transfer-on-death / retirement beneficiaries, as person ids.
+   * Undefined where the account type has no designation.
+   */
+  beneficiaries?: string[];
+  /** Held outside PNC (e.g. a life insurance policy); tracked for planning. */
+  external?: boolean;
+  transactions?: Transaction[];
 };
 
 export type Advisor = {
@@ -285,7 +331,7 @@ export type FamilyRole = {
 };
 
 export const assetCategories = [
-  "Joint checking/savings",
+  "Checking & savings",
   "Real Estate",
   "Brokerage account",
   "401(k) / IRA",

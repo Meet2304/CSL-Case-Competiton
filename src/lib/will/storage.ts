@@ -1,27 +1,28 @@
 import { useMemo, useSyncExternalStore } from "react";
-import { advisorCustomers } from "@/data/advisor";
-import { customer } from "@/data/mock";
+import { MOCK_AS_OF } from "@/data/mock";
 import type { WillStatus } from "@/data/types";
 import { emptyDraft, type WillDraft, type WillProgress } from "./types";
 
 /**
- * Demo persistence for the signed-in customer's will. There is no backend, so
- * the draft lives in this browser's localStorage. The status key is separate
- * (and tiny) so the customer reminder and the advisor dashboard can watch it:
- * finish a will as `customer`, sign in as `advisor` in the same browser and
- * the household shows "Will on file". Once a will is on file, a family member
- * it names can begin executing it; that progress is stored here too.
+ * Demo persistence for each household member's will, keyed by their person id
+ * (the will's owner). There is no backend, so drafts live in this browser's
+ * localStorage, where every login and the advisor can see them: finish a will
+ * as `jordan`, sign in as `advisor` and Jordan shows "Will on file". After the
+ * bank records the owner's death, the executor's progress settling the estate
+ * is stored here too.
  */
-const DRAFT_KEY = "pnc-will-draft-v1";
-const STATUS_KEY = "pnc-will-status";
-const EXECUTION_KEY = "pnc-will-execution";
+const DRAFT_KEY = "pnc-will-draft-v2";
+const STATUS_KEY = "pnc-will-status-v2";
+const EXECUTION_KEY = "pnc-will-execution-v2";
 const STATUS_EVENT = "pnc-will-status";
+
+const key = (base: string, owner: string) => `${base}:${owner}`;
 
 export type SavedWill = { draft: WillDraft; progress?: WillProgress };
 
-/** A family member has started settling the estate under the will. */
+/** The executor has started settling the estate under the will. */
 export type WillExecution = {
-  /** Family member id of whoever began execution. */
+  /** Person id of whoever began execution. */
   startedBy: string;
   startedOn: string; // ISO date
   dateOfPassing: string; // ISO date
@@ -29,25 +30,25 @@ export type WillExecution = {
   completed: string[];
 };
 
-function read(key: string): string | null {
+function read(k: string): string | null {
   try {
-    return window.localStorage.getItem(key);
+    return window.localStorage.getItem(k);
   } catch {
     return null;
   }
 }
 
-function write(key: string, value: string | null) {
+function write(k: string, value: string | null) {
   try {
-    if (value === null) window.localStorage.removeItem(key);
-    else window.localStorage.setItem(key, value);
+    if (value === null) window.localStorage.removeItem(k);
+    else window.localStorage.setItem(k, value);
   } catch {
     // Storage blocked (private mode): the planner still works for this visit.
   }
 }
 
-export function loadWill(): SavedWill {
-  return parseWill(read(DRAFT_KEY)) ?? { draft: emptyDraft() };
+export function loadWill(owner: string): SavedWill {
+  return parseWill(read(key(DRAFT_KEY, owner))) ?? { draft: emptyDraft() };
 }
 
 function parseWill(raw: string | null): SavedWill | null {
@@ -70,35 +71,45 @@ function parseWill(raw: string | null): SavedWill | null {
   return null;
 }
 
-export function saveWill(saved: SavedWill) {
-  write(DRAFT_KEY, JSON.stringify(saved));
+export function saveWill(owner: string, saved: SavedWill) {
+  write(key(DRAFT_KEY, owner), JSON.stringify(saved));
 }
 
-export function readWillStatus(): WillStatus | null {
-  const v = read(STATUS_KEY);
+export function readWillStatus(owner: string): WillStatus | null {
+  const v = read(key(STATUS_KEY, owner));
   return v === "in-progress" || v === "on-file" ? v : null;
 }
 
-export function setWillStatus(status: WillStatus) {
-  write(STATUS_KEY, status === "none" ? null : status);
-  write(`${STATUS_KEY}-updated`, status === "none" ? null : new Date().toISOString().slice(0, 10));
+export function setWillStatus(owner: string, status: WillStatus) {
+  write(key(STATUS_KEY, owner), status === "none" ? null : status);
+  write(key(`${STATUS_KEY}-updated`, owner), status === "none" ? null : MOCK_AS_OF);
   window.dispatchEvent(new Event(STATUS_EVENT));
 }
 
-export function readWillUpdated(): string | undefined {
-  return read(`${STATUS_KEY}-updated`) ?? undefined;
+export function readWillUpdated(owner: string): string | undefined {
+  return read(key(`${STATUS_KEY}-updated`, owner)) ?? undefined;
 }
 
-export function setWillExecution(execution: WillExecution | null) {
-  write(EXECUTION_KEY, execution && JSON.stringify(execution));
+export function setWillExecution(owner: string, execution: WillExecution | null) {
+  write(key(EXECUTION_KEY, owner), execution && JSON.stringify(execution));
   window.dispatchEvent(new Event(STATUS_EVENT));
 }
 
-/** Clears the draft, status and any execution ("Start over"). */
-export function resetWill() {
-  write(DRAFT_KEY, null);
-  write(EXECUTION_KEY, null);
-  setWillStatus("none");
+/** Clears the owner's draft, status and any execution ("Start over"). */
+export function resetWill(owner: string) {
+  write(key(DRAFT_KEY, owner), null);
+  write(key(EXECUTION_KEY, owner), null);
+  setWillStatus(owner, "none");
+}
+
+/** Clears every will in this browser (the demo reset). */
+export function resetAllWills() {
+  try {
+    Object.keys(window.localStorage)
+      .filter((k) => [DRAFT_KEY, STATUS_KEY, EXECUTION_KEY].some((b) => k.startsWith(b)))
+      .forEach((k) => window.localStorage.removeItem(k));
+  } catch {}
+  window.dispatchEvent(new Event(STATUS_EVENT));
 }
 
 function subscribe(onChange: () => void) {
@@ -111,39 +122,32 @@ function subscribe(onChange: () => void) {
 }
 
 /**
- * The demo customer's will status as saved in this browser, or `fallback`
- * (the mock record) when nothing is saved. The server render always uses
- * `fallback`, so markup matches until the browser value is read.
+ * The owner's will status as saved in this browser, or `fallback` when nothing
+ * is saved. The server render always uses `fallback`.
  */
-export function useWillStatus(fallback: WillStatus): WillStatus {
+export function useWillStatus(owner: string, fallback: WillStatus = "none"): WillStatus {
   return useSyncExternalStore(
     subscribe,
-    () => readWillStatus() ?? fallback,
+    () => readWillStatus(owner) ?? fallback,
     () => fallback,
   );
 }
 
-/** The bank's record for the demo customer, used until this browser has saved a status. */
-const recordedStatus = advisorCustomers.find((c) => c.id === customer.id)?.will.status ?? "none";
-
-/** The signed-in customer's will status. */
-export const useMyWillStatus = () => useWillStatus(recordedStatus);
-
-/** The saved will (answers and progress), or null on the server / before one is started. */
-export function useSavedWill(): SavedWill | null {
+/** The owner's saved will (answers and progress), or null on the server / before one is started. */
+export function useSavedWill(owner: string): SavedWill | null {
   const raw = useSyncExternalStore(
     subscribe,
-    () => read(DRAFT_KEY),
+    () => read(key(DRAFT_KEY, owner)),
     () => null,
   );
   return useMemo(() => parseWill(raw), [raw]);
 }
 
-/** The estate settlement in progress under the will, if anyone has begun it. */
-export function useWillExecution(): WillExecution | null {
+/** Settlement of the owner's estate under their will, if the executor has begun it. */
+export function useWillExecution(owner: string): WillExecution | null {
   const raw = useSyncExternalStore(
     subscribe,
-    () => read(EXECUTION_KEY),
+    () => read(key(EXECUTION_KEY, owner)),
     () => null,
   );
   return useMemo(() => {

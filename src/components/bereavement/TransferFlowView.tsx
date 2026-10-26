@@ -1,18 +1,13 @@
 "use client";
 
 import { useId } from "react";
-import { ArrowLeft, Check, CheckCircle2, Clock, FileUp, Sparkles } from "lucide-react";
+import { ArrowLeft, Check, CheckCircle2, Clock, FileUp } from "lucide-react";
 import { Money } from "@/components/ui/Money";
-import {
-  docKindLabels,
-  familyAsset,
-  type DocKind,
-  type FlowStep,
-  type TransferFlow,
-} from "@/data/bereavement";
+import { docKindLabels, type DocKind, type FlowStep, type TransferFlow } from "@/data/bereavement";
 import { MOCK_AS_OF } from "@/data/mock";
 import { bereavementActions, useBereavement } from "@/lib/bereavement";
 import { cn, formatDate } from "@/lib/format";
+import { accountLabel } from "@/lib/household";
 import { confirmKey, flowSummary, stepComplete } from "@/lib/transfer";
 
 const kindStyles: Record<DocKind, string> = {
@@ -47,19 +42,14 @@ export function TransferFlowView({ flow, onBack }: { flow: TransferFlow; onBack:
       <p className="mt-1 max-w-2xl text-sm leading-relaxed text-pnc-muted">{flow.intro}</p>
 
       <ul className="mt-3 flex flex-wrap gap-2">
-        {flow.assetIds.map((id) => {
-          const a = familyAsset(id);
-          return (
-            <li
-              key={id}
-              className="rounded-md border border-pnc-line bg-white px-3 py-1.5 text-sm text-pnc-ink"
-            >
-              {a.name}
-              {a.last4 && <span className="text-pnc-muted"> x{a.last4}</span>} ·{" "}
-              <Money value={a.value} compact className="font-semibold" />
-            </li>
-          );
-        })}
+        {flow.accounts.map((a) => (
+          <li
+            key={a.id}
+            className="rounded-md border border-pnc-line bg-white px-3 py-1.5 text-sm text-pnc-ink"
+          >
+            {accountLabel(a)} · <Money value={a.balance} compact className="font-semibold" />
+          </li>
+        ))}
       </ul>
 
       <div className="mt-4 flex items-center gap-3 text-sm">
@@ -103,17 +93,8 @@ export function TransferFlowView({ flow, onBack }: { flow: TransferFlow; onBack:
             <p className="min-w-0 flex-1">
               <span className="block font-semibold">Thank you — we have everything we need.</span>
               We&apos;re reviewing your documents, which usually takes {flow.reviewTime}. We&apos;ll
-              let you know as soon as it&apos;s done.
+              let you know as soon as it&apos;s done. Your advisor can see where it is, too.
             </p>
-            <button
-              type="button"
-              onClick={() =>
-                bereavementActions.saveFlow(flow.id, { ...progress, status: "complete" })
-              }
-              className="inline-flex items-center gap-1.5 rounded-full border border-pnc-line bg-white px-4 py-2 text-xs font-semibold text-pnc-muted hover:border-pnc-link hover:text-pnc-link"
-            >
-              <Sparkles className="size-3.5" aria-hidden="true" /> Demo: simulate approval
-            </button>
           </div>
         ) : (
           <div className="flex flex-wrap items-center gap-3">

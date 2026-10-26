@@ -7,6 +7,8 @@ import { routes } from "@/lib/routes";
  * There is no real authentication — this is a prototype.
  */
 export const SESSION_COOKIE = "pnc-session";
+/** Which person in the household a customer signed in as (see src/data/household.ts). */
+export const PERSON_COOKIE = "pnc-person";
 
 export function parseRole(value: string | undefined): Role | undefined {
   return value === "customer" || value === "advisor" ? value : undefined;

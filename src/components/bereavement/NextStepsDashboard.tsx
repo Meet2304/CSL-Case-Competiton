@@ -3,30 +3,24 @@
 import { useState } from "react";
 import {
   ArrowRight,
-  CheckCircle2,
   ChevronRight,
-  Clock,
   Flower2,
   HeartHandshake,
   MessageCircleHeart,
-  RotateCcw,
   Users,
   type LucideIcon,
 } from "lucide-react";
+import { useViewer } from "@/components/customer/Viewer";
 import { MockBadge } from "@/components/mock/Mock";
 import { Money } from "@/components/ui/Money";
-import {
-  familyAsset,
-  keyAssetGroups,
-  secondaryAssetGroups,
-  supportPeople,
-  supportResources,
-  transferFlows,
-  type AssetGroup,
-} from "@/data/bereavement";
-import { bereavementActions, type BereavementState, type FlowStatus } from "@/lib/bereavement";
+import { WillExecutionCard } from "@/components/will/WillExecution";
+import { supportPeople, supportResources } from "@/data/bereavement";
+import { MOCK_AS_OF } from "@/data/mock";
+import type { BereavementState, FlowStatus } from "@/lib/bereavement";
 import { cn, formatDate } from "@/lib/format";
 import { initials } from "@/lib/family";
+import { accountLabel, firstName, personByName } from "@/lib/household";
+import { survivorPlan, type SurvivorItem } from "@/lib/survivor";
 import { flowSummary, statusLabels } from "@/lib/transfer";
 import { PlaceholderFlowView } from "./PlaceholderFlowView";
 import { TransferFlowView } from "./TransferFlowView";
@@ -41,20 +35,24 @@ const statusStyles: Record<FlowStatus, string> = {
   complete: "bg-pnc-positive-bg text-pnc-positive",
 };
 
-function groupStatus(group: AssetGroup, s: BereavementState): FlowStatus {
-  return group.flowId ? flowSummary(transferFlows[group.flowId], s).status : "not-started";
-}
+const itemStatus = (item: SurvivorItem, s: BereavementState): FlowStatus | null =>
+  item.flow ? flowSummary(item.flow, s).status : null;
+
+const total = (item: SurvivorItem) => item.accounts.reduce((sum, a) => sum + a.balance, 0);
 
 /**
- * The surviving spouse's "Next steps" dashboard: a short timeline, key assets
- * to settle soon, secondary assets with no rush, and people and resources to
- * lean on. Adapts with container queries so it also works inside the phone.
+ * A survivor's "Next steps" after the bank records a death: the one thing to
+ * do today, the accounts that pass to them (each a guided flow), and the
+ * accounts someone else settles. Built from the household's accounts, so it
+ * reflects the beneficiaries that were on file. Adapts with container queries.
  */
 export function NextStepsDashboard() {
-  const { state, loss, firstName } = useHouseholdLoss();
+  const { state, loss } = useHouseholdLoss();
+  const { person, isMinor, accounts } = useViewer();
   const [openId, setOpenId] = useState<string | null>(null);
+  const deceased = loss && personByName(loss.personName);
 
-  if (!loss) {
+  if (!loss || !deceased) {
     return (
       <p className="rounded-md border border-dashed border-pnc-line bg-white px-4 py-10 text-center text-sm text-pnc-muted">
         There&apos;s nothing here right now.
@@ -62,69 +60,109 @@ export function NextStepsDashboard() {
     );
   }
 
-  const open = [...keyAssetGroups, ...secondaryAssetGroups].find((g) => g.id === openId);
+  const first = firstName(deceased.name);
+
+  if (isMinor) {
+    return (
+      <section className="mx-auto max-w-xl rounded-lg bg-white p-6 text-center shadow-card">
+        <HeartHandshake className="mx-auto size-9 text-attention" aria-hidden="true" />
+        <h2 className="mt-3 font-display text-2xl font-medium text-pnc-ink">
+          We&apos;re so sorry about {first}
+        </h2>
+        <p className="mt-2 text-[15px] leading-relaxed text-pnc-muted">
+          There&apos;s nothing you need to do. The adults in your family and PNC are looking after{" "}
+          {first}&apos;s accounts, and your own accounts keep working just as before.
+        </p>
+      </section>
+    );
+  }
+
+  const plan = survivorPlan(deceased, person, accounts, MOCK_AS_OF);
+  const yours = plan.filter((i) => i.route === "to-you");
+  const others = plan.filter((i) => i.route !== "to-you");
+  const open = plan.find((i) => i.id === openId);
   const back = () => setOpenId(null);
 
   return (
     <div className="@container">
-      <div className="grid items-start gap-6 @4xl:grid-cols-[1fr_17rem]">
-        <div className="min-w-0 rounded-md bg-white p-4 shadow-card @3xl:p-6">
+      <div className="grid items-start gap-6 @4xl:grid-cols-[minmax(0,1fr)_17rem]">
+        <div className="min-w-0 space-y-6">
           {open ? (
-            open.flowId ? (
-              <TransferFlowView flow={transferFlows[open.flowId]} onBack={back} />
-            ) : (
-              <PlaceholderFlowView group={open} onBack={back} />
-            )
+            <div className="rounded-md bg-white p-4 shadow-card @3xl:p-6">
+              {open.flow ? (
+                <TransferFlowView flow={open.flow} onBack={back} />
+              ) : (
+                <PlaceholderFlowView item={open} onBack={back} />
+              )}
+            </div>
           ) : (
             <>
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
+              <section className="rounded-md bg-white p-4 shadow-card @3xl:p-6">
+                <div className="flex flex-wrap items-start justify-between gap-3">
                   <h2 className="font-display text-2xl font-medium text-pnc-ink">
                     We&apos;re so sorry for your loss
                   </h2>
-                  <p className="mt-1 max-w-2xl text-sm leading-relaxed text-pnc-muted">
-                    {loss.personName} passed away on {formatDate(loss.date, "medium")}. Here&apos;s
-                    everything needed to look after {firstName}&apos;s accounts, in the order we
-                    suggest. Take it one step at a time — we&apos;ll keep your place.
-                  </p>
+                  <MockBadge />
                 </div>
-                <MockBadge />
-              </div>
-
-              <Timeline state={state} firstName={firstName ?? ""} onOpen={setOpenId} />
-
-              <section className="mt-7">
-                <h3 className="text-lg font-semibold text-pnc-ink">Key assets</h3>
-                <p className="text-sm text-pnc-muted">
-                  We advise you to transfer these as soon as you feel able — your household relies
-                  on them.
+                <p className="mt-1 max-w-2xl text-sm leading-relaxed text-pnc-muted">
+                  {deceased.name} passed away on {formatDate(loss.date, "medium")}. Here&apos;s what
+                  happens to each of {first}&apos;s accounts and the few things that need you. Take
+                  it one step at a time — we keep your place.
                 </p>
-                <ul className="mt-3 grid gap-3 @2xl:grid-cols-3">
-                  {keyAssetGroups.map((g) => (
-                    <AssetCard key={g.id} group={g} state={state} size="lg" onOpen={setOpenId} />
-                  ))}
-                </ul>
+                <Today items={yours} state={state} first={first} onOpen={setOpenId} />
               </section>
 
-              <section className="mt-7">
-                <h3 className="text-lg font-semibold text-pnc-ink">Secondary assets</h3>
-                <p className="text-sm text-pnc-muted">
-                  You can take your time with these — we recommend within about 6 months.
-                </p>
-                <ul className="mt-3 grid gap-3 @lg:grid-cols-2 @2xl:grid-cols-3">
-                  {secondaryAssetGroups.map((g) => (
-                    <AssetCard key={g.id} group={g} state={state} size="sm" onOpen={setOpenId} />
-                  ))}
-                </ul>
-              </section>
+              <WillExecutionCard testatorId={deceased.id} />
 
-              <button
-                type="button"
-                onClick={bereavementActions.resetProgress}
-                className="mt-6 inline-flex items-center gap-1.5 text-xs font-semibold text-pnc-muted hover:text-pnc-link"
-              >
-                <RotateCcw className="size-3.5" aria-hidden="true" /> Reset demo progress
-              </button>
+              {yours.length > 0 && (
+                <section aria-labelledby="ns-yours">
+                  <h3 id="ns-yours" className="text-lg font-semibold text-pnc-ink">
+                    Coming to you
+                  </h3>
+                  <p className="text-sm text-pnc-muted">
+                    These pass to you. Each one is a short guided form.
+                  </p>
+                  <ul className="mt-3 grid gap-3 @2xl:grid-cols-2">
+                    {yours.map((i) => (
+                      <ItemCard key={i.id} item={i} state={state} onOpen={setOpenId} />
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {others.length > 0 && (
+                <section aria-labelledby="ns-others">
+                  <h3 id="ns-others" className="text-lg font-semibold text-pnc-ink">
+                    Handled through the estate
+                  </h3>
+                  <p className="text-sm text-pnc-muted">
+                    Nothing for you to do here unless you&apos;re the executor.
+                  </p>
+                  <ul className="mt-3 divide-y divide-pnc-line rounded-md bg-white shadow-card">
+                    {others.map((i) => (
+                      <li key={i.id}>
+                        <button
+                          type="button"
+                          onClick={() => setOpenId(i.id)}
+                          className="flex w-full flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 text-left hover:bg-pnc-surface/60 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-pnc-link"
+                        >
+                          <span className="min-w-0 flex-1 basis-56">
+                            <span className="block font-semibold text-pnc-ink">
+                              {i.accounts.map(accountLabel).join(", ")}
+                            </span>
+                            <span className="block text-sm text-pnc-muted">{i.summary}</span>
+                          </span>
+                          <Money value={total(i)} className="text-sm font-semibold" />
+                          <ChevronRight
+                            className="size-4 shrink-0 text-pnc-muted"
+                            aria-hidden="true"
+                          />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
             </>
           )}
         </div>
@@ -135,166 +173,109 @@ export function NextStepsDashboard() {
   );
 }
 
-function Timeline({
+/** The single most useful thing to do next. */
+function Today({
+  items,
   state,
-  firstName,
+  first,
   onOpen,
 }: {
+  items: SurvivorItem[];
   state: BereavementState;
-  firstName: string;
+  first: string;
   onOpen: (id: string) => void;
 }) {
-  const joint = flowSummary(transferFlows.joint, state);
-  const ira = flowSummary(transferFlows.ira, state);
-
-  // What to do today: the single most useful next action.
-  const today = !state.deathCertificate
-    ? {
-        text: `Upload ${firstName}'s death certificate — it's used for every account.`,
-        open: "joint",
-      }
-    : joint.status !== "submitted" && joint.status !== "complete"
+  const withFlow = items.filter((i) => i.flow);
+  const pending = withFlow.find((i) => {
+    const s = itemStatus(i, state);
+    return s === "not-started" || s === "in-progress";
+  });
+  const next =
+    !state.deathCertificate && withFlow[0]
       ? {
-          text: `Finish the joint account steps (${joint.required - joint.doneCount} left).`,
-          open: "joint",
+          text: `Upload ${first}'s death certificate. We use it for every account.`,
+          id: withFlow[0].id,
+          cta: "Start",
         }
-      : ira.status !== "submitted" && ira.status !== "complete"
-        ? { text: "When you're ready, choose what to do with the IRA.", open: "ira" }
-        : { text: "Nothing to do today — we're reviewing your documents.", open: null };
-
-  const events: { title: string; detail: string; status: FlowStatus }[] = [
-    {
-      title: "Joint accounts in your name",
-      detail: `Usually ${transferFlows.joint.reviewTime}`,
-      status: joint.status,
-    },
-    {
-      title: "Life insurance claim",
-      detail: "Usually 2–4 weeks after filing",
-      status: "not-started",
-    },
-    {
-      title: "IRA transferred to you",
-      detail: "No deadline pressure for a spouse",
-      status: ira.status,
-    },
-  ];
+      : pending
+        ? {
+            text: `${itemStatus(pending, state) === "in-progress" ? "Finish" : "Start"} ${pending.title}.`,
+            id: pending.id,
+            cta: itemStatus(pending, state) === "in-progress" ? "Continue" : "Start",
+          }
+        : {
+            text: withFlow.length
+              ? "Nothing to do today. We're reviewing what you sent and will let you know."
+              : "Nothing to do today. Your advisor will be in touch.",
+            id: null,
+            cta: "",
+          };
 
   return (
-    <section className="mt-6" aria-labelledby="next-steps-heading">
-      <h3 id="next-steps-heading" className="text-lg font-semibold text-pnc-ink">
-        Next steps
-      </h3>
-      <ol className="mt-3 grid gap-3 @3xl:grid-cols-[minmax(13rem,1.3fr)_auto_1fr_auto_1fr_auto_1fr] @3xl:items-center">
-        <li className="rounded-md border-2 border-pnc-blue-700 bg-pnc-blue-50/50 p-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-pnc-blue-800">Today</p>
-          <p className="mt-1 text-sm text-pnc-ink">{today.text}</p>
-          {today.open && (
-            <button
-              type="button"
-              onClick={() => onOpen(today.open!)}
-              className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-pnc-link hover:underline"
-            >
-              Start <ArrowRight className="size-3.5" aria-hidden="true" />
-            </button>
-          )}
-        </li>
-        {events.map((e) => (
-          <EventItem key={e.title} {...e} />
-        ))}
-      </ol>
-    </section>
+    <div className="mt-4 flex flex-wrap items-center gap-3 rounded-md bg-pnc-blue-50 p-4">
+      <div className="min-w-0 flex-1 basis-64">
+        <p className="text-xs font-semibold uppercase tracking-wide text-pnc-blue-800">Today</p>
+        <p className="mt-0.5 text-sm text-pnc-ink">{next.text}</p>
+      </div>
+      {next.id && (
+        <button
+          type="button"
+          onClick={() => onOpen(next.id!)}
+          className="inline-flex items-center gap-1.5 rounded-full bg-pnc-blue-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-pnc-blue-800"
+        >
+          {next.cta} <ArrowRight className="size-4" aria-hidden="true" />
+        </button>
+      )}
+    </div>
   );
 }
 
-function EventItem({
-  title,
-  detail,
-  status,
-}: {
-  title: string;
-  detail: string;
-  status: FlowStatus;
-}) {
-  const done = status === "complete";
-  return (
-    <>
-      <li aria-hidden="true" className="hidden justify-center text-pnc-muted @3xl:flex">
-        <ArrowRight className="size-5" />
-      </li>
-      <li className="flex items-start gap-2.5 rounded-md border border-pnc-line p-3 @3xl:border-0 @3xl:p-0">
-        {done ? (
-          <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-pnc-positive" aria-hidden="true" />
-        ) : (
-          <Clock className="mt-0.5 size-5 shrink-0 text-pnc-muted" aria-hidden="true" />
-        )}
-        <span>
-          <span className="block text-sm font-semibold text-pnc-ink">{title}</span>
-          <span className="block text-xs text-pnc-muted">
-            {status === "submitted" ? "In review" : done ? "Done" : detail}
-          </span>
-        </span>
-      </li>
-    </>
-  );
-}
-
-function AssetCard({
-  group,
+function ItemCard({
+  item,
   state,
-  size,
   onOpen,
 }: {
-  group: AssetGroup;
+  item: SurvivorItem;
   state: BereavementState;
-  size: "lg" | "sm";
   onOpen: (id: string) => void;
 }) {
-  const status = groupStatus(group, state);
-  const summary = group.flowId ? flowSummary(transferFlows[group.flowId], state) : null;
-  const assets = group.assetIds.map(familyAsset);
-  const total = assets.reduce((sum, a) => sum + a.value, 0);
-  const cta = status === "not-started" ? "Start" : status === "in-progress" ? "Continue" : "View";
+  const status = itemStatus(item, state);
+  const summary = item.flow ? flowSummary(item.flow, state) : null;
+  const cta =
+    !status || status === "not-started" ? "Start" : status === "in-progress" ? "Continue" : "View";
 
   return (
     <li>
       <button
         type="button"
-        onClick={() => onOpen(group.id)}
-        className={cn(
-          "flex h-full w-full flex-col rounded-md border border-pnc-line bg-white text-left transition-colors hover:border-pnc-link focus-visible:outline-2 focus-visible:outline-pnc-link",
-          size === "lg" ? "min-h-40 p-4" : "p-3",
-        )}
+        onClick={() => onOpen(item.id)}
+        className="flex h-full w-full flex-col rounded-md bg-white p-4 text-left shadow-card ring-1 ring-transparent transition hover:ring-pnc-link focus-visible:outline-2 focus-visible:outline-pnc-link"
       >
         <span className="flex items-start justify-between gap-2">
-          <span className={cn("font-semibold text-pnc-ink", size === "lg" && "text-lg")}>
-            {group.title}
+          <span className="min-w-0 font-semibold text-pnc-ink">{item.title}</span>
+          {status && (
+            <span
+              className={cn(
+                "shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold whitespace-nowrap",
+                statusStyles[status],
+              )}
+            >
+              {statusLabels[status]}
+            </span>
+          )}
+        </span>
+        <span className="mt-0.5 block text-sm text-pnc-muted">{item.summary}</span>
+        <Money value={total(item)} compact className="mt-2 block text-sm font-semibold" />
+        <span className="mt-auto flex items-center justify-between gap-2 pt-3 text-sm">
+          <span className="text-xs text-pnc-muted">
+            {summary ? `${summary.doneCount} of ${summary.required} steps` : "Outside PNC"}
           </span>
-          <span
-            className={cn(
-              "whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold",
-              statusStyles[status],
-            )}
-          >
-            {statusLabels[status]}
+          <span className="inline-flex items-center gap-0.5 font-semibold text-pnc-link">
+            {cta}
+            <span className="sr-only"> {item.title}</span>
+            <ChevronRight className="size-4" aria-hidden="true" />
           </span>
         </span>
-        <span className="mt-1 block text-xs text-pnc-muted">
-          {assets.map((a) => `${a.name}${a.last4 ? ` x${a.last4}` : ""}`).join(" · ")}
-        </span>
-        <Money value={total} compact className="mt-2 block text-sm font-semibold text-pnc-ink" />
-        {size === "lg" && (
-          <span className="mt-auto flex items-center justify-between pt-3 text-sm">
-            <span className="text-xs text-pnc-muted">
-              {summary
-                ? `${summary.doneCount} of ${summary.required} steps`
-                : "Your advisor can help"}
-            </span>
-            <span className="inline-flex items-center gap-0.5 font-semibold text-pnc-link">
-              {cta} <ChevronRight className="size-4" aria-hidden="true" />
-            </span>
-          </span>
-        )}
       </button>
     </li>
   );
@@ -306,31 +287,27 @@ function Sidebar() {
       <section className="p-4">
         <h3 className="flex items-center gap-2 font-semibold text-pnc-ink">
           <HeartHandshake className="size-5 text-pnc-blue-700" aria-hidden="true" />
-          More resources to help you
+          Support for you
         </h3>
         <ul className="mt-3 space-y-3">
           {supportResources.map((r, i) => {
             const Icon = resourceIcons[i % resourceIcons.length];
             return (
-              <li key={r.title}>
-                <a href="#" className="group flex gap-3">
-                  <span className="grid size-9 shrink-0 place-items-center rounded-full bg-pnc-blue-50 text-pnc-blue-700">
-                    <Icon className="size-4.5" aria-hidden="true" />
-                  </span>
-                  <span className="text-sm">
-                    <span className="block font-semibold text-pnc-link group-hover:underline">
-                      {r.title}
-                    </span>
-                    <span className="block text-pnc-muted">{r.body}</span>
-                  </span>
-                </a>
+              <li key={r.title} className="flex gap-3">
+                <span className="grid size-9 shrink-0 place-items-center rounded-full bg-pnc-blue-50 text-pnc-blue-700">
+                  <Icon className="size-4.5" aria-hidden="true" />
+                </span>
+                <span className="text-sm">
+                  <span className="block font-semibold text-pnc-ink">{r.title}</span>
+                  <span className="block text-pnc-muted">{r.body}</span>
+                </span>
               </li>
             );
           })}
         </ul>
       </section>
       <section className="p-4">
-        <h3 className="font-semibold text-pnc-ink">People</h3>
+        <h3 className="font-semibold text-pnc-ink">People who can help</h3>
         <ul className="mt-3 space-y-3">
           {supportPeople.map((p) => (
             <li key={p.role} className="flex gap-3">
@@ -341,12 +318,6 @@ function Sidebar() {
                 <span className="block text-xs text-pnc-muted">{p.role}</span>
                 <span className="block font-semibold text-pnc-ink">{p.name}</span>
                 <span className="block text-xs text-pnc-muted">{p.detail}</span>
-                <a
-                  href="#"
-                  className="mt-0.5 inline-block font-semibold text-pnc-link hover:underline"
-                >
-                  {p.action}
-                </a>
               </span>
             </li>
           ))}

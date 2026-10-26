@@ -140,7 +140,7 @@ function holdingFor(a: FamilyAsset, nameOf: (id: string) => string): Holding | u
     ...rest,
   });
   switch (a.category) {
-    case "Joint checking/savings":
+    case "Checking & savings":
       return typed(a.name.includes("Money Market") ? "Money market" : "Checking", {
         beneficiaries: a.method === "pod" ? successors : a.method === "estate" ? [] : undefined,
       });
