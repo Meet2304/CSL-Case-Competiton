@@ -145,12 +145,32 @@ with the **assistant docked on the right** (below the content on phones):
 - **Client** — reference: profile, goals, notes, contact history, family and
   accounts. No advice here.
 - **What if** — run the rulebook as if anyone in the household died today.
-- **Assistant** — opens with what it worked out ("I walked 10 accounts through
-  the rulebook…", with _How I decided_), then asks for the facts the rulebook
-  can't know, with answer buttons (who owns the 529 now, whether a beneficiary is
-  disabled, whether federal benefits were paid). Each answer is fed back into
-  the decision tree, and the assistant says what changed. Free-text questions
-  work too.
+- **Findoe** (the assistant, docked on the right) — opens with what it worked
+  out ("I walked 10 accounts through the rulebook…", with _Show how I decided_),
+  then asks for the facts the rulebook can't know, with answer buttons (who owns
+  the 529 now, whether a beneficiary is disabled, whether federal benefits were
+  paid). Each answer is fed back into the decision tree, and Findoe says what
+  changed. **Ask AI** on any next step asks Findoe for personalized help with
+  it; free-text questions work too.
+
+### Findoe and Claude Haiku 5.5
+
+Findoe's replies come from **Claude Haiku 5.5** (`src/app/api/findoe/route.ts`),
+grounded in the rulebook: the browser sends a client context built by
+`src/lib/findoe/context.ts` (the plan, ranked steps, decision paths, dates,
+citations, open questions, the client's notes and family), and the system prompt
+forbids inventing any route, date, amount or citation. The model writes the
+advice; the rulebook still makes every decision. Only signed-in advisors can call
+the route, and the context is prompt-cached per client.
+
+To switch it on, add your key to `.env.local` (git-ignored) and restart `npm run dev`:
+
+```bash
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+Without a key Findoe shows _Offline · answers from the rulebook only_ and falls
+back to the simulated rules-based answers, so the demo still works.
 
 The assistant is **simulated**: `src/lib/assistant.ts` is a rules engine over the
 mock profiles in `src/data/clients.ts` (hand-written for Morgan Placeholder and

@@ -929,7 +929,10 @@ export function answerQuestion(f: ClientFacts, question: string, answers: Answer
       followUps: [`How should I approach ${first} right now?`, "What's urgent in the first month?"],
     };
   }
-  if (/approach|say|grie|condolen|talk to|reach out|sensitiv/.test(q) && briefing) {
+  if (
+    /approach|say|grie|condolen|talk to|reach out|sensitiv|open the call|first call/.test(q) &&
+    briefing
+  ) {
     return {
       paragraphs: [
         `Lead with care, not accounts. Something like: ${briefing.opening}`,

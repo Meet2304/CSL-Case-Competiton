@@ -1,7 +1,7 @@
 import { Chip } from "@/components/advisor/assistant/parts";
 import type { Holding } from "@/data/types";
 import type { PlannedAction } from "@/lib/settlement/engine";
-import { cn, daysBetween, formatDate, relativeDay } from "@/lib/format";
+import { daysBetween, formatDate, relativeDay } from "@/lib/format";
 import { firstName, kindLabels, kindTone, ownerLabel } from "./parts";
 import { SourceChips } from "./SourceChip";
 
@@ -27,21 +27,14 @@ export function DeadlineList({
   const name = (id: string) => holdings.find((h) => h.id === id)?.name ?? id;
 
   return (
-    <ol className="relative space-y-4 border-l-2 border-pnc-line pl-5">
+    <ol className="divide-y divide-pnc-line">
       {deadlines.map((d) => {
         const kind = d.action.deadline!.kind;
         const days = daysBetween(today, d.due!);
         const soon = !hypothetical && days >= 0 && days <= 90;
         const past = !hypothetical && days < 0;
         return (
-          <li key={`${d.action.id}@${d.due}`} className="relative">
-            <span
-              className={cn(
-                "absolute -left-[27px] top-1 size-3 rounded-full ring-4 ring-white",
-                soon ? "bg-attention" : past ? "bg-pnc-muted" : "bg-pnc-blue-700",
-              )}
-              aria-hidden="true"
-            />
+          <li key={`${d.action.id}@${d.due}`} className="py-3.5 first:pt-0 last:pb-0">
             <p className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
               <time dateTime={d.due} className="font-semibold text-pnc-ink">
                 {formatDate(d.due!, "medium")}

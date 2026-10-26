@@ -15,12 +15,11 @@ import {
   Undo2,
   X,
 } from "lucide-react";
-import { AssistantMark, Chip } from "@/components/advisor/assistant/parts";
+import { FindoeMonogram } from "@/components/advisor/assistant/parts";
 import { EngagementPanel } from "@/components/advisor/client/EngagementPanel";
 import { DeadlineList } from "@/components/advisor/settlement/DeadlineList";
 import { HouseholdChecklist } from "@/components/advisor/settlement/HouseholdChecklist";
 import { CopyButton, Disclosure } from "@/components/advisor/settlement/layout";
-import { whenTone } from "@/components/advisor/settlement/parts";
 import { ReviewQueue } from "@/components/advisor/settlement/ReviewQueue";
 import { RouteTable } from "@/components/advisor/settlement/RouteTable";
 import { MockBadge } from "@/components/mock/Mock";
@@ -51,81 +50,74 @@ function clientNote(plan: SettlementPlan): string {
   ].join("\n");
 }
 
-function StepCard({
+const whenText: Record<NextStep["when"]["tone"], string> = {
+  now: "text-attention",
+  soon: "text-pnc-orange-600",
+  later: "text-pnc-muted",
+};
+
+function StepRow({
   step,
   index,
-  onWhy,
+  onAskAI,
   onAnswer,
   onDone,
 }: {
   step: NextStep;
   index: number;
-  onWhy: (s: NextStep) => void;
+  onAskAI: (s: NextStep) => void;
   onAnswer: (q: OpenQuestion) => void;
   onDone: (s: NextStep) => void;
 }) {
   const isQuestion = step.kind === "question";
   return (
-    <li
-      className={cn(
-        "flex gap-3 rounded-md p-4 ring-1",
-        isQuestion ? "bg-pnc-blue-50 ring-pnc-blue-600/20" : "bg-white ring-pnc-line",
-      )}
-    >
+    <li className="flex gap-4 py-4">
       <span
-        className={cn(
-          "grid size-7 shrink-0 place-items-center rounded-full text-sm font-semibold",
-          isQuestion ? "bg-pnc-blue-700 text-white" : "bg-pnc-chip text-pnc-ink",
-        )}
+        className="w-5 shrink-0 pt-px text-right text-sm tabular-nums text-pnc-muted"
         aria-hidden="true"
       >
-        {isQuestion ? <CircleHelp className="size-4" /> : index + 1}
+        {index + 1}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="font-semibold leading-snug text-pnc-ink">
-          {isQuestion && <span className="sr-only">Question: </span>}
-          {step.title}
-        </p>
+        {isQuestion && <p className="text-xs font-medium text-pnc-blue-800">Needs your answer</p>}
+        <p className="font-medium leading-snug text-pnc-ink">{step.title}</p>
         <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-pnc-muted">{step.why}</p>
-        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
-          <Chip className={whenTone[step.when.tone]}>{step.when.label}</Chip>
-          <span className="text-xs text-pnc-muted">Owner: {step.owner}</span>
-          <span className="ml-auto flex flex-wrap gap-2">
-            {isQuestion ? (
-              <button
-                type="button"
-                onClick={() => onAnswer(step.question!)}
-                className={cn(small, "bg-pnc-blue-700 text-white hover:bg-pnc-blue-800")}
-              >
-                Answer
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => onWhy(step)}
-                className={cn(
-                  small,
-                  "bg-white text-pnc-link ring-1 ring-pnc-line hover:ring-pnc-link",
-                )}
-              >
-                Why?<span className="sr-only"> {step.title}</span>
-              </button>
-            )}
-            {step.checkable && (
-              <button
-                type="button"
-                onClick={() => onDone(step)}
-                className={cn(
-                  small,
-                  "bg-white text-pnc-ink ring-1 ring-pnc-line hover:ring-pnc-link",
-                )}
-              >
-                <Check className="size-4" aria-hidden="true" /> Done
-                <span className="sr-only">: {step.title}</span>
-              </button>
-            )}
-          </span>
-        </div>
+        <p className="mt-1.5 text-xs text-pnc-muted">
+          <span className={cn("font-medium", whenText[step.when.tone])}>{step.when.label}</span>
+          {" · "}
+          {step.owner}
+        </p>
+      </div>
+      <div className="flex shrink-0 items-start gap-1.5">
+        {isQuestion ? (
+          <button
+            type="button"
+            onClick={() => onAnswer(step.question!)}
+            className={cn(small, "bg-pnc-ink text-white hover:bg-pnc-navy")}
+          >
+            Answer
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => onAskAI(step)}
+            className={cn(small, "text-pnc-ink ring-1 ring-pnc-line hover:ring-pnc-muted")}
+          >
+            <FindoeMonogram className="size-4 text-[9px]" />
+            Ask AI<span className="sr-only">: {step.title}</span>
+          </button>
+        )}
+        {step.checkable && (
+          <button
+            type="button"
+            onClick={() => onDone(step)}
+            aria-label={`Mark done: ${step.title}`}
+            title="Mark done"
+            className="grid size-8 place-items-center rounded-full text-pnc-muted ring-1 ring-pnc-line hover:text-pnc-positive hover:ring-pnc-positive focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pnc-link"
+          >
+            <Check className="size-4" aria-hidden="true" />
+          </button>
+        )}
       </div>
     </li>
   );
@@ -140,7 +132,7 @@ export function NextStepsView({
   facts,
   guidance: g,
   reviews,
-  onWhy,
+  onAskAI,
   onAnswer,
   onOpenWhatIf,
   onAsk,
@@ -148,7 +140,7 @@ export function NextStepsView({
   facts: ClientFacts;
   guidance: Guidance;
   reviews: ReviewState;
-  onWhy: (s: NextStep) => void;
+  onAskAI: (s: NextStep) => void;
   onAnswer: (q: OpenQuestion) => void;
   onOpenWhatIf: () => void;
   onAsk: (q: string) => void;
@@ -170,37 +162,27 @@ export function NextStepsView({
   });
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       {/* 1. Where things stand */}
-      <section
-        aria-labelledby={`${baseId}-situation`}
-        className={cn(
-          "rounded-md border-l-4 bg-white p-4 ring-1 ring-pnc-line @3xl:p-5",
-          sit.tone === "loss" || sit.tone === "exposed"
-            ? "border-l-attention"
-            : sit.tone === "gaps"
-              ? "border-l-pnc-orange"
-              : "border-l-pnc-positive",
-        )}
-      >
+      <section aria-labelledby={`${baseId}-situation`}>
         <div className="flex items-center justify-between gap-2">
-          <p className="text-xs font-bold uppercase tracking-wide text-pnc-muted">{sit.eyebrow}</p>
+          <p className="text-sm text-pnc-muted">{sit.eyebrow}</p>
           <MockBadge />
         </div>
         <h3
           id={`${baseId}-situation`}
-          className="mt-1 font-display text-2xl font-medium text-pnc-ink"
+          className="mt-1 font-display text-[28px] font-medium leading-tight text-pnc-ink"
         >
           {sit.headline}
         </h3>
-        <p className="mt-1.5 max-w-3xl text-[15px] leading-relaxed text-pnc-ink">{sit.summary}</p>
-        <dl className="mt-4 grid grid-cols-3 gap-3">
+        <p className="mt-2 max-w-3xl text-[15px] leading-relaxed text-pnc-ink">{sit.summary}</p>
+        <dl className="mt-5 flex flex-wrap gap-x-10 gap-y-3">
           {sit.stats.map((s) => (
             <div key={s.label}>
               <dt className="text-xs text-pnc-muted">{s.label}</dt>
               <dd
                 className={cn(
-                  "font-display text-xl font-medium",
+                  "mt-0.5 font-display text-xl font-medium",
                   s.tone === "attention"
                     ? "text-attention"
                     : s.tone === "positive"
@@ -216,33 +198,28 @@ export function NextStepsView({
       </section>
 
       {/* 2. What to do next */}
-      <section aria-labelledby={`${baseId}-next`} className="space-y-3">
-        <div className="flex flex-wrap items-end justify-between gap-2">
-          <div>
-            <AssistantMark label="From the settlement rulebook" />
-            <h3 id={`${baseId}-next`} className="font-display text-xl font-medium text-pnc-ink">
-              Do next{" "}
-              <span className="text-sm font-semibold text-pnc-muted">
-                {g.steps.length ? `${g.steps.length} open` : "all done"}
-              </span>
-            </h3>
-          </div>
-          {g.done.length > 0 && (
-            <span className="text-xs text-pnc-muted">{g.done.length} done</span>
-          )}
+      <section aria-labelledby={`${baseId}-next`}>
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h3 id={`${baseId}-next`} className="font-display text-xl font-medium text-pnc-ink">
+            Do next
+          </h3>
+          <p className="text-sm text-pnc-muted">
+            {g.steps.length ? `${g.steps.length} open` : "All done"}
+            {g.done.length > 0 && ` · ${g.done.length} done`}
+          </p>
         </div>
         {g.steps.length === 0 ? (
-          <p className="rounded-md bg-pnc-positive-bg px-4 py-3 text-sm text-pnc-ink">
-            Nothing left on the list. The assistant will add steps if anything changes.
+          <p className="mt-3 text-sm text-pnc-muted">
+            Nothing left on the list. Findoe will add steps if anything changes.
           </p>
         ) : (
-          <ol className="space-y-2.5">
+          <ol className="mt-2 divide-y divide-pnc-line border-y border-pnc-line">
             {visible.map((s, i) => (
-              <StepCard
+              <StepRow
                 key={s.id}
                 step={s}
                 index={i}
-                onWhy={onWhy}
+                onAskAI={onAskAI}
                 onAnswer={onAnswer}
                 onDone={done}
               />
