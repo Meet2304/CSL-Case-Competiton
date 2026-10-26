@@ -77,3 +77,68 @@ export type Customer = {
   tier: string;
   userIdMasked: string;
 };
+
+// ---------------------------------------------------------------------------
+// Roles and the advisor (bank representative) side of the platform.
+
+export type Role = "customer" | "advisor";
+
+export type DemoUser = {
+  userId: string;
+  role: Role;
+  displayName: string;
+};
+
+export type Advisor = {
+  firstName: string;
+  lastName: string;
+  title: string;
+  team: string;
+};
+
+export type FamilyRelationship = "Spouse" | "Parent" | "Child" | "Sibling";
+
+/** A life event recorded against a customer, e.g. the death of a family member. */
+export type LossEvent = {
+  id: string;
+  date: string; // ISO yyyy-mm-dd
+  relationship: FamilyRelationship;
+  memberName: string;
+  reportedVia: "Branch visit" | "Phone call" | "Mobile app" | "Estate attorney";
+  /** Advisor has completed the follow-up steps; the customer is no longer flagged. */
+  followUpComplete: boolean;
+};
+
+export type HouseholdMember = {
+  name: string;
+  relationship: FamilyRelationship;
+};
+
+/** A customer household assigned to the advisor by the bank. */
+export type AdvisorCustomer = {
+  id: string;
+  name: string; // primary customer
+  household: HouseholdMember[];
+  segment: "Private Bank" | "Wealth Management" | "Preferred Banking";
+  relationshipValue: number;
+  accountCount: number;
+  lastContact: string; // ISO date
+  nextReview: string; // ISO date
+  lossEvents: LossEvent[];
+};
+
+export type AdvisorNotificationKind = "loss" | "review" | "deposit" | "document";
+
+export type AdvisorNotification = {
+  id: string;
+  kind: AdvisorNotificationKind;
+  customerId: string;
+  title: string;
+  /** One line shown while the notification is collapsed. */
+  summary: string;
+  body: string;
+  date: string; // ISO date
+  urgent: boolean;
+  /** Suggested next steps (shown for urgent notifications). */
+  steps?: string[];
+};

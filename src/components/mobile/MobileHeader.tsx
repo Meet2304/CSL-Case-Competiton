@@ -4,7 +4,8 @@ import { ArrowLeft, CircleHelp, ShoppingCart, UserCog } from "lucide-react";
 import { FacetBackdrop } from "@/components/brand/FacetBackdrop";
 import { routes } from "@/lib/routes";
 
-const iconButton =
+/** Round dark icon button used in the header toolbar. */
+export const iconButton =
   "grid size-9 place-items-center rounded-full bg-pnc-blue-950/70 text-white hover:bg-pnc-blue-950";
 
 /**
@@ -14,12 +15,15 @@ const iconButton =
 export function MobileHeader({
   title,
   backHref,
+  leading,
   right,
   children,
 }: {
   title?: ReactNode;
   /** Shows a back arrow instead of the profile/settings button. */
   backHref?: string;
+  /** Replaces the profile/settings button (e.g. a sign-off button). */
+  leading?: ReactNode;
   /** Extra content on the title row (e.g. the Reminders pill). */
   right?: ReactNode;
   children?: ReactNode;
@@ -33,6 +37,8 @@ export function MobileHeader({
             <Link href={backHref} aria-label="Back" className="grid size-9 place-items-center text-white">
               <ArrowLeft className="size-6" />
             </Link>
+          ) : leading ? (
+            leading
           ) : (
             <Link href={routes.more} aria-label="Profile and settings" className={iconButton}>
               <UserCog className="size-4.5" />

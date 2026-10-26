@@ -1,0 +1,148 @@
+/**
+ * MOCK DATA for the advisor (bank representative) experience. Every name,
+ * household and dollar figure is invented. Loss events recorded here drive
+ * the urgent notifications and the "needs attention" ordering of the
+ * customer table (see src/lib/advisor.ts) — add one to a customer to see it
+ * surface at the top.
+ */
+import type { Advisor, AdvisorCustomer, AdvisorNotification } from "./types";
+
+export const advisor: Advisor = {
+  firstName: "Alex",
+  lastName: "Example",
+  title: "Senior Wealth Advisor",
+  team: "PNC Private Bank · Pittsburgh",
+};
+
+type Seed = Omit<AdvisorCustomer, "lossEvents"> & Partial<Pick<AdvisorCustomer, "lossEvents">>;
+
+const seeds: Seed[] = [
+  {
+    id: "c-sample",
+    name: "Jordan Sample",
+    household: [{ name: "Casey Sample", relationship: "Spouse" }],
+    segment: "Preferred Banking",
+    relationshipValue: 49_092.3,
+    accountCount: 5,
+    lastContact: "2026-09-18",
+    nextReview: "2027-01-12",
+  },
+  {
+    id: "c-placeholder",
+    name: "Morgan Placeholder",
+    household: [
+      { name: "Riley Placeholder", relationship: "Spouse" },
+      { name: "Sam Placeholder", relationship: "Child" },
+    ],
+    segment: "Private Bank",
+    relationshipValue: 8_420_000,
+    accountCount: 9,
+    lastContact: "2026-08-30",
+    nextReview: "2026-11-04",
+    lossEvents: [
+      {
+        id: "l-1",
+        date: "2026-10-23",
+        relationship: "Spouse",
+        memberName: "Riley Placeholder",
+        reportedVia: "Phone call",
+        followUpComplete: false,
+      },
+    ],
+  },
+  {
+    id: "c-example",
+    name: "Avery Example",
+    household: [{ name: "Drew Example", relationship: "Parent" }],
+    segment: "Wealth Management",
+    relationshipValue: 2_315_400,
+    accountCount: 6,
+    lastContact: "2026-10-02",
+    nextReview: "2026-12-09",
+    lossEvents: [
+      {
+        id: "l-2",
+        date: "2026-10-19",
+        relationship: "Parent",
+        memberName: "Drew Example",
+        reportedVia: "Estate attorney",
+        followUpComplete: false,
+      },
+    ],
+  },
+  {
+    id: "c-demo",
+    name: "Riley Demo",
+    household: [{ name: "Parker Demo", relationship: "Spouse" }],
+    segment: "Private Bank",
+    relationshipValue: 12_780_000,
+    accountCount: 11,
+    lastContact: "2026-10-14",
+    nextReview: "2026-11-20",
+    lossEvents: [
+      // Handled earlier in the year — kept as history, no longer flagged.
+      {
+        id: "l-3",
+        date: "2026-03-08",
+        relationship: "Parent",
+        memberName: "Jamie Demo",
+        reportedVia: "Branch visit",
+        followUpComplete: true,
+      },
+    ],
+  },
+  { id: "c-mockford", name: "Casey Mockford", household: [{ name: "Jesse Mockford", relationship: "Spouse" }], segment: "Wealth Management", relationshipValue: 1_640_250, accountCount: 4, lastContact: "2026-10-09", nextReview: "2027-02-03" },
+  { id: "c-testwood", name: "Quinn Testwood", household: [], segment: "Preferred Banking", relationshipValue: 412_900, accountCount: 3, lastContact: "2026-07-22", nextReview: "2026-11-15" },
+  { id: "c-fictional", name: "Harper Fictional", household: [{ name: "Rowan Fictional", relationship: "Spouse" }, { name: "Ellis Fictional", relationship: "Child" }], segment: "Private Bank", relationshipValue: 6_905_000, accountCount: 8, lastContact: "2026-10-20", nextReview: "2027-01-28" },
+  { id: "c-sampleton", name: "Rowan Sampleton", household: [], segment: "Wealth Management", relationshipValue: 980_100, accountCount: 4, lastContact: "2026-06-11", nextReview: "2026-12-01" },
+  { id: "c-demoray", name: "Elliot Demoray", household: [{ name: "Shawn Demoray", relationship: "Sibling" }], segment: "Wealth Management", relationshipValue: 3_120_600, accountCount: 5, lastContact: "2026-09-29", nextReview: "2027-03-10" },
+  { id: "c-exampleton", name: "Sage Exampleton", household: [{ name: "Lane Exampleton", relationship: "Spouse" }], segment: "Private Bank", relationshipValue: 15_250_000, accountCount: 12, lastContact: "2026-10-21", nextReview: "2026-11-30" },
+  { id: "c-notreal", name: "Parker Notreal", household: [], segment: "Preferred Banking", relationshipValue: 275_480, accountCount: 2, lastContact: "2026-05-17", nextReview: "2026-11-18" },
+  { id: "c-mockwell", name: "Drew Mockwell", household: [{ name: "Kai Mockwell", relationship: "Spouse" }], segment: "Wealth Management", relationshipValue: 1_870_000, accountCount: 6, lastContact: "2026-08-08", nextReview: "2027-02-14" },
+  { id: "c-placeholt", name: "Finley Placeholt", household: [{ name: "Robin Placeholt", relationship: "Parent" }], segment: "Private Bank", relationshipValue: 4_560_000, accountCount: 7, lastContact: "2026-10-01", nextReview: "2027-01-05" },
+  { id: "c-samplewood", name: "Reese Samplewood", household: [], segment: "Preferred Banking", relationshipValue: 189_320, accountCount: 3, lastContact: "2026-09-03", nextReview: "2027-03-22" },
+  { id: "c-fauxley", name: "Blake Fauxley", household: [{ name: "Morgan Fauxley", relationship: "Spouse" }], segment: "Wealth Management", relationshipValue: 2_045_800, accountCount: 5, lastContact: "2026-10-16", nextReview: "2026-12-17" },
+  { id: "c-dummett", name: "Emerson Dummett", household: [{ name: "Taylor Dummett", relationship: "Child" }], segment: "Private Bank", relationshipValue: 9_310_000, accountCount: 10, lastContact: "2026-09-25", nextReview: "2026-11-24" },
+  { id: "c-pseudo", name: "Hayden Pseudo", household: [], segment: "Wealth Management", relationshipValue: 730_640, accountCount: 3, lastContact: "2026-07-30", nextReview: "2027-01-19" },
+  { id: "c-madeup", name: "Kendall Madeup", household: [{ name: "Avery Madeup", relationship: "Spouse" }], segment: "Preferred Banking", relationshipValue: 356_210, accountCount: 4, lastContact: "2026-10-11", nextReview: "2027-04-02" },
+  { id: "c-invented", name: "Logan Invented", household: [{ name: "Cameron Invented", relationship: "Spouse" }], segment: "Private Bank", relationshipValue: 7_740_000, accountCount: 9, lastContact: "2026-10-06", nextReview: "2026-12-12" },
+  { id: "c-standin", name: "Peyton Standin", household: [], segment: "Wealth Management", relationshipValue: 1_215_900, accountCount: 4, lastContact: "2026-08-19", nextReview: "2027-02-25" },
+  { id: "c-typical", name: "Skyler Typical", household: [{ name: "Jordan Typical", relationship: "Parent" }], segment: "Preferred Banking", relationshipValue: 98_450, accountCount: 2, lastContact: "2026-06-28", nextReview: "2026-11-09" },
+  { id: "c-template", name: "Dakota Template", household: [{ name: "Reese Template", relationship: "Spouse" }], segment: "Private Bank", relationshipValue: 5_480_000, accountCount: 8, lastContact: "2026-10-18", nextReview: "2027-01-22" },
+];
+
+export const advisorCustomers: AdvisorCustomer[] = seeds.map((s) => ({ lossEvents: [], ...s }));
+
+/** Routine (non-urgent) notifications. Loss notifications are derived from loss events. */
+export const routineNotifications: AdvisorNotification[] = [
+  {
+    id: "n-review-dummett",
+    kind: "review",
+    customerId: "c-dummett",
+    title: "Annual review coming up",
+    summary: "Emerson Dummett · portfolio review Nov 24",
+    body: "Emerson Dummett's annual portfolio review is scheduled for Nov. 24.",
+    date: "2026-10-24",
+    urgent: false,
+  },
+  {
+    id: "n-deposit-exampleton",
+    kind: "deposit",
+    customerId: "c-exampleton",
+    title: "Large deposit received",
+    summary: "Sage Exampleton · $1.2M into Checking x0041",
+    body: "Sage Exampleton deposited $1,200,000.00 into Private Bank Checking x0041.",
+    date: "2026-10-22",
+    urgent: false,
+  },
+  {
+    id: "n-document-fictional",
+    kind: "document",
+    customerId: "c-fictional",
+    title: "Documents signed",
+    summary: "Harper Fictional · trust account agreement",
+    body: "Harper Fictional e-signed the updated trust account agreement.",
+    date: "2026-10-20",
+    urgent: false,
+  },
+];

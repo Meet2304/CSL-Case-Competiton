@@ -35,16 +35,43 @@ phone user-agent) and reload. For demos/recordings you can also pin a view with
 `?view=mobile` or `?view=web` on any URL (stored in a cookie; `?view=auto` clears
 it). A pinned mobile view on a wide screen is shown inside an iPhone frame.
 
+## Roles — customer vs. advisor
+
+Sign-on decides the experience. Demo User IDs (any password; defined in
+`src/data/users.ts`):
+
+| User ID | Role | Lands on | Navigation |
+| --- | --- | --- | --- |
+| `customer` | Customer (Jordan Sample; spouse Casey) | `/accounts` — the banking dashboard | Accounts, Pay & Transfer, Cards, Rewards, Help (web) / 5 tabs (mobile) |
+| `advisor` | Bank representative (Alex Example, Senior Wealth Advisor) | `/advisor` — Notifications + paginated Your Customers | Home only (for now) |
+
+The role is stored in a demo session cookie by the `signIn` Server Action
+(`src/lib/auth.ts`). `src/proxy.ts` then keeps each role on its own pages:
+signed-out visitors only see sign-on, advisors only see `/advisor`, customers
+never see `/advisor`. Sign off via the profile icon (web), the header button
+(mobile advisor) or More → Sign Off (mobile customer).
+
+**Loss of a family member.** Customers in `src/data/advisor.ts` carry
+`lossEvents`. Any event with `followUpComplete: false` automatically creates
+an urgent "Loss of a family member" notification with next steps and moves
+that customer to the top of the advisor's table with a needs-attention icon
+(`src/lib/advisor.ts`). Add a loss event to any customer to see it surface.
+
 ## Structure
 
 ```
 src/
   app/
-    web/              internal: laptop view. page.tsx = sign-on; (signed-in)/ adds nav + footer
-    mobile/           internal: phone view. page.tsx = sign-on; (tabs)/ adds bottom tab bar
+    web/              internal: laptop view. page.tsx = sign-on
+      (signed-in)/    customer pages (customer nav + footer)
+      advisor/        advisor pages (advisor nav + footer)
+    mobile/           internal: phone view. page.tsx = sign-on
+      (tabs)/         customer screens (5-tab bar)
+      advisor/        advisor screens (Home-only tab bar)
   proxy.ts            device detection -> rewrites public URLs into web/ or mobile/
   components/
     brand/            PncLogo, FacetBackdrop (the blue triangle pattern)
+    advisor/          CustomerTable (web), CustomerList (mobile), NotificationList, Pagination
     mock/             MockBadge
     ui/               Money, IconChip, Toggle, CardArt (shared by both views)
     shared/           catalog.ts (Pay & Transfer options), CardLockRow
@@ -52,9 +79,14 @@ src/
     mobile/           PhoneFrame, MobileHeader, MobileCard rows, BottomTabBar, ...
   data/
     types.ts          data shapes
-    mock.ts           ALL mock data (single source)
+    mock.ts           customer mock data
+    advisor.ts        advisor profile, assigned customers, loss events, notifications
+    users.ts          demo sign-on User IDs and roles
   lib/format.ts       money/date formatting, cn()
   lib/routes.ts       public URL map + toPublicPath()
+  lib/session.ts      session cookie + role helpers (shared by proxy and actions)
+  lib/auth.ts         signIn / signOff Server Actions
+  lib/advisor.ts      attention sorting + notification building
 ```
 
 See `AGENTS.md` for the conventions to follow when extending the app.

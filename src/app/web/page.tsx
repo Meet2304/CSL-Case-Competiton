@@ -18,8 +18,8 @@ export default function WebLoginPage() {
             Online Banking
           </h1>
           <p className="mt-4 max-w-md text-white/85">
-            Sign on to view your accounts, pay bills, and move money. This prototype accepts any
-            credentials — no data is sent anywhere.
+            Customers sign on to view accounts, pay bills, and move money. Advisors sign on to
+            see the customers assigned to them. Demo prototype — any password works.
           </p>
         </div>
         <WebSignOnForm />
