@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+/*
+ * PNC-inspired design tokens.
+ * Every color used in the app should come from this list so the web and
+ * mobile views stay in one design language. Use them as Tailwind classes,
+ * e.g. `bg-pnc-blue-700`, `text-pnc-orange`, `border-pnc-line`.
+ */
+@theme {
+  --color-pnc-navy: #0b2340; /* web top nav */
+  --color-pnc-blue-950: #062a5c;
+  --color-pnc-blue-900: #083b80; /* hero gradient end, tab bar */
+  --color-pnc-blue-800: #0a4a9c; /* mobile header, tab bar */
+  --color-pnc-blue-700: #0b59b8; /* hero gradient start */
+  --color-pnc-blue-600: #0f6bd0;
+  --color-pnc-link: #0f62c2; /* account names, text links */
+  --color-pnc-blue-50: #e9f1fb; /* icon chips */
+  --color-pnc-orange: #ef6a00; /* brand accent, active nav underline */
+  --color-pnc-orange-600: #d65f00;
+  --color-pnc-ink: #1d2733; /* primary text */
+  --color-pnc-muted: #5b6573; /* secondary text */
+  --color-pnc-line: #e3e6ea; /* dividers */
+  --color-pnc-surface: #f3f4f6; /* page background */
+  --color-pnc-chip: #eef0f3; /* round icon backgrounds */
+  --color-pnc-negative: #c8102e; /* negative balances */
+  --color-pnc-positive: #1f7a3a;
+  --color-pnc-toggle: #34c759;
+  --color-pnc-badge: #d0021b; /* notification count */
+  --color-mock: #8a5a00; /* mock-data labelling */
+  --color-mock-bg: #fff4d6;
+  --color-mock-line: #f0c75e;
+
+  --font-sans: var(--font-open-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-montserrat), var(--font-open-sans), sans-serif;
+
+  --shadow-card: 0 1px 2px rgb(16 24 40 / 0.06), 0 1px 3px rgb(16 24 40 / 0.08);
+  --shadow-raised: 0 6px 18px rgb(16 24 40 / 0.12);
+}
+
+body {
+  background: var(--color-pnc-surface);
+  color: var(--color-pnc-ink);
+}
+
+/* Hide scrollbars inside the simulated phone and horizontal carousels. */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
