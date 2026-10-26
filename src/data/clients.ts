@@ -121,7 +121,8 @@ const handWritten: ClientProfile[] = [
         value: 1_385_000,
         ownership: "Individual",
         owners: ["Riley Placeholder"],
-        beneficiaries: ["Morgan Placeholder", "Sam Placeholder"],
+        beneficiaries: ["Morgan Placeholder"],
+        contingentBeneficiaries: ["Sam Placeholder"],
       },
       {
         id: "h-pl-roth",
