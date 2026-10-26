@@ -24,6 +24,7 @@
   --color-pnc-chip: #eef0f3; /* round icon backgrounds */
   --color-pnc-negative: #c8102e; /* negative balances */
   --color-pnc-positive: #1f7a3a;
+  --color-pnc-positive-bg: #e7f4ec;
   --color-pnc-toggle: #34c759;
   --color-pnc-badge: #d0021b; /* notification count */
   --color-attention: #b42318; /* advisor: customer needs attention (e.g. a loss) */

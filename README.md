@@ -57,6 +57,32 @@ an urgent "Loss of a family member" notification with next steps and moves
 that customer to the top of the advisor's table with a needs-attention icon
 (`src/lib/advisor.ts`). Add a loss event to any customer to see it surface.
 
+## Family dashboard (customer) — `/family`
+
+Laptop: **Family** in the top nav. Phone: **More → Family Dashboard**. The
+signed-in customer (Jordan) is an admin of the *Sample Family*.
+
+- **Role-based access.** The built-in **Admin** role (more than one allowed)
+  can add members, add assets and manage access. Admins create member roles
+  (e.g. Adult child, Teen, Trusted advisor) in a segmented access editor:
+  per asset, **Visibility** (view balance, view activity) and **Control**
+  (transact, manage), plus a Full column. Any permission implies view balance.
+  The last living admin can't be demoted or removed, and you can't remove your
+  own admin access.
+- **Access limits are confidential to admins.** A non-admin member only sees
+  the assets shared with them and the actions they can take — nothing tells
+  them an asset or action is hidden. Admins check this with **Preview as**
+  (Overview tab), which renders that exact member view.
+- **Assets** are grouped into 13 categories (Joint checking/savings, Real
+  Estate, Brokerage account, 401(k) / IRA, Life insurance, Social Security,
+  Pension, Employer benefits, Vehicles, Digital assets, Business interests,
+  Debts, IP). *Add asset* asks only for name, category, value, optional last 4
+  and owners.
+- The legal-process model (how each asset passes on death and its steps) is
+  kept in `src/data/family.ts` / `src/lib/family.ts` but is not shown in the UI.
+- Changes are saved in the browser (`localStorage`); **Reset demo** restores
+  the seed data in `src/data/family.ts`.
+
 ## Structure
 
 ```
@@ -72,6 +98,9 @@ src/
   components/
     brand/            PncLogo, FacetBackdrop (the blue triangle pattern)
     advisor/          CustomerTable (web), CustomerList (mobile), NotificationList, Pagination
+    family/           FamilyProvider (state + persistence), FamilyDashboard (tabs) and its
+                      Overview / Members / Roles (RoleEditor, AccessMatrix) panels and
+                      MemberFamilyView (what non-admins see)
     mock/             MockBadge
     ui/               Money, IconChip, Toggle, CardArt (shared by both views)
     shared/           catalog.ts (Pay & Transfer options), CardLockRow
@@ -82,11 +111,13 @@ src/
     mock.ts           customer mock data
     advisor.ts        advisor profile, assigned customers, loss events, notifications
     users.ts          demo sign-on User IDs and roles
+    family.ts         family seed data + legal steps and timelines per succession method
   lib/format.ts       money/date formatting, cn()
   lib/routes.ts       public URL map + toPublicPath()
   lib/session.ts      session cookie + role helpers (shared by proxy and actions)
   lib/auth.ts         signIn / signOff Server Actions
   lib/advisor.ts      attention sorting + notification building
+  lib/family.ts       family access rules, succession rules and the state reducer
 ```
 
 See `AGENTS.md` for the conventions to follow when extending the app.

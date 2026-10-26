@@ -52,5 +52,15 @@ and mobile views stay in one design language.
 - **Advisor attention logic** lives in `src/lib/advisor.ts`; drive UI from
   `openLoss` / `needsAttention` / `sortByAttention` / `buildNotifications` rather
   than re-implementing the rules in components.
+- **Family dashboard rules live in `src/lib/family.ts`** (`effectiveAccess`,
+  `isLocked`, `successorsFor`, `familyReducer`). Components read state through
+  `useFamily()` and change it only via `dispatch` actions; add a reducer action
+  rather than mutating state in a component. Seed data and per-method legal
+  steps are in `src/data/family.ts`. The dashboard adapts with container queries
+  (`@container` / `@2xl:`), so it works inside the phone frame as well.
+- **Never reveal access limits to non-admins.** Member-facing UI (`MemberFamilyView`)
+  renders only what the member can see and the actions they can take: no "view
+  only" labels, disabled/locked controls, hidden-asset counts, or other members'
+  roles. Explanations of limits belong only in admin UI.
 - Before finishing: `npm run typecheck`, `npm run lint` and `npm run build` must pass
   (the same checks run in GitHub Actions CI on every PR — `.github/workflows/ci.yml`).

@@ -26,6 +26,7 @@ const navByRole: Record<Role, NavItem[]> = {
     { label: "Pay & Transfer", href: routes.payTransfer, menu: payTransferLinks },
     { label: "Cards", href: routes.cards },
     { label: "Rewards", href: routes.rewards },
+    { label: "Family", href: routes.family },
     { label: "Help", href: routes.help },
   ],
   // Advisors only have the home dashboard for now; add sections here.
