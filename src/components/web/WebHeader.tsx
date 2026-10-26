@@ -30,8 +30,10 @@ const navByRole: Record<Role, NavItem[]> = {
     { label: "Family", href: routes.family },
     { label: "Help", href: routes.help },
   ],
-  // Advisors only have the home dashboard for now; add sections here.
-  advisor: [{ label: "Home", href: routes.advisor }],
+  advisor: [
+    { label: "Home", href: routes.advisor },
+    { label: "Rulebook", href: routes.advisorRules },
+  ],
 };
 
 export function WebHeader({ variant = "customer" }: { variant?: Role }) {
@@ -47,6 +49,11 @@ export function WebHeader({ variant = "customer" }: { variant?: Role }) {
       : navByRole[variant];
   const home = navItems[0].href;
   const pathname = toPublicPath(usePathname());
+  // The longest matching entry wins, so /advisor/rules lights up Rulebook, not Home.
+  const activeHref = navItems
+    .map((i) => i.href)
+    .filter((h) => pathname === h || pathname.startsWith(`${h}/`))
+    .sort((a, b) => b.length - a.length)[0];
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const navRef = useRef<HTMLElement>(null);
 
@@ -71,7 +78,7 @@ export function WebHeader({ variant = "customer" }: { variant?: Role }) {
           className="order-last -mx-3 flex h-11 w-full items-stretch md:order-none md:mx-0 md:ml-auto md:h-full md:w-auto"
         >
           {navItems.map((item) => {
-            const active = pathname.startsWith(item.href);
+            const active = item.href === activeHref;
             const isOpen = openMenu === item.label;
             const itemClass = cn(
               "relative flex items-center gap-1 whitespace-nowrap px-2 text-[13px] font-semibold text-white/90 hover:text-white sm:px-4 sm:text-sm",

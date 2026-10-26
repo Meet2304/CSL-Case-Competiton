@@ -7,6 +7,7 @@ import { MOCK_AS_OF } from "@/data/mock";
 import type { LossEvent } from "@/data/types";
 import { customerDirectory } from "@/lib/advisor";
 import { bereavementActions, type RecordedLoss } from "@/lib/bereavement";
+import { reviewActions, useReviews } from "@/lib/settlement/reviews";
 import { useAdvisorBook } from "./useAdvisorBook";
 
 const reportedOptions: LossEvent["reportedVia"][] = [
@@ -29,6 +30,7 @@ const label = "block text-xs font-semibold text-pnc-ink";
  */
 export function RecordPassingPanel({ className }: { className?: string }) {
   const { recorded } = useAdvisorBook();
+  const reviews = useReviews();
   const id = useId();
   const [open, setOpen] = useState(false);
   const [personName, setPersonName] = useState(
@@ -64,10 +66,13 @@ export function RecordPassingPanel({ className }: { className?: string }) {
         >
           <FilePlus2 className="size-4" aria-hidden="true" /> Record a death notice
         </button>
-        {recorded.length > 0 && (
+        {(recorded.length > 0 || Object.keys(reviews).length > 0) && (
           <button
             type="button"
-            onClick={bereavementActions.reset}
+            onClick={() => {
+              bereavementActions.reset();
+              reviewActions.reset();
+            }}
             className="inline-flex items-center gap-1 text-xs font-semibold text-pnc-muted hover:text-pnc-link"
           >
             <RotateCcw className="size-3.5" aria-hidden="true" /> Reset demo

@@ -74,5 +74,11 @@ and mobile views stay in one design language.
   loss must stay gentle: condolence first, no pressure, nothing urgent today.
 - **Formatting:** Prettier (`.prettierrc.json`, print width 100). Run `npm run format`
   before committing.
-- Before finishing: `npm run format:check`, `npm run typecheck`, `npm run lint` and `npm run build` must pass
+- **Settlement rules** live in `src/data/settlement` (rulebook data, every rule cites a source
+  in `sources.ts`) and `src/lib/settlement` (pure engine). Never hard-code legal rules, dates or
+  thresholds in components or in `assistant.ts` — add a node, overlay or household rule with a
+  source and a test. Label engine output with `AssistantMark` and show `SourceChip`s. New
+  sources without `verifiedOn` must be added to the pinned unverified list in
+  `rulebook.test.ts` on purpose. `npm test` must pass.
+- Before finishing: `npm run format:check`, `npm run typecheck`, `npm run lint`, `npm test` and `npm run build` must pass
   (the same checks run in GitHub Actions CI on every PR — `.github/workflows/ci.yml`).

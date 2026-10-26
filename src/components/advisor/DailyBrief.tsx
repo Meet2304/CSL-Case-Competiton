@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
-import { ArrowRight, CalendarClock, HeartCrack, Landmark, type LucideIcon } from "lucide-react";
+import {
+  ArrowRight,
+  CalendarClock,
+  HeartCrack,
+  Landmark,
+  ShieldAlert,
+  type LucideIcon,
+} from "lucide-react";
 import { AssistantPanel } from "@/components/advisor/assistant/parts";
 import { profileFor } from "@/data/clients";
 import { MOCK_AS_OF } from "@/data/mock";
@@ -15,6 +22,7 @@ const kinds: Record<BriefItem["kind"], { icon: LucideIcon; tab: string; tone: st
   loss: { icon: HeartCrack, tab: "loss", tone: "text-attention" },
   review: { icon: CalendarClock, tab: "engagement", tone: "text-pnc-blue-700" },
   cash: { icon: Landmark, tab: "assets", tone: "text-pnc-blue-700" },
+  readiness: { icon: ShieldAlert, tab: "transition", tone: "text-pnc-orange-600" },
 };
 
 /** Dashboard context: who needs the advisor today, and why, across the whole book. */

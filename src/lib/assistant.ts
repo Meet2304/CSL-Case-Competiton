@@ -5,11 +5,19 @@
  * data it cites in `basedOn` / `sources`. Pure functions only; UI lives in
  * components/advisor/.
  *
+ * Legal routes, deadlines and citations come from the settlement rules engine
+ * (src/lib/settlement); this file only writes the words around them.
+ *
  * Guidance is general US practice for a prototype, not tax or legal advice.
  */
+import { rulebook } from "@/data/settlement";
 import type { AdvisorCustomer, ClientMember, ClientProfile, Holding } from "@/data/types";
 import { lossContact, openLoss } from "@/lib/advisor";
 import { daysBetween, formatCompactMoney, formatDate } from "@/lib/format";
+import { settlementInputFromFacts } from "@/lib/settlement/adapters";
+import { addDays } from "@/lib/settlement/dates";
+import { settlementPlan, type SettlementPlan } from "@/lib/settlement/engine";
+import { readinessReport, type ReadinessReport } from "@/lib/settlement/simulate";
 
 // ---------------------------------------------------------------------------
 // Facts about a client, shared by every assistant feature.
@@ -90,6 +98,36 @@ export function factsFor(c: AdvisorCustomer, profile: ClientProfile, today: stri
   };
 }
 
+const plans = new WeakMap<ClientFacts, SettlementPlan | undefined>();
+
+/** The settlement rulebook's plan for the client's open loss (cached per facts object). */
+export function lossPlan(f: ClientFacts): SettlementPlan | undefined {
+  if (!plans.has(f)) {
+    const input = settlementInputFromFacts(f);
+    plans.set(f, input ? settlementPlan(input) : undefined);
+  }
+  return plans.get(f);
+}
+
+/** Source ids behind the plan's outcomes for these holdings, deduped. */
+function rulesFor(plan: SettlementPlan | undefined, holdingIds: string[]): string[] {
+  if (!plan) return [];
+  const ids = plan.accounts
+    .filter((a) => holdingIds.includes(a.holding.id))
+    .flatMap((a) => a.sources);
+  return ids.filter((x, i) => ids.indexOf(x) === i);
+}
+
+const citation = (id: string) => rulebook.sources[id]?.citation ?? id;
+
+/** "…if not, the beneficiary can take it by their tax-filing deadline or, at the latest, Dec 31, 2027." */
+function yodRmdSentence(plan: SettlementPlan | undefined, d: string, year: string) {
+  const due = plan?.deadlines.find((x) => x.action.id === "yod-rmd")?.due;
+  return due
+    ? `Confirm whether ${d}'s ${year} RMD was taken; if not, the beneficiary can take it by their tax-filing deadline or, at the latest, ${formatDate(due, "medium")}.`
+    : "";
+}
+
 // ---------------------------------------------------------------------------
 // Asset recommendations.
 
@@ -113,6 +151,8 @@ export type Recommendation = {
   actions: string[];
   /** The facts the assistant used, shown as "Based on". */
   basedOn: string[];
+  /** Settlement rulebook source ids behind the legal parts of this recommendation. */
+  sources?: string[];
 };
 
 const priorityOrder: RecPriority[] = ["Now", "This month", "This quarter"];
@@ -121,6 +161,7 @@ export function assetRecommendations(f: ClientFacts): Recommendation[] {
   const { c, p, deceased, loss, first } = f;
   const recs: Recommendation[] = [];
   const { self } = f;
+  const plan = lossPlan(f);
 
   if (loss && deceased) {
     const d = firstName(deceased.name);
@@ -159,6 +200,10 @@ export function assetRecommendations(f: ClientFacts): Recommendation[] {
           "Keep account numbers the same where possible so autopays don't break",
         ],
         basedOn: joint.map((h) => `${label(h)} · joint with ${d} · ${money(h.value)}`),
+        sources: rulesFor(
+          plan,
+          joint.map((h) => h.id),
+        ),
       });
     }
 
@@ -185,6 +230,7 @@ export function assetRecommendations(f: ClientFacts): Recommendation[] {
         basedOn: [
           `${label(h)} · ${money(h.value)} · beneficiaries: ${h.beneficiaries!.join(", ")}`,
         ],
+        sources: rulesFor(plan, [h.id]),
       });
     }
 
@@ -206,19 +252,24 @@ export function assetRecommendations(f: ClientFacts): Recommendation[] {
                   : `As the surviving spouse, ${first} can roll it into their own IRA (simplest, and required withdrawals follow ${first}'s age) or keep it as an inherited IRA. There's no deadline pressure for this decision.`,
               actions: [
                 "Compare rollover vs inherited IRA with projected required withdrawals",
-                ...(bens[1] ? [`Note ${firstName(bens[1])} is the contingent beneficiary`] : []),
+                ...(h.contingentBeneficiaries?.[0]
+                  ? [
+                      `Note ${firstName(h.contingentBeneficiaries[0])} is the contingent beneficiary`,
+                    ]
+                  : []),
               ],
               basedOn: [
-                `${label(h)} · ${money(h.value)} · beneficiaries: ${bens.join(", ")}`,
+                `${label(h)} · ${money(h.value)} · beneficiaries: ${bens.join(", ")}${h.contingentBeneficiaries?.length ? ` (contingent: ${h.contingentBeneficiaries.join(", ")})` : ""}`,
                 `${first} is ${f.selfAge}`,
               ],
+              sources: rulesFor(plan, [h.id]),
             }
           : {
               id: `ira-${h.id}`,
               title: `Set up inherited IRA${bens.length > 1 ? "s" : ""} from ${label(h)}`,
               priority: "This month",
               category: "Retirement",
-              rationale: `${first} is a non-spouse beneficiary, so the account generally must be emptied within 10 years. ${(deceased.age ?? 0) >= 73 ? `${d} was ${deceased.age} and had likely begun required withdrawals, so annual withdrawals probably continue — and any ${f.today.slice(0, 4)} withdrawal ${d} hadn't taken is due by Dec 31.` : ""} ${bens.length > 1 ? `With ${bens.length} beneficiaries, split it into separate inherited IRAs by Dec 31 of next year.` : ""}`,
+              rationale: `${first} is a non-spouse beneficiary, so the account generally must be emptied within 10 years. ${plan?.accounts.find((a) => a.holding.id === h.id)?.overlays.some((o) => o.id === "ov.annual-rmds") ? `${d} was ${deceased.age} and had likely begun required withdrawals, so annual withdrawals probably continue.` : ""} ${h.type === "Roth IRA" ? "" : yodRmdSentence(plan, d, loss.date.slice(0, 4))} ${bens.length > 1 ? `With ${bens.length} beneficiaries, split it into separate inherited IRAs by ${formatDate(plan?.deadlines.find((x) => x.action.id === "separate-accounts")?.due ?? `${Number(loss.date.slice(0, 4)) + 1}-12-31`, "medium")}.` : ""}`,
               actions: [
                 "Open an inherited IRA for each beneficiary",
                 "Plan withdrawals across the 10 years to smooth the tax bill",
@@ -227,6 +278,7 @@ export function assetRecommendations(f: ClientFacts): Recommendation[] {
                 `${label(h)} · ${money(h.value)} · beneficiaries: ${bens.join(", ")}`,
                 `${d} was ${deceased.age}`,
               ],
+              sources: rulesFor(plan, [h.id]),
             },
       );
     }
@@ -254,6 +306,10 @@ export function assetRecommendations(f: ClientFacts): Recommendation[] {
           ...(f.attorney ? [`Coordinate with ${f.attorney.name}`] : []),
         ],
         basedOn: probate.map((h) => `${label(h)} · ${money(h.value)} · no beneficiary`),
+        sources: rulesFor(
+          plan,
+          probate.map((h) => h.id),
+        ),
       });
     }
 
@@ -270,6 +326,7 @@ export function assetRecommendations(f: ClientFacts): Recommendation[] {
           "Review the trust's first-death provisions with the attorney",
         ],
         basedOn: [`${label(trust)} · ${money(trust.value)} · trustees: ${trust.owners.join(", ")}`],
+        sources: rulesFor(plan, [trust.id]),
       });
     }
 
@@ -283,6 +340,7 @@ export function assetRecommendations(f: ClientFacts): Recommendation[] {
         rationale: `${d} owned it for ${list(plan529.beneficiaries ?? [])}. Without a successor owner, the plan may need court approval to keep it in the family.`,
         actions: [`Make ${first} the owner`, "Name a successor owner this time"],
         basedOn: [`${label(plan529)} · ${money(plan529.value)}`],
+        sources: rulesFor(plan, [plan529.id]),
       });
     }
 
@@ -299,6 +357,7 @@ export function assetRecommendations(f: ClientFacts): Recommendation[] {
           "Plan to hold proceeds in the money market for now",
         ],
         basedOn: [`${label(life)} · held outside PNC`],
+        sources: rulesFor(plan, [life.id]),
       });
     }
 
@@ -312,6 +371,7 @@ export function assetRecommendations(f: ClientFacts): Recommendation[] {
         rationale: `It's an individual card, so the balance is settled by the estate — ${first} isn't personally responsible. Stop autopays first.`,
         actions: ["Close the card to new charges", "Send the final statement to the executor"],
         basedOn: [`${label(card)} · balance ${money(card.value)}`],
+        sources: rulesFor(plan, [card.id]),
       });
     }
   }
@@ -345,6 +405,10 @@ export function assetRecommendations(f: ClientFacts): Recommendation[] {
           : []),
       ],
       basedOn: stale.map((h) => `${label(h)} · beneficiary: ${h.beneficiaries!.join(", ")}`),
+      sources: rulesFor(
+        plan,
+        stale.map((h) => h.id),
+      ),
     });
   }
 
@@ -450,7 +514,9 @@ export function lossBriefing(f: ClientFacts): LossBriefing | undefined {
 
   // Everyone with a stake in the deceased's assets, other than the client.
   const heirNames = new Set<string>();
-  for (const h of f.deceasedHoldings) for (const b of h.beneficiaries ?? []) heirNames.add(b);
+  for (const h of f.deceasedHoldings)
+    for (const b of [...(h.beneficiaries ?? []), ...(h.contingentBeneficiaries ?? [])])
+      heirNames.add(b);
   for (const m of p.members)
     if (m.roles.some((r) => /heir|beneficiar/i.test(r))) heirNames.add(m.name);
   if (isSpouse)
@@ -465,10 +531,10 @@ export function lossBriefing(f: ClientFacts): LossBriefing | undefined {
       const stake = [
         ...f.deceasedHoldings
           .filter((h) => h.beneficiaries?.includes(m.name))
-          .map(
-            (h) =>
-              `${h.beneficiaries![0] === m.name ? "Beneficiary" : "Contingent beneficiary"} of ${label(h)}`,
-          ),
+          .map((h) => `Beneficiary of ${label(h)}`),
+        ...f.deceasedHoldings
+          .filter((h) => h.contingentBeneficiaries?.includes(m.name))
+          .map((h) => `Contingent beneficiary of ${label(h)}`),
         ...m.roles,
       ].filter((v, i, a) => a.indexOf(v) === i);
       const minor = (m.age ?? 99) < 18;
@@ -522,11 +588,9 @@ export function lossBriefing(f: ClientFacts): LossBriefing | undefined {
     personalized.push(
       `The first holidays come within weeks. Avoid scheduling paperwork the week of Thanksgiving and check in before December.`,
     );
-  if ((deceased.age ?? 0) >= 73 && f.deceasedHoldings.some(isRetirement)) {
-    personalized.push(
-      `${d} was ${deceased.age}; confirm whether this year's required IRA withdrawal was taken — if not, it's due by Dec 31.`,
-    );
-  }
+  const rmd = yodRmdSentence(lossPlan(f), d, loss.date.slice(0, 4));
+  if (rmd)
+    personalized.push(`${deceased.age !== undefined ? `${d} was ${deceased.age}. ` : ""}${rmd}`);
 
   return {
     headline: `${deceased.name} died ${f.daysSinceLoss === 0 ? "today" : `${f.daysSinceLoss} days ago`}`,
@@ -633,19 +697,199 @@ export function lossBriefing(f: ClientFacts): LossBriefing | undefined {
 // ---------------------------------------------------------------------------
 // Ask the assistant about a client.
 
-export type Answer = { paragraphs: string[]; sources: string[]; followUps: string[] };
+export type Answer = {
+  paragraphs: string[];
+  /** The client data the answer used. */
+  sources: string[];
+  followUps: string[];
+  /** Settlement rulebook source ids (the law behind the answer), shown as citations. */
+  rules?: string[];
+  /** The answer came from the settlement rulebook. */
+  usedRulebook?: boolean;
+};
 
 export function suggestedQuestions(f: ClientFacts): string[] {
   const qs = [`Summarize ${f.first} for me`];
   if (f.loss)
     qs.push(
       `How should I approach ${f.first} right now?`,
+      "What are the key deadlines?",
       `Who inherits from ${firstName(f.deceased?.name ?? "")}?`,
     );
   qs.push("Which beneficiary designations need attention?");
   if (f.pnc.some(isRetirement)) qs.push("What should happen with the retirement accounts?");
   qs.push("How much cash do they have available?", "When did we last talk, and what's next?");
-  return qs.slice(0, 6);
+  // Always offer the what-if, replacing the lowest-priority questions if needed.
+  return [...qs.slice(0, 5), `What if ${f.first} died today?`];
+}
+
+const uniqIds = (ids: string[]) => ids.filter((x, i) => ids.indexOf(x) === i);
+
+/** Readiness reports for everyone worth simulating in this household. */
+function readinessFor(f: ClientFacts): ReadinessReport[] {
+  return f.p.members
+    .filter(
+      (m) =>
+        m.status === "Living" &&
+        m.relationship !== "Attorney" &&
+        m.relationship !== "Sibling-in-law" &&
+        f.pnc.some((h) => h.owners.includes(m.name)),
+    )
+    .map((m) => readinessReport(f.c, f.p, m.name, f.today));
+}
+
+/** Who can answer an open question the rulebook raised. */
+function whoKnows(key: string, f: ClientFacts): string {
+  if (key.includes("reclamation")) return "Operations, from the account's deposit history";
+  if (key.includes("yod-rmd")) return `${f.first} or the prior year's IRA statements`;
+  if (key.includes("disability")) return "the beneficiaries, through the attorney";
+  if (key.includes("successor-trustee")) return "the trust document and the estate attorney";
+  if (key.includes("successor-owner")) return "the 529 plan's records";
+  return f.attorney?.name ?? "the estate attorney";
+}
+
+/** Answers that come from the settlement rulebook, or undefined to fall through. */
+function rulebookAnswer(f: ClientFacts, question: string): Answer | undefined {
+  const q = question.toLowerCase();
+  const { first } = f;
+  const plan = lossPlan(f);
+  const self = () => readinessReport(f.c, f.p, f.self, f.today);
+  const plans = () => [...(plan ? [plan] : []), ...readinessFor(f).map((r) => r.plan)];
+
+  // An open question raised by the plan ("Ask" in the Transition plan).
+  for (const p of plans()) {
+    const open = p.openQuestions.find((x) => x.question.toLowerCase() === q.trim());
+    if (open)
+      return {
+        paragraphs: [
+          `I don't have that in ${first}'s records. Confirm it with ${whoKnows(open.key, f)}; until then the plan assumes the cautious option.`,
+        ],
+        sources: ["Settlement plan: open questions"],
+        followUps: ["What are the key deadlines?", `What if ${first} died today?`],
+        usedRulebook: true,
+      };
+  }
+
+  // "Why: <finding title>?" from the what-if's "Ask about this".
+  const why = question.match(/^why:\s*(.+?)\??$/i);
+  if (why) {
+    for (const r of readinessFor(f)) {
+      const finding = r.findings.find((x) => x.title.toLowerCase() === why[1].trim().toLowerCase());
+      if (finding)
+        return {
+          paragraphs: [
+            `If ${firstName(r.person)} died today: ${finding.detail}`,
+            `Fix: ${finding.fix}.`,
+          ],
+          sources: [`What-if for ${r.person}`],
+          rules: finding.sources,
+          followUps: [
+            "Which beneficiary designations need attention?",
+            "Draft an outreach message",
+          ],
+          usedRulebook: true,
+        };
+    }
+  }
+
+  if (/deadline|key date|due date|when (is|are).*(due|file)/.test(q)) {
+    if (!plan)
+      return {
+        paragraphs: [
+          `There's no loss on file for ${first}, so no settlement dates are running. Ask "What if ${first} died today?" to see the dates a death would start.`,
+        ],
+        sources: [],
+        followUps: [`What if ${first} died today?`],
+        usedRulebook: true,
+      };
+    const upcoming = plan.deadlines.filter((d) => d.due! >= f.today).slice(0, 8);
+    return {
+      paragraphs: [
+        `Counted from ${firstName(plan.deceased.name)}'s date of death, ${formatDate(plan.deceased.dateOfDeath, "medium")}:`,
+        ...upcoming.map(
+          (d) =>
+            `${formatDate(d.due!, "medium")} — ${d.action.deadline!.label} (${d.action.deadline!.kind === "statutory" ? "set by law" : d.action.deadline!.kind}).`,
+        ),
+      ],
+      sources: [`Settlement rulebook v${plan.rulebookVersion}`],
+      rules: uniqIds(upcoming.flatMap((d) => d.action.sources)),
+      followUps: ["Why does anything go to probate?", "Which rules does this rely on?"],
+      usedRulebook: true,
+    };
+  }
+
+  if (/why.*probate|go(es)? (to|through) probate|what goes to probate/.test(q)) {
+    const p = plan ?? self().plan;
+    const probate = p.accounts.filter((a) => a.outcome.probate);
+    return {
+      paragraphs: probate.length
+        ? [
+            `${plan ? "" : `If ${first} died today: `}${money(p.totals.probate)} goes through probate.`,
+            ...probate.map(
+              (a) =>
+                `${label(a.holding)}: ${a.trace.map((t) => t.answer.toLowerCase()).join(" → ")} → ${a.title.toLowerCase()}.`,
+            ),
+          ]
+        : [
+            `Nothing goes through probate at PNC${plan ? "" : ` if ${first} died today`}. ${money(p.totals.outsideProbate)} passes outside probate, ${money(p.totals.uninterrupted)} of it with no paperwork.`,
+          ],
+      sources: [`Settlement rulebook v${p.rulebookVersion}`],
+      rules: uniqIds(probate.flatMap((a) => a.sources)),
+      followUps: ["What are the key deadlines?", "Which rules does this rely on?"],
+      usedRulebook: true,
+    };
+  }
+
+  if (/(?<!-)\blaw\b|statute|regulation|legal basis|cite|which rule/.test(q)) {
+    const p = plan ?? self().plan;
+    const counts = new Map<string, number>();
+    for (const a of p.accounts) for (const s of a.sources) counts.set(s, (counts.get(s) ?? 0) + 1);
+    for (const h of p.household)
+      for (const s of h.rule.sources) counts.set(s, (counts.get(s) ?? 0) + 1);
+    const top = [...counts]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6)
+      .map(([id]) => id);
+    return {
+      paragraphs: top.map((id) => `${citation(id)} — ${rulebook.sources[id].summary}`),
+      sources: [`Settlement rulebook v${p.rulebookVersion}`],
+      rules: top,
+      followUps: ["What are the key deadlines?", "Why does anything go to probate?"],
+      usedRulebook: true,
+    };
+  }
+
+  if (/what if|if .* (died|passed)|simulat|readiness/.test(q)) {
+    const reports = readinessFor(f);
+    const named =
+      reports.find((r) => q.includes(r.person.toLowerCase())) ??
+      reports.find((r) => q.includes(firstName(r.person).toLowerCase()));
+    const r = named ?? reports.find((x) => x.person === f.self) ?? reports[0];
+    if (!r)
+      return {
+        paragraphs: ["Nobody in this household owns an account at PNC to simulate."],
+        sources: [],
+        followUps: [],
+        usedRulebook: true,
+      };
+    const p = firstName(r.person);
+    const status = { ready: "Ready", gaps: "Some gaps", exposed: "Exposed" }[r.status];
+    return {
+      paragraphs: [
+        `${status}. If ${p} died today, ${money(r.plan.totals.probate)} would go through probate and ${money(r.plan.totals.outsideProbate)} would pass outside it.`,
+        ...r.findings.slice(0, 3).map((x) => `${x.title}. Fix: ${x.fix}.`),
+        ...(r.findings.length ? [] : ["Every account would pass the way it's set up."]),
+      ],
+      sources: [`What-if for ${r.person}`, `Settlement rulebook v${r.plan.rulebookVersion}`],
+      rules: uniqIds(r.findings.slice(0, 3).flatMap((x) => x.sources)),
+      followUps: [
+        "Which beneficiary designations need attention?",
+        "Which rules does this rely on?",
+      ],
+      usedRulebook: true,
+    };
+  }
+  return undefined;
 }
 
 export function answerQuestion(f: ClientFacts, question: string): Answer {
@@ -656,14 +900,18 @@ export function answerQuestion(f: ClientFacts, question: string): Answer {
 
   // "Why: <recommendation title>?" from a recommendation's "Ask about this".
   const why = question.match(/^why:\s*(.+?)\??$/i);
-  const rec = why && recs.find((r) => lcFirst(r.title) === why[1].trim().toLowerCase());
+  const rec = why && recs.find((r) => r.title.toLowerCase() === why[1].trim().toLowerCase());
   if (rec) {
     return {
       paragraphs: [rec.rationale, `What to do: ${rec.actions.join("; ")}.`],
       sources: rec.basedOn,
+      rules: rec.sources,
       followUps: ["What's urgent in the first month?", "Draft an outreach message"],
+      usedRulebook: !!rec.sources?.length,
     };
   }
+  const fromRules = rulebookAnswer(f, question);
+  if (fromRules) return fromRules;
   if (/heir/.test(q) && /approach|talk|contact|reach/.test(q) && briefing) {
     return {
       paragraphs: briefing.heirs.length
@@ -968,7 +1216,7 @@ export function engagementPlan(f: ClientFacts): EngagementPlan {
 export type BriefItem = {
   customerId: string;
   name: string;
-  kind: "loss" | "review" | "cash";
+  kind: "loss" | "review" | "cash" | "readiness";
   text: string;
   action: string;
 };
@@ -1018,6 +1266,30 @@ export function dailyBrief(rows: { c: AdvisorCustomer; p: ClientProfile }[], tod
         action: "See recommendation",
       });
   }
+  // Households that would be exposed if the customer died today, largest probate first.
+  const readiness: { item: BriefItem; probate: number }[] = [];
+  for (const { c, p } of rows) {
+    if (openLoss(c) || !p.members.some((m) => m.name === c.name)) continue;
+    const r = readinessReport(c, p, c.name, today);
+    if (r.status !== "exposed" || r.plan.totals.probate <= 0) continue;
+    const stale = r.findings.find((x) => x.id === "f.names-deceased")?.holdingIds.length ?? 0;
+    readiness.push({
+      item: {
+        customerId: c.id,
+        name: c.name,
+        kind: "readiness",
+        text: `If ${firstName(c.name)} died today, ${money(r.plan.totals.probate)} would go through probate${stale ? ` — ${stale} designation${stale > 1 ? "s" : ""} need${stale > 1 ? "" : "s"} updating` : ""}.`,
+        action: "See what if",
+      },
+      probate: r.plan.totals.probate,
+    });
+  }
+  items.push(
+    ...readiness
+      .sort((a, b) => b.probate - a.probate)
+      .slice(0, 3)
+      .map((x) => x.item),
+  );
   const counts = {
     losses: items.filter((i) => i.kind === "loss").length,
     reviews: items.filter((i) => i.kind === "review").length,
@@ -1029,10 +1301,4 @@ export function dailyBrief(rows: { c: AdvisorCustomer; p: ClientProfile }[], tod
         ? `${counts.reviews} review${counts.reviews === 1 ? "" : "s"} in the next two weeks.`
         : "A quiet day. Good time for proactive check-ins.";
   return { headline, items };
-}
-
-function addDays(iso: string, days: number): string {
-  const d = new Date(`${iso}T12:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
 }

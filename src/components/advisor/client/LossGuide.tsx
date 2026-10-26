@@ -1,9 +1,15 @@
 "use client";
 
-import { Check, MessageCircleQuestion, Quote, X } from "lucide-react";
+import { useMemo } from "react";
+import { Check, ListChecks, MessageCircleQuestion, Quote, X } from "lucide-react";
 import { AssistantMark, AssistantPanel, Chip } from "@/components/advisor/assistant/parts";
+import type { OpenTab } from "@/components/advisor/client/ClientWorkspace";
+import { pendingReviews } from "@/components/advisor/settlement/ReviewQueue";
 import { Money } from "@/components/ui/Money";
 import { lossBriefing, type ClientFacts } from "@/lib/assistant";
+import { settlementInputFromFacts } from "@/lib/settlement/adapters";
+import { settlementPlan } from "@/lib/settlement/engine";
+import { useReviews } from "@/lib/settlement/reviews";
 import { formatDate } from "@/lib/format";
 
 const askButton =
@@ -14,11 +20,25 @@ const askButton =
  * how to approach the bereaved client and each heir, a phased plan, and
  * advice personalized from the client's own records.
  */
-export function LossGuide({ facts, onAsk }: { facts: ClientFacts; onAsk: (q: string) => void }) {
+export function LossGuide({
+  facts,
+  onAsk,
+  onOpen,
+}: {
+  facts: ClientFacts;
+  onAsk: (q: string) => void;
+  onOpen?: OpenTab;
+}) {
   const b = lossBriefing(facts);
+  const reviews = useReviews();
+  const plan = useMemo(() => {
+    const input = settlementInputFromFacts(facts);
+    return input ? settlementPlan(input) : undefined;
+  }, [facts]);
   if (!b) return <p className="text-sm text-pnc-muted">No open loss for this client.</p>;
   const d = b.deceased;
   const accounts = facts.deceasedHoldings.filter((h) => !h.external);
+  const pending = plan ? pendingReviews(plan.reviewQueue, reviews, facts.c.id).length : 0;
 
   return (
     <div className="space-y-7">
@@ -26,6 +46,17 @@ export function LossGuide({ facts, onAsk }: { facts: ClientFacts; onAsk: (q: str
         <AssistantMark label="Loss guide" />
         <h3 className="font-display text-2xl font-medium text-pnc-ink">{b.headline}</h3>
         <p className="max-w-3xl text-[15px] leading-relaxed text-pnc-ink">{b.summary}</p>
+        {plan && onOpen && (
+          <button
+            type="button"
+            onClick={() => onOpen("transition")}
+            className="inline-flex items-center gap-1.5 rounded-full bg-pnc-blue-50 px-3 py-1.5 text-sm font-semibold text-pnc-link hover:underline"
+          >
+            <ListChecks className="size-4" aria-hidden="true" />
+            Open the transition plan — {plan.deadlines.length} key dates, {pending} item
+            {pending === 1 ? "" : "s"} to sign off
+          </button>
+        )}
       </header>
 
       <div className="grid gap-5 @4xl:grid-cols-[minmax(0,1fr)_minmax(0,20rem)]">

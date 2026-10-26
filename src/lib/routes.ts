@@ -24,6 +24,9 @@ export const routes = {
   advisor: "/advisor",
   /** Advisor: one client's summary, family, loss guide and assistant. */
   advisorClient: (id: string) => `/advisor/clients/${id}`,
+  /** Advisor: the settlement rulebook (decision tree, rules and sources). */
+  advisorRules: "/advisor/rules",
+  advisorRuleNode: (id: string) => `/advisor/rules#${id}`,
 } as const;
 
 export type View = "web" | "mobile";

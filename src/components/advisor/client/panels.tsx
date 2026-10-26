@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { ChevronDown, MessageCircleQuestion } from "lucide-react";
 import { AssistantPanel, Chip, priorityTone } from "@/components/advisor/assistant/parts";
 import type { OpenTab } from "@/components/advisor/client/ClientWorkspace";
+import { SourceChips } from "@/components/advisor/settlement/SourceChip";
 import { WillStatus } from "@/components/advisor/WillStatus";
 import { Money } from "@/components/ui/Money";
 import type { ClientMember, Holding } from "@/data/types";
@@ -113,6 +114,9 @@ export function OverviewPanel({
             <button type="button" onClick={() => onOpen("assets")} className={askButton}>
               All recommendations
             </button>
+            <button type="button" onClick={() => onOpen("transition")} className={askButton}>
+              {facts.loss ? "Transition plan" : "Run a what-if"}
+            </button>
             <button
               type="button"
               onClick={() => onAsk(`Summarize ${facts.first} for me`)}
@@ -180,6 +184,11 @@ function HoldingRow({ h, facts }: { h: Holding; facts: ClientFacts }) {
         ) : (
           names(h.beneficiaries, facts)
         )}
+        {h.contingentBeneficiaries?.length ? (
+          <span className="block text-xs text-pnc-muted">
+            (contingent: {h.contingentBeneficiaries.join(", ")})
+          </span>
+        ) : null}
       </td>
       <td className="py-3 text-right">
         <Money value={h.value} className="font-semibold" />
@@ -253,11 +262,13 @@ export function AssetsPanel({ facts, onAsk }: { facts: ClientFacts; onAsk: (q: s
 
 function RecommendationCard({ rec, onAsk }: { rec: Recommendation; onAsk: (q: string) => void }) {
   const [open, setOpen] = useState(false);
+  const panelId = `${useId()}-rec`;
   return (
     <li className="rounded-md bg-white ring-1 ring-pnc-blue-600/10">
       <button
         type="button"
         aria-expanded={open}
+        aria-controls={panelId}
         onClick={() => setOpen((o) => !o)}
         className="flex w-full items-start gap-3 px-4 py-3 text-left"
       >
@@ -275,7 +286,10 @@ function RecommendationCard({ rec, onAsk }: { rec: Recommendation; onAsk: (q: st
         />
       </button>
       {open && (
-        <div className="space-y-3 border-t border-pnc-line px-4 py-3 text-sm leading-relaxed">
+        <div
+          id={panelId}
+          className="space-y-3 border-t border-pnc-line px-4 py-3 text-sm leading-relaxed"
+        >
           <p className="text-pnc-ink">{rec.rationale}</p>
           <div>
             <p className="font-semibold text-pnc-ink">Steps</p>
@@ -293,6 +307,12 @@ function RecommendationCard({ rec, onAsk }: { rec: Recommendation; onAsk: (q: st
               ))}
             </ul>
           </div>
+          {rec.sources && rec.sources.length > 0 && (
+            <div>
+              <p className="font-semibold text-pnc-ink">Rules</p>
+              <SourceChips ids={rec.sources} className="mt-1" />
+            </div>
+          )}
           <button type="button" onClick={() => onAsk(`Why: ${rec.title}?`)} className={askButton}>
             <MessageCircleQuestion className="size-4" aria-hidden="true" /> Ask about this
           </button>

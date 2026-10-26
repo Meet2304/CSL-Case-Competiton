@@ -8,6 +8,7 @@ import { AskPanel, traceFor, type ChatTurn } from "@/components/advisor/client/A
 import { EngagementPanel } from "@/components/advisor/client/EngagementPanel";
 import { LossGuide } from "@/components/advisor/client/LossGuide";
 import { AssetsPanel, FamilyPanel, OverviewPanel } from "@/components/advisor/client/panels";
+import { TransitionPanel } from "@/components/advisor/settlement/TransitionPanel";
 import { useAdvisorBook } from "@/components/advisor/useAdvisorBook";
 import { MockBadge } from "@/components/mock/Mock";
 import { useHashTab } from "@/components/shared/useHashTab";
@@ -23,6 +24,7 @@ const allTabs = [
   { id: "assets", label: "Assets & advice" },
   { id: "family", label: "Family" },
   { id: "loss", label: "Loss guide" },
+  { id: "transition", label: "Transition plan" },
   { id: "ask", label: "Ask" },
   { id: "engagement", label: "Engagement" },
 ] as const;
@@ -32,8 +34,9 @@ const tabIds = allTabs.map((t) => t.id);
 /**
  * One client's summary for the advisor: profile, holdings, family and the
  * (simulated) assistant's advice, Q&A and engagement plan. The Loss guide tab
- * only appears while the client has an open loss. Client-side so deaths the
- * bank records on the dashboard show up here immediately.
+ * only appears while the client has an open loss; the Transition plan (the
+ * settlement rulebook) is always there — after a death, or as a what-if.
+ * Client-side so deaths the bank records on the dashboard show up here immediately.
  */
 export function ClientWorkspace({ customerId }: { customerId: string }) {
   const { customers } = useAdvisorBook();
@@ -67,11 +70,12 @@ export function ClientWorkspace({ customerId }: { customerId: string }) {
   const tabs = allTabs.filter((t) => t.id !== "loss" || facts.loss);
   const current = tabs.some((t) => t.id === tab) ? tab : "overview";
   const ask = (question: string) => {
+    const answer = answerQuestion(facts, question);
     const turn: ChatTurn = {
-      id: chat.length + 1,
+      id: (chat.at(-1)?.id ?? 0) + 1,
       question,
-      answer: answerQuestion(facts, question),
-      trace: traceFor(facts),
+      answer,
+      trace: traceFor(facts, answer),
     };
     setChat((c) => [...c, turn]);
     setHashTab("ask");
@@ -149,9 +153,19 @@ export function ClientWorkspace({ customerId }: { customerId: string }) {
           {current === "overview" && <OverviewPanel facts={facts} onAsk={ask} onOpen={setTab} />}
           {current === "assets" && <AssetsPanel facts={facts} onAsk={ask} />}
           {current === "family" && <FamilyPanel facts={facts} />}
-          {current === "loss" && <LossGuide facts={facts} onAsk={ask} />}
+          {current === "loss" && <LossGuide facts={facts} onAsk={ask} onOpen={setTab} />}
+          {current === "transition" && <TransitionPanel facts={facts} onAsk={ask} />}
           {current === "ask" && (
-            <AskPanel facts={facts} chat={chat} animateId={animateId} onAsk={ask} />
+            <AskPanel
+              facts={facts}
+              chat={chat}
+              animateId={animateId}
+              onAsk={ask}
+              onClear={() => {
+                setChat([]);
+                setAnimateId(undefined);
+              }}
+            />
           )}
           {current === "engagement" && <EngagementPanel facts={facts} />}
         </div>
