@@ -5,6 +5,7 @@ import { ShieldAlert, ShieldCheck } from "lucide-react";
 import { MockBadge } from "@/components/mock/Mock";
 import { Money } from "@/components/ui/Money";
 import type { AdvisorCustomer, ClientProfile } from "@/data/types";
+import type { Answers } from "@/lib/settlement/engine";
 import { readinessReport, simulatablePeople } from "@/lib/settlement/simulate";
 import { cn, formatCompactMoney, formatDate } from "@/lib/format";
 import { DeadlineList } from "./DeadlineList";
@@ -22,12 +23,14 @@ export function SimulationView({
   profile,
   defaultPerson,
   today,
+  answers,
   onAsk,
 }: {
   customer: AdvisorCustomer;
   profile: ClientProfile;
   defaultPerson: string;
   today: string;
+  answers: Answers;
   onAsk: (q: string) => void;
 }) {
   const baseId = useId();
@@ -35,8 +38,8 @@ export function SimulationView({
   const [picked, setPicked] = useState(defaultPerson);
   const person: string | undefined = people.includes(picked) ? picked : people[0];
   const report = useMemo(
-    () => (person ? readinessReport(customer, profile, person, today) : undefined),
-    [customer, profile, person, today],
+    () => (person ? readinessReport(customer, profile, person, today, answers) : undefined),
+    [customer, profile, person, today, answers],
   );
 
   function onRadioKey(e: KeyboardEvent<HTMLButtonElement>, index: number) {

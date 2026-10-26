@@ -1,8 +1,10 @@
 // Labels and tones for the settlement engine's output. Tokens only; every
 // chip pairs its color with text so nothing is conveyed by color alone.
-import type { ActionOwner, DeadlineKind, ReviewLevel, SettlementRoute } from "@/data/types";
+import type { DeadlineKind, ReviewLevel, SettlementRoute } from "@/data/types";
+import type { StepWhen } from "@/lib/nextSteps";
 import type { FindingSeverity, ReadinessReport } from "@/lib/settlement/simulate";
 
+export { ownerLabel } from "@/lib/settlement/labels";
 export { routeLabels } from "@/lib/settlement/engine";
 
 const positive = "bg-pnc-positive-bg text-pnc-positive ring-transparent";
@@ -36,19 +38,11 @@ export const reviewLabels: Record<ReviewLevel, string> = {
 
 export const reviewTone = "bg-white text-pnc-ink ring-pnc-line";
 
-export function ownerLabel(owner: ActionOwner, survivorFirst: string): string {
-  const labels: Record<ActionOwner, string> = {
-    advisor: "You",
-    client: survivorFirst,
-    executor: "Executor",
-    "bank-operations": "Operations",
-    "trust-officer": "Trust officer",
-    attorney: "Attorney",
-    "tax-advisor": "Tax advisor",
-    insurer: "Insurer",
-  };
-  return labels[owner];
-}
+export const whenTone: Record<StepWhen["tone"], string> = {
+  now: attention,
+  soon: orange,
+  later: muted,
+};
 
 export const kindLabels: Record<DeadlineKind, string> = {
   statutory: "Set by law",

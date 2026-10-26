@@ -19,7 +19,8 @@ export const federalHousehold: HouseholdRule[] = [
     id: "hh.reclamation",
     jurisdiction: "US",
     title: "Federal benefit payments after the death",
-    when: [],
+    // Applies until the advisor confirms there were no federal benefits.
+    when: [{ fact: "receivedFederalBenefits", in: ["yes", "unknown"] }],
     detail:
       "Social Security or other federal payments that arrive after the death are returned to the agency. Warn {survivor} so it isn't a surprise.",
     actions: ["reclamation-watch"],
@@ -29,6 +30,10 @@ export const federalHousehold: HouseholdRule[] = [
         fact: "receivedFederalBenefits",
         question:
           "Did {decedent} receive Social Security or other federal benefits by direct deposit?",
+        options: [
+          { value: "yes", label: "Yes" },
+          { value: "no", label: "No" },
+        ],
       },
     ],
     sources: ["treas-210"],

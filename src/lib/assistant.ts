@@ -16,7 +16,7 @@ import { lossContact, openLoss } from "@/lib/advisor";
 import { daysBetween, formatCompactMoney, formatDate } from "@/lib/format";
 import { settlementInputFromFacts } from "@/lib/settlement/adapters";
 import { addDays } from "@/lib/settlement/dates";
-import { settlementPlan, type SettlementPlan } from "@/lib/settlement/engine";
+import { settlementPlan, type Answers, type SettlementPlan } from "@/lib/settlement/engine";
 import { readinessReport, type ReadinessReport } from "@/lib/settlement/simulate";
 
 // ---------------------------------------------------------------------------
@@ -98,15 +98,21 @@ export function factsFor(c: AdvisorCustomer, profile: ClientProfile, today: stri
   };
 }
 
-const plans = new WeakMap<ClientFacts, SettlementPlan | undefined>();
+const plans = new WeakMap<ClientFacts, Map<string, SettlementPlan | undefined>>();
 
-/** The settlement rulebook's plan for the client's open loss (cached per facts object). */
-export function lossPlan(f: ClientFacts): SettlementPlan | undefined {
-  if (!plans.has(f)) {
-    const input = settlementInputFromFacts(f);
-    plans.set(f, input ? settlementPlan(input) : undefined);
+/**
+ * The settlement rulebook's plan for the client's open loss, with the advisor's
+ * answers applied (cached per facts object and answers).
+ */
+export function lossPlan(f: ClientFacts, answers: Answers = {}): SettlementPlan | undefined {
+  const byAnswers = plans.get(f) ?? new Map<string, SettlementPlan | undefined>();
+  plans.set(f, byAnswers);
+  const key = JSON.stringify(answers);
+  if (!byAnswers.has(key)) {
+    const input = settlementInputFromFacts(f, answers);
+    byAnswers.set(key, input ? settlementPlan(input) : undefined);
   }
-  return plans.get(f);
+  return byAnswers.get(key);
 }
 
 /** Source ids behind the plan's outcomes for these holdings, deduped. */
@@ -726,7 +732,7 @@ export function suggestedQuestions(f: ClientFacts): string[] {
 const uniqIds = (ids: string[]) => ids.filter((x, i) => ids.indexOf(x) === i);
 
 /** Readiness reports for everyone worth simulating in this household. */
-function readinessFor(f: ClientFacts): ReadinessReport[] {
+export function readinessFor(f: ClientFacts, answers: Answers = {}): ReadinessReport[] {
   return f.p.members
     .filter(
       (m) =>
@@ -735,26 +741,28 @@ function readinessFor(f: ClientFacts): ReadinessReport[] {
         m.relationship !== "Sibling-in-law" &&
         f.pnc.some((h) => h.owners.includes(m.name)),
     )
-    .map((m) => readinessReport(f.c, f.p, m.name, f.today));
+    .map((m) => readinessReport(f.c, f.p, m.name, f.today, answers));
 }
 
 /** Who can answer an open question the rulebook raised. */
-function whoKnows(key: string, f: ClientFacts): string {
-  if (key.includes("reclamation")) return "Operations, from the account's deposit history";
-  if (key.includes("yod-rmd")) return `${f.first} or the prior year's IRA statements`;
-  if (key.includes("disability")) return "the beneficiaries, through the attorney";
-  if (key.includes("successor-trustee")) return "the trust document and the estate attorney";
-  if (key.includes("successor-owner")) return "the 529 plan's records";
+export function whoKnows(key: string, f: ClientFacts): string {
+  if (key.endsWith(":receivedFederalBenefits"))
+    return "Operations, from the account's deposit history";
+  if (key.endsWith(":decedentPastRequiredBeginningDate"))
+    return `${f.first} or the prior year's IRA statements`;
+  if (key.endsWith(":beneficiaryDisabledOrIll")) return "the beneficiaries, through the attorney";
+  if (key.endsWith(":successor-trustee")) return "the trust document and the estate attorney";
+  if (key.endsWith(":successor-owner")) return `${f.first} and the 529 plan's records`;
   return f.attorney?.name ?? "the estate attorney";
 }
 
 /** Answers that come from the settlement rulebook, or undefined to fall through. */
-function rulebookAnswer(f: ClientFacts, question: string): Answer | undefined {
+function rulebookAnswer(f: ClientFacts, question: string, answers: Answers): Answer | undefined {
   const q = question.toLowerCase();
   const { first } = f;
-  const plan = lossPlan(f);
-  const self = () => readinessReport(f.c, f.p, f.self, f.today);
-  const plans = () => [...(plan ? [plan] : []), ...readinessFor(f).map((r) => r.plan)];
+  const plan = lossPlan(f, answers);
+  const self = () => readinessReport(f.c, f.p, f.self, f.today, answers);
+  const plans = () => [...(plan ? [plan] : []), ...readinessFor(f, answers).map((r) => r.plan)];
 
   // An open question raised by the plan ("Ask" in the Transition plan).
   for (const p of plans()) {
@@ -773,7 +781,7 @@ function rulebookAnswer(f: ClientFacts, question: string): Answer | undefined {
   // "Why: <finding title>?" from the what-if's "Ask about this".
   const why = question.match(/^why:\s*(.+?)\??$/i);
   if (why) {
-    for (const r of readinessFor(f)) {
+    for (const r of readinessFor(f, answers)) {
       const finding = r.findings.find((x) => x.title.toLowerCase() === why[1].trim().toLowerCase());
       if (finding)
         return {
@@ -860,7 +868,7 @@ function rulebookAnswer(f: ClientFacts, question: string): Answer | undefined {
   }
 
   if (/what if|if .* (died|passed)|simulat|readiness/.test(q)) {
-    const reports = readinessFor(f);
+    const reports = readinessFor(f, answers);
     const named =
       reports.find((r) => q.includes(r.person.toLowerCase())) ??
       reports.find((r) => q.includes(firstName(r.person).toLowerCase()));
@@ -892,7 +900,7 @@ function rulebookAnswer(f: ClientFacts, question: string): Answer | undefined {
   return undefined;
 }
 
-export function answerQuestion(f: ClientFacts, question: string): Answer {
+export function answerQuestion(f: ClientFacts, question: string, answers: Answers = {}): Answer {
   const q = question.toLowerCase();
   const { c, p, first } = f;
   const briefing = lossBriefing(f);
@@ -910,7 +918,7 @@ export function answerQuestion(f: ClientFacts, question: string): Answer {
       usedRulebook: !!rec.sources?.length,
     };
   }
-  const fromRules = rulebookAnswer(f, question);
+  const fromRules = rulebookAnswer(f, question, answers);
   if (fromRules) return fromRules;
   if (/heir/.test(q) && /approach|talk|contact|reach/.test(q) && briefing) {
     return {
@@ -1234,7 +1242,7 @@ export function dailyBrief(rows: { c: AdvisorCustomer; p: ClientProfile }[], tod
           f.loss.relationship === "Self"
             ? `${c.name} died ${f.daysSinceLoss} days ago. Reach out to ${f.self} (${f.relToSurvivor === "spouse" ? "spouse" : "next of kin"}).`
             : `${f.loss.memberName} (${f.relToSurvivor}) died ${f.daysSinceLoss} days ago. Reach out to ${f.first} today.`,
-        action: "Open loss guide",
+        action: "See next steps",
       });
     }
   }

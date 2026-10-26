@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { Check, Copy } from "lucide-react";
+import { Check, ChevronDown, Copy, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/format";
 import { sectionTitle } from "./parts";
 
@@ -42,7 +42,7 @@ export function StatTile({
   );
 }
 
-/** A titled section the jump nav can move focus to. */
+/** A titled section with an optional count and intro. */
 export function PlanSection({
   id,
   title,
@@ -76,41 +76,60 @@ export function PlanSection({
 }
 
 /**
- * In-page links to each section. Buttons, not `#` links: the client page keeps
- * its tab in the URL hash. Moves focus to the heading so keyboard and screen
- * reader users land where sighted users do.
+ * A row that opens to show detail: title, a one-line summary of what's inside,
+ * and the content only once opened. Controlled when `open` is passed.
  */
-export function JumpNav({
-  label,
-  items,
+export function Disclosure({
+  id,
+  icon: Icon,
+  title,
+  summary,
+  open: controlled,
+  onToggle,
+  children,
 }: {
-  label: string;
-  items: { id: string; title: string; count?: number }[];
+  id: string;
+  icon: LucideIcon;
+  title: string;
+  summary?: ReactNode;
+  open?: boolean;
+  onToggle?: (open: boolean) => void;
+  children: ReactNode;
 }) {
-  function go(id: string) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
-    el.focus({ preventScroll: true });
-  }
+  const [own, setOwn] = useState(false);
+  const open = controlled ?? own;
+  const toggle = () => {
+    setOwn(!open);
+    onToggle?.(!open);
+  };
   return (
-    <nav aria-label={label} className="no-scrollbar -mx-1 overflow-x-auto">
-      <ul className="flex gap-1.5 px-1 py-0.5">
-        {items.map((i) => (
-          <li key={i.id} className="shrink-0">
-            <button
-              type="button"
-              onClick={() => go(i.id)}
-              className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-pnc-ink ring-1 ring-pnc-line hover:text-pnc-link hover:ring-pnc-link focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pnc-link"
-            >
-              {i.title}
-              {i.count !== undefined && <span className="ml-1 text-pnc-muted">{i.count}</span>}
-            </button>
-          </li>
-        ))}
-      </ul>
-    </nav>
+    <section id={id} className="scroll-mt-24 border-b border-pnc-line last:border-b-0">
+      <h4>
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-controls={`${id}-panel`}
+          onClick={toggle}
+          className="flex w-full items-center gap-3 px-1 py-3.5 text-left hover:bg-pnc-surface/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pnc-link"
+        >
+          <Icon className="size-5 shrink-0 text-pnc-blue-700" aria-hidden="true" />
+          <span className="min-w-0 flex-1">
+            <span className="block font-semibold text-pnc-ink">{title}</span>
+            {summary && <span className="block text-sm text-pnc-muted">{summary}</span>}
+          </span>
+          <ChevronDown
+            className={cn(
+              "size-5 shrink-0 text-pnc-muted transition-transform",
+              open && "rotate-180",
+            )}
+            aria-hidden="true"
+          />
+        </button>
+      </h4>
+      <div id={`${id}-panel`} hidden={!open} className="px-1 pb-5 pt-1">
+        {open && children}
+      </div>
+    </section>
   );
 }
 

@@ -62,6 +62,9 @@ export const FACT_DOMAINS: Partial<Record<AccountFactKey, readonly string[]>> = 
     "not-applicable",
   ],
   successorOwnerNamed: ["yes", "no", "unknown"],
+  beneficiaryDisabledOrIll: ["yes", "no", "unknown"],
+  decedentPastRequiredBeginningDate: ["yes", "no", "unknown"],
+  anyBeneficiaryMinor: ["yes", "no", "unknown"],
   state: ["PA", "other"],
 };
 
@@ -245,6 +248,7 @@ export function deriveAccountFacts(h: Holding, ctx: DerivationContext): AccountF
             ? `Successor owner: ${h.successorOwner}`
             : "No successor owner on file",
     },
+    beneficiaryDisabledOrIll: { value: "unknown", evidence: "Not in our records" },
     heldOutsidePnc: {
       value: h.external === true,
       evidence: h.external ? "Held outside PNC" : "Held at PNC",

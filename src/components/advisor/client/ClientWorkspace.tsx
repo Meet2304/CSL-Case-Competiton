@@ -1,42 +1,42 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useId, useMemo, useState, type KeyboardEvent } from "react";
-import { ArrowLeft, HeartCrack } from "lucide-react";
-import { tabButton } from "@/components/advisor/assistant/parts";
-import { AskPanel, traceFor, type ChatTurn } from "@/components/advisor/client/AskPanel";
-import { EngagementPanel } from "@/components/advisor/client/EngagementPanel";
-import { LossGuide } from "@/components/advisor/client/LossGuide";
-import { AssetsPanel, FamilyPanel, OverviewPanel } from "@/components/advisor/client/panels";
-import { TransitionPanel } from "@/components/advisor/settlement/TransitionPanel";
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { ArrowLeft } from "lucide-react";
+import { AssistantMark, tabButton } from "@/components/advisor/assistant/parts";
+import { AgentPanel, type AgentTurn } from "@/components/advisor/client/AgentPanel";
+import { NextStepsView } from "@/components/advisor/client/NextStepsView";
+import { ClientPanel } from "@/components/advisor/client/panels";
+import { SimulationView } from "@/components/advisor/settlement/SimulationView";
 import { useAdvisorBook } from "@/components/advisor/useAdvisorBook";
 import { MockBadge } from "@/components/mock/Mock";
 import { useHashTab } from "@/components/shared/useHashTab";
 import { profileFor } from "@/data/clients";
 import { MOCK_AS_OF } from "@/data/mock";
-import { lossTag } from "@/lib/advisor";
-import { answerQuestion, factsFor } from "@/lib/assistant";
-import { formatDate } from "@/lib/format";
+import { DISCLAIMER } from "@/data/settlement";
+import { agentReply, answerEffect } from "@/lib/agent";
+import { factsFor } from "@/lib/assistant";
+import { guidanceFor, type NextStep } from "@/lib/nextSteps";
+import { caseworkActions, useCasework } from "@/lib/settlement/casework";
+import type { AskOption, OpenQuestion } from "@/lib/settlement/engine";
+import { useReviews } from "@/lib/settlement/reviews";
 import { routes } from "@/lib/routes";
 
 const allTabs = [
-  { id: "overview", label: "Overview" },
-  { id: "assets", label: "Assets & advice" },
-  { id: "family", label: "Family" },
-  { id: "loss", label: "Loss guide" },
-  { id: "transition", label: "Transition plan" },
-  { id: "ask", label: "Ask" },
-  { id: "engagement", label: "Engagement" },
+  { id: "next", label: "Next steps" },
+  { id: "client", label: "Client" },
+  { id: "whatif", label: "What if" },
 ] as const;
 type TabId = (typeof allTabs)[number]["id"];
 const tabIds = allTabs.map((t) => t.id);
 
 /**
- * One client's summary for the advisor: profile, holdings, family and the
- * (simulated) assistant's advice, Q&A and engagement plan. The Loss guide tab
- * only appears while the client has an open loss; the Transition plan (the
- * settlement rulebook) is always there — after a death, or as a what-if.
- * Client-side so deaths the bank records on the dashboard show up here immediately.
+ * One client, from the advisor's point of view. Next steps reads top to
+ * bottom — where things stand, what to do, detail on demand — and every step
+ * comes from the settlement rulebook. The assistant sits alongside: it says
+ * what it worked out, asks for the facts the rulebook can't know, and explains
+ * any step. Client is reference; What if runs the rulebook for anyone in the
+ * household. Client-side so deaths the bank records show up immediately.
  */
 export function ClientWorkspace({ customerId }: { customerId: string }) {
   const { customers } = useAdvisorBook();
@@ -46,52 +46,103 @@ export function ClientWorkspace({ customerId }: { customerId: string }) {
     () => (customer && profile ? factsFor(customer, profile, MOCK_AS_OF) : undefined),
     [customer, profile],
   );
-  const [tab, setHashTab] = useHashTab<TabId>(tabIds);
-  const [chat, setChat] = useState<ChatTurn[]>([]);
-  // Only the newest answer animates; switching tabs settles it so it won't replay.
+  const casework = useCasework(customerId);
+  const reviews = useReviews();
+  const guidance = useMemo(
+    () => (facts ? guidanceFor(facts, casework, reviews) : undefined),
+    [facts, casework, reviews],
+  );
+  const [tab, setTab] = useHashTab<TabId>(tabIds);
+  const [turns, setTurns] = useState<AgentTurn[]>([]);
   const [animateId, setAnimateId] = useState<number>();
-  const setTab = (id: TabId) => {
-    setAnimateId(undefined);
-    setHashTab(id);
-  };
+  const [focusKey, setFocusKey] = useState<string>();
+  const [skipped, setSkipped] = useState<string[]>([]);
+  const agentRef = useRef<HTMLElement>(null);
   const baseId = useId();
 
-  // On narrow screens the tab strip scrolls; keep the open tab visible (e.g. after a #loss link).
+  // On narrow screens the tab strip scrolls; keep the open tab visible.
   useEffect(() => {
     document
       .getElementById(`${baseId}-tab-${tab}`)
       ?.scrollIntoView({ block: "nearest", inline: "nearest" });
   }, [baseId, tab]);
 
-  if (!customer || !profile || !facts) {
+  if (!customer || !profile || !facts || !guidance) {
     return <p className="py-10 text-center text-sm text-pnc-muted">Client not found.</p>;
   }
 
-  const tabs = allTabs.filter((t) => t.id !== "loss" || facts.loss);
-  const current = tabs.some((t) => t.id === tab) ? tab : "overview";
-  const ask = (question: string) => {
-    const answer = answerQuestion(facts, question);
-    const turn: ChatTurn = {
-      id: (chat.at(-1)?.id ?? 0) + 1,
+  const nextId = () => (turns.at(-1)?.id ?? 0) + 1;
+  /** Brings the assistant into view (it sits below the content on narrow screens). */
+  function showAgent() {
+    const el = agentRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    if (r.top > window.innerHeight - 120 || r.bottom < 0) {
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+    }
+    el.focus({ preventScroll: true });
+  }
+
+  function ask(question: string) {
+    const turn: AgentTurn = {
+      id: nextId(),
+      kind: "qa",
       question,
-      answer,
-      trace: traceFor(facts, answer),
+      answer: agentReply(facts!, guidance!, question, casework.answers),
     };
-    setChat((c) => [...c, turn]);
-    setHashTab("ask");
+    setTurns((t) => [...t, turn]);
     setAnimateId(turn.id);
-  };
+    showAgent();
+  }
+
+  function answer(q: OpenQuestion, option: AskOption) {
+    const answers = {
+      ...casework.answers,
+      ...Object.fromEntries(q.keys.map((k) => [k, option.value])),
+    };
+    const after = guidanceFor(facts!, { ...casework, answers }, reviews);
+    const turn: AgentTurn = {
+      id: nextId(),
+      kind: "answered",
+      question: q.question,
+      answerLabel: option.label,
+      lines: answerEffect(guidance!, after, q, option.label),
+      keys: q.keys,
+    };
+    caseworkActions.answer(customerId, q.keys, option.value);
+    setTurns((t) => [...t, turn]);
+    setAnimateId(turn.id);
+    setFocusKey(undefined);
+  }
+
+  function undo(keys: string[]) {
+    caseworkActions.clearAnswer(customerId, keys);
+    const turn: AgentTurn = {
+      id: nextId(),
+      kind: "qa",
+      question: "Undo that answer",
+      answer: {
+        paragraphs: ["Undone. The plan is back to assuming the cautious option until you confirm."],
+        sources: [],
+        followUps: [],
+      },
+    };
+    setTurns((t) => [...t, turn]);
+    setAnimateId(turn.id);
+  }
 
   function onTabKey(e: KeyboardEvent<HTMLButtonElement>, index: number) {
     if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
     e.preventDefault();
-    const next = tabs[(index + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
+    const next =
+      allTabs[(index + (e.key === "ArrowRight" ? 1 : allTabs.length - 1)) % allTabs.length];
     setTab(next.id);
     document.getElementById(`${baseId}-tab-${next.id}`)?.focus();
   }
 
   return (
-    <div className="@container space-y-5">
+    <div className="@container space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
           href={routes.advisor}
@@ -102,76 +153,105 @@ export function ClientWorkspace({ customerId }: { customerId: string }) {
         <MockBadge />
       </div>
 
-      {facts.loss && current !== "loss" && (
-        <button
-          type="button"
-          onClick={() => setTab("loss")}
-          className="flex w-full flex-wrap items-center gap-3 rounded-md bg-attention-bg px-4 py-3 text-left ring-1 ring-attention-line hover:bg-attention-line/30"
-        >
-          <HeartCrack className="size-5 shrink-0 text-attention" aria-hidden="true" />
-          <span className="min-w-0 flex-1 basis-56 text-sm text-pnc-ink">
-            <span className="font-semibold text-attention">{lossTag(facts.loss)}</span>:{" "}
-            {facts.loss.memberName} died {formatDate(facts.loss.date, "medium")}. The loss guide has
-            a plan for {facts.first} and the family.
-          </span>
-          <span className="text-sm font-semibold text-pnc-link">Open loss guide</span>
-        </button>
-      )}
-
+      {/* No overflow clipping here: the assistant column stays in view with `sticky`. */}
       <section className="rounded-md bg-white shadow-card">
         <div
           role="tablist"
-          aria-label={`${customer.name} client summary`}
+          aria-label={`${customer.name}`}
           className="no-scrollbar flex overflow-x-auto border-b border-pnc-line px-2"
         >
-          {tabs.map((t, i) => (
+          {allTabs.map((t, i) => (
             <button
               key={t.id}
               id={`${baseId}-tab-${t.id}`}
               type="button"
               role="tab"
-              aria-selected={current === t.id}
+              aria-selected={tab === t.id}
               aria-controls={`${baseId}-panel`}
-              tabIndex={current === t.id ? 0 : -1}
+              tabIndex={tab === t.id ? 0 : -1}
               onClick={() => setTab(t.id)}
               onKeyDown={(e) => onTabKey(e, i)}
-              className={tabButton(current === t.id)}
+              className={tabButton(tab === t.id)}
             >
               {t.label}
-              {t.id === "loss" && (
-                <span className="size-1.5 rounded-full bg-attention" aria-hidden="true" />
+              {t.id === "next" && guidance.steps.length > 0 && (
+                <span className="rounded-full bg-pnc-chip px-1.5 text-xs font-semibold text-pnc-ink">
+                  {guidance.steps.length}
+                </span>
               )}
             </button>
           ))}
         </div>
-        <div
-          id={`${baseId}-panel`}
-          role="tabpanel"
-          aria-labelledby={`${baseId}-tab-${current}`}
-          className="p-4 @3xl:p-6"
-        >
-          {current === "overview" && <OverviewPanel facts={facts} onAsk={ask} onOpen={setTab} />}
-          {current === "assets" && <AssetsPanel facts={facts} onAsk={ask} />}
-          {current === "family" && <FamilyPanel facts={facts} />}
-          {current === "loss" && <LossGuide facts={facts} onAsk={ask} onOpen={setTab} />}
-          {current === "transition" && <TransitionPanel facts={facts} onAsk={ask} />}
-          {current === "ask" && (
-            <AskPanel
+
+        <div className="grid @5xl:grid-cols-[minmax(0,1fr)_22rem]">
+          <div
+            id={`${baseId}-panel`}
+            role="tabpanel"
+            aria-labelledby={`${baseId}-tab-${tab}`}
+            className="@container min-w-0 p-4 @3xl:p-6"
+          >
+            {tab === "next" && (
+              <NextStepsView
+                facts={facts}
+                guidance={guidance}
+                reviews={reviews}
+                onWhy={(s: NextStep) => ask(`Why: ${s.title}?`)}
+                onAnswer={(q) => {
+                  setSkipped((s) => s.filter((k) => k !== q.key));
+                  setFocusKey(q.key);
+                  showAgent();
+                }}
+                onOpenWhatIf={() => setTab("whatif")}
+                onAsk={ask}
+              />
+            )}
+            {tab === "client" && <ClientPanel facts={facts} />}
+            {tab === "whatif" && (
+              <div className="space-y-5">
+                <header className="space-y-1">
+                  <AssistantMark label="What if" />
+                  <p className="max-w-3xl text-sm text-pnc-muted">
+                    The same rulebook, run before a death: pick anyone in the household to see what
+                    would happen to their accounts today, and what to fix while they can still sign
+                    the forms. {DISCLAIMER}
+                  </p>
+                </header>
+                <SimulationView
+                  customer={facts.c}
+                  profile={facts.p}
+                  defaultPerson={facts.self}
+                  today={facts.today}
+                  answers={casework.answers}
+                  onAsk={ask}
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-b-md border-t border-pnc-line bg-pnc-surface/50 @5xl:rounded-bl-none @5xl:border-l @5xl:border-t-0">
+            <AgentPanel
+              ref={agentRef}
               facts={facts}
-              chat={chat}
+              guidance={guidance}
+              turns={turns}
               animateId={animateId}
+              focusKey={focusKey}
+              skipped={skipped}
               onAsk={ask}
+              onAnswer={answer}
+              onSkip={(q) => {
+                setSkipped((s) => [...s, q.key]);
+                setFocusKey(undefined);
+              }}
+              onUndo={undo}
               onClear={() => {
-                setChat([]);
+                setTurns([]);
                 setAnimateId(undefined);
               }}
             />
-          )}
-          {current === "engagement" && <EngagementPanel facts={facts} />}
+          </div>
         </div>
       </section>
     </div>
   );
 }
-
-export type OpenTab = (tab: TabId) => void;

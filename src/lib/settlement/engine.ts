@@ -4,9 +4,11 @@
  * routes, dated deadlines, open questions, sign-offs and the source behind
  * every step. Pure and deterministic — no clock, no React, no model.
  */
-import { ALWAYS_ASK_OVERLAYS, rulebook } from "@/data/settlement";
+import { rulebook } from "@/data/settlement";
 import type {
+  AccountFactKey,
   AccountFacts,
+  AskOption,
   ClientMember,
   DeadlineKind,
   Holding,
@@ -27,11 +29,13 @@ import {
   beneficiaryTakers,
   deriveAccountFacts,
   deriveHouseholdFacts,
+  FACT_DOMAINS,
   label,
   type DerivationContext,
 } from "./facts";
 import { walk, type TraceStep } from "./walk";
 
+export type { AskOption } from "@/data/types";
 export type { TraceStep } from "./walk";
 
 export type PlannedAction = {
@@ -47,7 +51,26 @@ export type PlannedAction = {
   accountIds: string[];
 };
 
-export type OpenQuestion = { key: string; question: string; accountIds: string[] };
+/**
+ * A fact the rulebook needs from the advisor. `keys` are the answer keys it
+ * sets (several when the same question covers more than one account).
+ */
+export type OpenQuestion = {
+  key: string;
+  keys: string[];
+  question: string;
+  accountIds: string[];
+  options: AskOption[];
+};
+
+/** A question the advisor has answered; the plan already reflects it. */
+export type AnsweredQuestion = OpenQuestion & { answer: string; answerLabel: string };
+
+/**
+ * Advisor answers keyed by `${holdingId}:${fact}`, `household:${fact}`,
+ * `${holdingId}:successor-trustee` or `${holdingId}:successor-owner`.
+ */
+export type Answers = Record<string, string>;
 
 export type AccountPlan = {
   holding: Holding;
@@ -102,6 +125,8 @@ export type SettlementPlan = {
   /** Every dated action, ascending by due date. */
   deadlines: PlannedAction[];
   openQuestions: OpenQuestion[];
+  /** Questions the advisor already answered, with the answer applied. */
+  answered: AnsweredQuestion[];
   reviewQueue: ReviewItem[];
   assumptions: string[];
   totals: SettlementTotals;
@@ -119,6 +144,8 @@ export type SettlementInput = {
   state: StateCode;
   /** Anything the adapter had to assume to build this input. */
   assumptions?: string[];
+  /** Facts the advisor confirmed, which override what our records say. */
+  answers?: Answers;
 };
 
 export const REVIEW_ORDER: ReviewLevel[] = [
@@ -178,6 +205,52 @@ function plan(
   };
 }
 
+const YES_NO: AskOption[] = [
+  { value: "yes", label: "Yes" },
+  { value: "no", label: "No" },
+];
+const TRI_STATE = ["yes", "no", "unknown"];
+
+function question(key: string, text: string, accountIds: string[], options: AskOption[]) {
+  return { key, keys: [key], question: text, accountIds, options };
+}
+
+/** Replaces facts the advisor has confirmed. */
+function applyAnswers(facts: AccountFacts, holdingId: string, answers: Answers): AccountFacts {
+  const out: Record<string, { value: unknown; evidence: string }> = { ...facts };
+  for (const key of Object.keys(facts) as AccountFactKey[]) {
+    const v = answers[`${holdingId}:${key}`];
+    if (v !== undefined && FACT_DOMAINS[key]?.includes(v))
+      out[key] = { value: v, evidence: "Confirmed by the advisor" };
+  }
+  return out as AccountFacts;
+}
+
+/** Living adults the advisor could name as successor trustee or owner. */
+function peopleOptions(members: ClientMember[]): AskOption[] {
+  return members
+    .filter(
+      (m) =>
+        m.status === "Living" &&
+        m.relationship !== "Attorney" &&
+        (m.age === undefined || m.age >= 18),
+    )
+    .map((m) => ({ value: m.name, label: m.name }));
+}
+
+/** The same question on several accounts is asked once, setting every account's answer. */
+function mergeQuestions<Q extends OpenQuestion>(qs: Q[]): Q[] {
+  const out: Q[] = [];
+  for (const q of qs) {
+    const seen = out.find((x) => x.question === q.question);
+    if (seen) {
+      seen.keys = uniq([...seen.keys, ...q.keys]);
+      seen.accountIds = uniq([...seen.accountIds, ...q.accountIds]);
+    } else out.push({ ...q, keys: [...q.keys], accountIds: [...q.accountIds] });
+  }
+  return out;
+}
+
 /** Works out what happens to every account for one death. */
 export function settlementPlan(input: SettlementInput, book: Rulebook = rulebook): SettlementPlan {
   // 1. Context: the deceased is marked as such (idempotent).
@@ -197,60 +270,82 @@ export function settlementPlan(input: SettlementInput, book: Rulebook = rulebook
   const cite = (ids: string[]) =>
     ids.forEach((id) => sourcesUsed.includes(id) || sourcesUsed.push(id));
 
+  const answers = input.answers ?? {};
+  const living = (names: string[]) =>
+    names.filter(
+      (o) => o !== input.deceased.name && members.find((m) => m.name === o)?.status !== "Deceased",
+    );
+  /** Every question our records alone would raise, answered or not. */
+  const raised: OpenQuestion[] = [];
+
   // 2–6. One plan per holding the decedent was involved in.
   const accounts: AccountPlan[] = [];
   for (const h of input.holdings) {
-    const facts = deriveAccountFacts(h, ctx);
+    const fill = filler(input, h);
+
+    // Pass 1 — our records alone: what would we have to ask?
+    const rawFacts = deriveAccountFacts(h, ctx);
+    const raw = walk(rawFacts, book);
+    if (raw.outcome.route === "not-affected") continue;
+    const rawValues = plainValues(rawFacts);
+    const asked: OpenQuestion[] = [];
+    for (const ov of book.overlays) {
+      if ((ov.routes && !ov.routes.includes(raw.outcome.route)) || !holds(ov.when, rawValues))
+        continue;
+      for (const ask of ov.asks ?? [])
+        if (rawFacts[ask.fact].value === "unknown")
+          asked.push(
+            question(`${h.id}:${ask.fact}`, fill(ask.question), [h.id], ask.options ?? YES_NO),
+          );
+    }
+    if (raw.outcome.passesTo === "successor-trustee" && !living(h.owners).length)
+      asked.push(
+        question(
+          `${h.id}:successor-trustee`,
+          fill("Who is the successor trustee named in the trust for {account}?"),
+          [h.id],
+          peopleOptions(members),
+        ),
+      );
+    if (raw.outcome.passesTo === "successor-owner" && !h.successorOwner)
+      asked.push(
+        question(
+          `${h.id}:successor-owner`,
+          fill("Who should own {account} now?"),
+          [h.id],
+          peopleOptions(members),
+        ),
+      );
+    raised.push(...asked);
+
+    // Pass 2 — with the advisor's answers applied: the outcome we act on.
+    const named = answers[`${h.id}:successor-owner`];
+    const holding = named && !h.successorOwner ? { ...h, successorOwner: named } : h;
+    const facts = applyAnswers(deriveAccountFacts(holding, ctx), h.id, answers);
     const { outcome, trace } = walk(facts, book);
     if (outcome.route === "not-affected") continue;
-    const fill = filler(input, h);
     const values = plainValues(facts);
-
     const matched = book.overlays.filter(
       (ov) => (!ov.routes || ov.routes.includes(outcome.route)) && holds(ov.when, values),
     );
-    const openQuestions: OpenQuestion[] = [];
-    for (const ov of matched)
-      for (const ask of ov.asks ?? [])
-        if (ALWAYS_ASK_OVERLAYS.includes(ov.id) || facts[ask.fact].value === "unknown")
-          openQuestions.push({
-            key: `${h.id}:${ov.id}`,
-            question: fill(ask.question),
-            accountIds: [h.id],
-          });
+    const openQuestions = asked.filter((q) => answers[q.key] === undefined);
 
     const assumptions = accountAssumptions(h, facts, ctx);
     let passesToNames: string[] = [];
     switch (outcome.passesTo) {
       case "surviving-owners":
-        passesToNames = h.owners.filter(
-          (o) =>
-            o !== input.deceased.name && members.find((m) => m.name === o)?.status !== "Deceased",
-        );
+        passesToNames = living(h.owners);
         break;
       case "beneficiaries":
         passesToNames = beneficiaryTakers(h, ctx).names;
         break;
-      case "successor-trustee":
-        passesToNames = h.owners.filter(
-          (o) =>
-            o !== input.deceased.name && members.find((m) => m.name === o)?.status !== "Deceased",
-        );
-        if (!passesToNames.length)
-          openQuestions.push({
-            key: `${h.id}:successor-trustee`,
-            question: "Who is the successor trustee named in the trust instrument?",
-            accountIds: [h.id],
-          });
+      case "successor-trustee": {
+        const trustee = answers[`${h.id}:successor-trustee`];
+        passesToNames = living(h.owners).length ? living(h.owners) : trustee ? [trustee] : [];
         break;
+      }
       case "successor-owner":
-        passesToNames = h.successorOwner ? [h.successorOwner] : [];
-        if (!h.successorOwner)
-          openQuestions.push({
-            key: `${h.id}:successor-owner`,
-            question: fill("Who should own {account} now?"),
-            accountIds: [h.id],
-          });
+        passesToNames = holding.successorOwner ? [holding.successorOwner] : [];
         break;
       case "estate":
         passesToNames = [`Estate of ${input.deceased.name}`];
@@ -266,7 +361,7 @@ export function settlementPlan(input: SettlementInput, book: Rulebook = rulebook
     actions.forEach((a) => cite(a.action.sources));
 
     accounts.push({
-      holding: h,
+      holding,
       facts,
       outcome,
       title: fill(outcome.title),
@@ -289,12 +384,26 @@ export function settlementPlan(input: SettlementInput, book: Rulebook = rulebook
     });
   }
 
-  // 7. Household rules, once per death.
+  // 7. Household rules, once per death. Questions come from our records alone;
+  // the rules themselves run on the facts with the advisor's answers applied.
   const hh = deriveHouseholdFacts(ctx, accounts);
-  const hhValues = plainValues(hh.facts);
   const hhFill = filler(input);
+  for (const rule of book.household) {
+    if (!holds(rule.when, plainValues(hh.facts))) continue;
+    for (const ask of rule.asks ?? [])
+      if (hh.facts[ask.fact].value === "unknown")
+        raised.push(
+          question(`household:${ask.fact}`, hhFill(ask.question), [], ask.options ?? YES_NO),
+        );
+  }
+  const hhFacts = { ...hh.facts };
+  for (const [k, f] of Object.entries(hh.facts)) {
+    const v = answers[`household:${k}`];
+    if (v !== undefined && TRI_STATE.includes(String(f.value)) && TRI_STATE.includes(v))
+      (hhFacts as Record<string, unknown>)[k] = { value: v, evidence: "Confirmed by the advisor" };
+  }
+  const hhValues = plainValues(hhFacts);
   const household: HouseholdItem[] = [];
-  const hhQuestions: OpenQuestion[] = [];
   for (const rule of book.household) {
     if (!holds(rule.when, hhValues)) continue;
     household.push({
@@ -302,13 +411,6 @@ export function settlementPlan(input: SettlementInput, book: Rulebook = rulebook
       detail: hhFill(rule.detail),
       actions: rule.actions.map((id) => plan(book.actions[id], "household", hhFill, dod, [])),
     });
-    for (const ask of rule.asks ?? [])
-      if (hh.facts[ask.fact].value === "unknown")
-        hhQuestions.push({
-          key: `household:${rule.id}`,
-          question: hhFill(ask.question),
-          accountIds: [],
-        });
     cite(rule.sources);
     rule.actions.forEach((id) => cite(book.actions[id].sources));
   }
@@ -328,13 +430,17 @@ export function settlementPlan(input: SettlementInput, book: Rulebook = rulebook
       a.label.localeCompare(b.label),
   );
 
-  // Open questions: the same question on several accounts is asked once.
-  const openQuestions: OpenQuestion[] = [];
-  for (const q of [...accounts.flatMap((p) => p.openQuestions), ...hhQuestions]) {
-    const seen = openQuestions.find((x) => x.question === q.question);
-    if (seen) seen.accountIds = uniq([...seen.accountIds, ...q.accountIds]);
-    else openQuestions.push({ ...q, accountIds: [...q.accountIds] });
-  }
+  // Questions: still open, or answered (with the answer the plan now reflects).
+  const openQuestions = mergeQuestions(raised.filter((q) => answers[q.key] === undefined));
+  const answered = mergeQuestions(
+    raised
+      .filter((q) => answers[q.key] !== undefined)
+      .map((q) => ({
+        ...q,
+        answer: answers[q.key],
+        answerLabel: q.options.find((o) => o.value === answers[q.key])?.label ?? answers[q.key],
+      })),
+  );
 
   // 9. Review queue.
   const reviewQueue: ReviewItem[] = [
@@ -386,6 +492,7 @@ export function settlementPlan(input: SettlementInput, book: Rulebook = rulebook
     household,
     deadlines,
     openQuestions,
+    answered,
     reviewQueue,
     assumptions: uniq([
       ...(input.assumptions ?? []),

@@ -130,20 +130,27 @@ recorded death but clears the flows.
 
 The advisor dashboard opens with **search** (clients or family members; press
 `/`) and a **daily briefing** of who needs attention and why. Every client name,
-search result and notification opens that client's **summary**, with tabs:
+search result and notification opens that client's page. It reads top to bottom,
+with the **assistant docked on the right** (below the content on phones):
 
-- **Overview** — profile, goals, recent contact, and what matters now.
-- **Assets & advice** — holdings with owners and beneficiaries, plus
-  recommendations for each (retitling, beneficiary updates, inherited IRAs,
-  probate, idle cash...), each with its steps and the facts it's based on.
-- **Family** — everyone tied to the accounts, with roles (executor, trustee, heir).
-- **Loss guide** (only while a loss is open) — who died and what they held, how
-  to approach the bereaved client and each heir, a 12-month plan, and advice
-  personalized from the client's notes and accounts.
-- **Transition plan** (always) — the settlement rules engine; see below.
-- **Ask** — questions about the client, answered with what was checked, the
-  client data used and, for legal questions, the rules cited.
-- **Engagement** — next best action, contact cadence, talking points and a draft.
+- **Next steps** (default) — _Where things stand_ (one headline, one paragraph,
+  three figures), then _Do next_: a short ranked list decided by the settlement
+  rulebook — people first, then what the rulebook needs you to confirm, then one
+  step per account outcome, dated deadlines, hand-offs to the attorney or tax
+  advisor, and sign-off. Each step has **Why?** (the agent explains the
+  decisions and the law behind it) and **Done**. Everything else — how to talk to
+  the client, each account's route, key dates, the household checklist, sign-off,
+  the outreach draft, your answers and our assumptions — sits under _Details_,
+  closed until you need it.
+- **Client** — reference: profile, goals, notes, contact history, family and
+  accounts. No advice here.
+- **What if** — run the rulebook as if anyone in the household died today.
+- **Assistant** — opens with what it worked out ("I walked 10 accounts through
+  the rulebook…", with _How I decided_), then asks for the facts the rulebook
+  can't know, with answer buttons (who owns the 529 now, whether a beneficiary is
+  disabled, whether federal benefits were paid). Each answer is fed back into
+  the decision tree, and the assistant says what changed. Free-text questions
+  work too.
 
 The assistant is **simulated**: `src/lib/assistant.ts` is a rules engine over the
 mock profiles in `src/data/clients.ts` (hand-written for Morgan Placeholder and
@@ -151,7 +158,7 @@ Avery Example; generated for everyone else so totals match the table). Every
 assistant panel is labeled "Simulated". It handles deaths recorded at runtime,
 including when the customer themself died (it then works with the next of kin).
 
-## Settlement rules engine — Transition plan + `/advisor/rules`
+## Settlement rules engine — Next steps, the assistant and `/advisor/rules`
 
 A deterministic, cited rules engine answers, for any household and any person in
 it: _when this person dies, what legally happens to each account, who gets it,
@@ -159,16 +166,21 @@ what has to be done by when, under which federal or Pennsylvania rule, and which
 steps need a professional to sign off?_ It runs in two modes from the same
 rulebook — **same protocols, run before the death instead of after**:
 
-1. **After a death** (Transition plan → _After Riley's death_): a per-account
-   route table (each row expands to the decision path, evidence and citations,
-   and a plain-language line for the client), key dates counted from the date
-   of death, a federal + Pennsylvania household checklist, open questions the
-   engine won't guess, a sign-off queue and the assumptions it made.
-2. **What if** (Transition plan → _What if…_): pick a household member; the same
-   engine runs on today's data and turns every bad outcome (probate, a
-   designation naming someone who has died, no beneficiary, a minor named
-   directly) into a finding with a fix. The daily brief surfaces exposed
-   households.
+1. **After a death** — the plan behind _Next steps_: a route per account (each
+   expands to the decision path, evidence and citations, and a plain-language
+   line for the client), key dates counted from the date of death, a federal +
+   Pennsylvania household checklist, questions the engine won't guess, a
+   sign-off queue and the assumptions it made.
+2. **What if** (tab) — pick a household member; the same engine runs on today's
+   data and turns every bad outcome (probate, a designation naming someone who
+   has died, no beneficiary, a minor named directly) into a finding with a fix.
+   With no open loss, these fixes are the client's _Next steps_. The daily brief
+   surfaces exposed households.
+
+- **Decisions:** `src/lib/nextSteps.ts` turns the plan into ranked steps;
+  `src/lib/agent.ts` is the assistant over it (briefing, _Why?_, what an answer
+  changed). Answers and done steps live in `src/lib/settlement/casework.ts` (in
+  the browser) and are fed back into `settlementPlan` as `answers`.
 
 - **Rulebook data** lives in `src/data/settlement` (sources, actions, decision
   tree, overlays, household rules, Pennsylvania pack). Every rule cites a source;
@@ -182,8 +194,10 @@ rulebook — **same protocols, run before the death instead of after**:
   `src/data/settlement`, then a test in `src/lib/settlement/__tests__`. `npm test`
   checks every branch is covered, every source exists, and the golden plans for
   Morgan, Avery and the Sample family.
-- Sign-offs are the only stored state (`src/lib/settlement/reviews.ts`, in the
-  browser); _Reset demo_ on the advisor home clears them.
+- The only stored state is what the advisor tells us: sign-offs
+  (`src/lib/settlement/reviews.ts`), answers and done steps
+  (`src/lib/settlement/casework.ts`), all in the browser. _Reset demo_ on the
+  advisor home clears them.
 
 General guidance under federal and Pennsylvania rules as reviewed on Oct 26, 2026. Not legal or tax advice. The plan is in `docs/plans/settlement-rules-engine.md`.
 

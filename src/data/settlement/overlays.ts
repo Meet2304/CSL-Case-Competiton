@@ -56,7 +56,11 @@ export const overlays: Overlay[] = [
     asks: [
       {
         fact: "decedentPastRequiredBeginningDate",
-        question: "Was {decedent} already taking required withdrawals, and was this year's taken?",
+        question: "Was {decedent} already taking required withdrawals from {account}?",
+        options: [
+          { value: "yes", label: "Yes, already taking them" },
+          { value: "no", label: "No, not yet" },
+        ],
       },
     ],
     sources: ["rmd-final-regs-2024"],
@@ -100,16 +104,22 @@ export const overlays: Overlay[] = [
     id: "ov.disability-check",
     title: "Check for an eligible designated beneficiary",
     routes: ["inherited-retirement"],
-    when: [{ fact: "primaryBeneficiaryCategory", eq: "other-individual" }],
+    // Disability is never in our records, so it's asked for every adult non-spouse heir.
+    when: [
+      { fact: "primaryBeneficiaryCategory", eq: "other-individual" },
+      { fact: "beneficiaryDisabledOrIll", eq: "unknown" },
+    ],
     detail:
-      "A disabled or chronically ill beneficiary can stretch withdrawals over their lifetime instead of 10 years.",
+      "A disabled or chronically ill beneficiary can stretch withdrawals over their lifetime instead of 10 years. Until someone confirms, the plan assumes the 10-year rule.",
     actions: [],
-    // Disability is never in our data, so the question is always raised for adult non-spouse heirs.
     asks: [
       {
-        fact: "primaryBeneficiaryCategory",
-        question:
-          "Is any beneficiary disabled or chronically ill? They'd be an eligible designated beneficiary.",
+        fact: "beneficiaryDisabledOrIll",
+        question: "Is any beneficiary of {account} disabled or chronically ill?",
+        options: [
+          { value: "yes", label: "Yes, at least one is" },
+          { value: "no", label: "No" },
+        ],
       },
     ],
     sources: ["rmd-final-regs-2024"],
@@ -138,6 +148,3 @@ export const overlays: Overlay[] = [
     sources: ["pnc-death-claims"],
   },
 ];
-
-/** Overlays whose questions are raised whenever they match, not only when a fact is unknown. */
-export const ALWAYS_ASK_OVERLAYS = ["ov.disability-check"];

@@ -56,6 +56,18 @@ export function useReviews(): ReviewState {
 
 export const reviewKey = (customerId: string, queueKey: string) => `${customerId}:${queueKey}`;
 
+/** Review items still waiting for at least one sign-off. */
+export function pendingReviews<T extends { key: string; levels: ReviewLevel[] }>(
+  items: T[],
+  reviews: ReviewState,
+  customerId: string,
+): T[] {
+  return items.filter((item) => {
+    const done = reviews[reviewKey(customerId, item.key)] ?? [];
+    return item.levels.some((l) => !done.some((d) => d.level === l));
+  });
+}
+
 export const reviewActions = {
   signOff(key: string, signOff: ReviewSignOff) {
     const s = read();

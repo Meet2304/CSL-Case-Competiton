@@ -13,7 +13,7 @@ import type {
   HoldingType,
 } from "@/data/types";
 import type { ClientFacts } from "@/lib/assistant";
-import type { SettlementInput } from "./engine";
+import type { Answers, SettlementInput } from "./engine";
 import { stateFromCity } from "./facts";
 
 /** What the survivor is to the deceased, from what the deceased was to the survivor. */
@@ -25,9 +25,13 @@ const inverse: Record<string, string> = {
 };
 
 /** For an open loss in the advisor book. Undefined when there's no loss or no deceased member. */
-export function settlementInputFromFacts(f: ClientFacts): SettlementInput | undefined {
+export function settlementInputFromFacts(
+  f: ClientFacts,
+  answers: Answers = {},
+): SettlementInput | undefined {
   if (!f.loss || !f.deceased) return undefined;
   return {
+    answers,
     mode: "settlement",
     asOf: f.today,
     deceased: { name: f.deceased.name, age: f.deceased.age, dateOfDeath: f.loss.date },
@@ -63,6 +67,7 @@ export function simulationInput(
   profile: ClientProfile,
   personName: string,
   asOf: string,
+  answers: Answers = {},
 ): SettlementInput {
   const person = profile.members.find((m) => m.name === personName);
   const living = profile.members.filter((m) => m.status === "Living" && m.name !== personName);
@@ -88,6 +93,7 @@ export function simulationInput(
     members: profile.members,
     holdings: profile.holdings,
     state: stateFromCity(profile.city),
+    answers,
   };
 }
 

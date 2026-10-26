@@ -6,7 +6,7 @@
 import type { AdvisorCustomer, ClientProfile, Holding } from "@/data/types";
 import { formatCompactMoney } from "@/lib/format";
 import { simulationInput } from "./adapters";
-import { settlementPlan, type SettlementPlan } from "./engine";
+import { settlementPlan, type Answers, type SettlementPlan } from "./engine";
 import { label } from "./facts";
 
 export type FindingSeverity = "high" | "medium" | "low";
@@ -44,8 +44,9 @@ export function readinessReport(
   profile: ClientProfile,
   personName: string,
   asOf: string,
+  answers: Answers = {},
 ): ReadinessReport {
-  const input = simulationInput(customer, profile, personName, asOf);
+  const input = simulationInput(customer, profile, personName, asOf, answers);
   const plan = settlementPlan(input);
   const first = firstName(personName);
   const findings: Finding[] = [];

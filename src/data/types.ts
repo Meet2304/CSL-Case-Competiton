@@ -461,6 +461,8 @@ export type AccountFactValues = {
   anyBeneficiaryMinor: TriState;
   decedentPastRequiredBeginningDate: TriState;
   successorOwnerNamed: TriState; // 529 plans
+  /** Never in our records; only the advisor can confirm it. */
+  beneficiaryDisabledOrIll: TriState;
   heldOutsidePnc: boolean;
   value: number;
   state: StateCode;
@@ -576,6 +578,20 @@ export type OutcomeNode = {
 
 export type RuleNode = DecisionNode | OutcomeNode;
 
+/** One answer the advisor can pick; `value` is the fact value it sets. */
+export type AskOption = { value: string; label: string };
+
+/**
+ * A fact the rulebook needs but our records don't have. Raised while the fact
+ * is "unknown"; the advisor's answer becomes the fact and the tree is re-walked.
+ */
+export type RuleAsk<K extends string> = {
+  fact: K;
+  question: string;
+  /** Defaults to Yes / No for yes-no-unknown facts. */
+  options?: AskOption[];
+};
+
 export type Overlay = {
   id: string;
   title: string;
@@ -588,7 +604,7 @@ export type Overlay = {
   /** Show as a warning chip on the account row. */
   attention?: boolean;
   /** Questions to raise when a fact used here is "unknown". */
-  asks?: { fact: AccountFactKey; question: string }[];
+  asks?: RuleAsk<AccountFactKey>[];
   sources: string[];
 };
 
@@ -600,7 +616,7 @@ export type HouseholdRule = {
   detail: string;
   actions: string[];
   review?: ReviewLevel[];
-  asks?: { fact: HouseholdFactKey; question: string }[];
+  asks?: RuleAsk<HouseholdFactKey>[];
   sources: string[];
 };
 

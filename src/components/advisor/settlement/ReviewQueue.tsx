@@ -11,14 +11,6 @@ import { reviewLabels } from "./parts";
 
 const advisorName = `${advisor.firstName} ${advisor.lastName}`;
 
-/** Items still waiting for at least one sign-off. */
-export function pendingReviews(items: ReviewItem[], reviews: ReviewState, customerId: string) {
-  return items.filter((item) => {
-    const done = reviews[reviewKey(customerId, item.key)] ?? [];
-    return item.levels.some((l) => !done.some((d) => d.level === l));
-  });
-}
-
 /**
  * Steps that need a person to sign off before they're final. Recording a
  * sign-off is the only thing stored; the plan itself is always derived.

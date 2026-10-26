@@ -29,5 +29,4 @@ export const DISCLAIMER =
   "General guidance under federal and Pennsylvania rules as reviewed on Oct 26, 2026. " +
   "Not legal or tax advice. Steps marked for review need sign-off before they're final.";
 
-export { ALWAYS_ASK_OVERLAYS } from "./overlays";
 export { UNVERIFIED_SOURCE_IDS } from "./sources";
