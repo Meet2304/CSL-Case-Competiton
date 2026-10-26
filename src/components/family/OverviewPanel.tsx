@@ -3,6 +3,7 @@
 import { useId, useState } from "react";
 import { ArrowLeft, Eye, EyeOff, Plus } from "lucide-react";
 import { Money } from "@/components/ui/Money";
+import { WillOverviewStrip } from "@/components/will/WillTab";
 import {
   assetCategories,
   type AssetCategory,
@@ -38,6 +39,7 @@ export function OverviewPanel() {
 
   return (
     <div>
+      {!preview && <WillOverviewStrip />}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <label htmlFor={selectId} className="text-sm font-semibold text-pnc-ink">
           <span className="flex items-center gap-1.5">

@@ -1,8 +1,9 @@
 "use client";
 
-import { useId, useState, type KeyboardEvent } from "react";
+import { useId, useSyncExternalStore, type KeyboardEvent } from "react";
 import { Landmark, MailOpen, RotateCcw, ShieldCheck, Users, type LucideIcon } from "lucide-react";
 import { MockBadge } from "@/components/mock/Mock";
+import { WillTab } from "@/components/will/WillTab";
 import { Money } from "@/components/ui/Money";
 import { isAdminMember, memberById } from "@/lib/family";
 import { cn } from "@/lib/format";
@@ -16,8 +17,32 @@ const tabs = [
   { id: "overview", label: "Overview" },
   { id: "members", label: "Members" },
   { id: "roles", label: "Roles & access" },
+  { id: "will", label: "Will" },
 ] as const;
 type TabId = (typeof tabs)[number]["id"];
+
+const isTab = (id: string): id is TabId => tabs.some((t) => t.id === id);
+
+// The open tab lives in the URL hash (/family#will) so other pages can link
+// straight to it and the back button works. The server always renders Overview.
+function subscribeHash(onChange: () => void) {
+  window.addEventListener("hashchange", onChange);
+  return () => window.removeEventListener("hashchange", onChange);
+}
+
+function useHashTab(): [TabId, (id: TabId) => void] {
+  const hash = useSyncExternalStore(
+    subscribeHash,
+    () => window.location.hash.slice(1),
+    () => "",
+  );
+  const setTab = (id: TabId) => {
+    const url = id === "overview" ? window.location.pathname : `#${id}`;
+    window.history.replaceState(null, "", url);
+    window.dispatchEvent(new HashChangeEvent("hashchange"));
+  };
+  return [isTab(hash) ? hash : "overview", setTab];
+}
 
 /**
  * Customer-side family dashboard: role-based access (who can see and do what)
@@ -28,7 +53,7 @@ type TabId = (typeof tabs)[number]["id"];
  */
 export function FamilyDashboard() {
   const { state, reset } = useFamily();
-  const [tab, setTab] = useState<TabId>("overview");
+  const [tab, setTab] = useHashTab();
   const baseId = useId();
 
   const self = memberById(state, state.selfId);
@@ -143,6 +168,7 @@ export function FamilyDashboard() {
           {tab === "overview" && <OverviewPanel />}
           {tab === "members" && <MembersPanel />}
           {tab === "roles" && <RolesPanel />}
+          {tab === "will" && <WillTab />}
         </div>
       </section>
     </div>

@@ -4,6 +4,7 @@ import { ClipboardList, EllipsisVertical } from "lucide-react";
 import { MobileHeader } from "@/components/mobile/MobileHeader";
 import { NoticeCarousel } from "@/components/mobile/NoticeCarousel";
 import { WalletCard } from "@/components/mobile/WalletCard";
+import { WillReminder } from "@/components/will/WillReminder";
 import { MockBadge } from "@/components/mock/Mock";
 import { Money } from "@/components/ui/Money";
 import {
@@ -47,6 +48,7 @@ export default function MobileAccountsPage() {
       </MobileHeader>
 
       <div className="space-y-4 px-3 pt-4">
+        <WillReminder variant="mobile" />
         <WalletCard title={virtualWallet.title} accounts={virtualWallet.accounts} />
 
         <section className="overflow-hidden rounded-2xl bg-white shadow-card">

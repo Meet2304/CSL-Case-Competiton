@@ -3,7 +3,8 @@
  * household and dollar figure is invented. Loss events recorded here drive
  * the urgent notifications and the "needs attention" ordering of the
  * customer table (see src/lib/advisor.ts) — add one to a customer to see it
- * surface at the top.
+ * surface at the top. Customers without a `will` have none on file; the
+ * advisor assistant recommends one based on relationship value and household.
  */
 import type { Advisor, AdvisorCustomer, AdvisorNotification } from "./types";
 
@@ -14,7 +15,8 @@ export const advisor: Advisor = {
   team: "PNC Private Bank · Pittsburgh",
 };
 
-type Seed = Omit<AdvisorCustomer, "lossEvents"> & Partial<Pick<AdvisorCustomer, "lossEvents">>;
+type Seed = Omit<AdvisorCustomer, "lossEvents" | "will"> &
+  Partial<Pick<AdvisorCustomer, "lossEvents" | "will">>;
 
 const seeds: Seed[] = [
   {
@@ -79,6 +81,7 @@ const seeds: Seed[] = [
     accountCount: 11,
     lastContact: "2026-10-14",
     nextReview: "2026-11-20",
+    will: { status: "on-file", updated: "2025-06-14" },
     lossEvents: [
       // Handled earlier in the year — kept as history, no longer flagged.
       {
@@ -100,6 +103,7 @@ const seeds: Seed[] = [
     accountCount: 4,
     lastContact: "2026-10-09",
     nextReview: "2027-02-03",
+    will: { status: "on-file", updated: "2024-11-02" },
   },
   {
     id: "c-testwood",
@@ -123,6 +127,7 @@ const seeds: Seed[] = [
     accountCount: 8,
     lastContact: "2026-10-20",
     nextReview: "2027-01-28",
+    will: { status: "in-progress", updated: "2026-10-12" },
   },
   {
     id: "c-sampleton",
@@ -153,6 +158,7 @@ const seeds: Seed[] = [
     accountCount: 12,
     lastContact: "2026-10-21",
     nextReview: "2026-11-30",
+    will: { status: "on-file", updated: "2026-02-20" },
   },
   {
     id: "c-notreal",
@@ -183,6 +189,7 @@ const seeds: Seed[] = [
     accountCount: 7,
     lastContact: "2026-10-01",
     nextReview: "2027-01-05",
+    will: { status: "on-file", updated: "2023-05-18" },
   },
   {
     id: "c-samplewood",
@@ -233,6 +240,7 @@ const seeds: Seed[] = [
     accountCount: 4,
     lastContact: "2026-10-11",
     nextReview: "2027-04-02",
+    will: { status: "in-progress", updated: "2026-09-21" },
   },
   {
     id: "c-invented",
@@ -243,6 +251,7 @@ const seeds: Seed[] = [
     accountCount: 9,
     lastContact: "2026-10-06",
     nextReview: "2026-12-12",
+    will: { status: "on-file", updated: "2025-09-30" },
   },
   {
     id: "c-standin",
@@ -253,6 +262,7 @@ const seeds: Seed[] = [
     accountCount: 4,
     lastContact: "2026-08-19",
     nextReview: "2027-02-25",
+    will: { status: "on-file", updated: "2026-04-07" },
   },
   {
     id: "c-typical",
@@ -276,7 +286,11 @@ const seeds: Seed[] = [
   },
 ];
 
-export const advisorCustomers: AdvisorCustomer[] = seeds.map((s) => ({ lossEvents: [], ...s }));
+export const advisorCustomers: AdvisorCustomer[] = seeds.map((s) => ({
+  lossEvents: [],
+  will: { status: "none" },
+  ...s,
+}));
 
 /** Routine (non-urgent) notifications. Loss notifications are derived from loss events. */
 export const routineNotifications: AdvisorNotification[] = [

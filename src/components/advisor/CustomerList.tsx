@@ -3,6 +3,7 @@
 import { AttentionIcon } from "@/components/advisor/AttentionIcon";
 import { Pagination, usePagination } from "@/components/advisor/Pagination";
 import { useCustomerJump } from "@/components/advisor/useCustomerJump";
+import { WillStatus } from "@/components/advisor/WillStatus";
 import { Money } from "@/components/ui/Money";
 import { MOCK_AS_OF } from "@/data/mock";
 import type { AdvisorCustomer } from "@/data/types";
@@ -51,6 +52,9 @@ export function CustomerList({ customers }: { customers: AdvisorCustomer[] }) {
                     Loss of {loss.relationship.toLowerCase()} · {formatDate(loss.date, "monthDay")}
                   </p>
                 )}
+                <div className="mt-1">
+                  <WillStatus customer={c} compact />
+                </div>
               </div>
               <span className="shrink-0 text-right">
                 <Money

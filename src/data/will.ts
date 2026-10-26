@@ -1,0 +1,250 @@
+/**
+ * MOCK reference data for the will planner (`/will`). The nonprofits are
+ * invented placeholders — no real charity is featured. Option lists
+ * (institutions, states, relationships) are what the forms offer.
+ */
+import type { CharityCause, PlaceholderCharity } from "./types";
+
+export const charityCauses: CharityCause[] = [
+  "Health",
+  "Education",
+  "Environment",
+  "Animals",
+  "Veterans",
+  "Human Services",
+  "International",
+];
+
+export const placeholderCharities: PlaceholderCharity[] = [
+  {
+    id: "ch-research",
+    name: "Sample Cancer Research Fund",
+    cause: "Health",
+    blurb: "Funds early-stage cancer research.",
+    featured: true,
+  },
+  {
+    id: "ch-veterans",
+    name: "Example Veterans Alliance",
+    cause: "Veterans",
+    blurb: "Supports veterans and their families.",
+    featured: true,
+  },
+  {
+    id: "ch-hospital",
+    name: "Placeholder Children's Hospital",
+    cause: "Health",
+    blurb: "Pediatric care and family housing.",
+    featured: true,
+  },
+  {
+    id: "ch-ocean",
+    name: "Demo Ocean Conservancy",
+    cause: "Environment",
+    blurb: "Protects coastlines and marine life.",
+    featured: true,
+  },
+  {
+    id: "ch-scholars",
+    name: "Example Scholarship Foundation",
+    cause: "Education",
+    blurb: "College scholarships for first-generation students.",
+    featured: true,
+  },
+  {
+    id: "ch-rights",
+    name: "Sample Human Rights Watchers",
+    cause: "International",
+    blurb: "Documents and defends human rights.",
+    featured: true,
+  },
+  {
+    id: "ch-clinic",
+    name: "Placeholder Community Clinic",
+    cause: "Health",
+    blurb: "Free primary care for uninsured patients.",
+    featured: true,
+  },
+  {
+    id: "ch-refugee",
+    name: "Demo Refugee Relief",
+    cause: "International",
+    blurb: "Emergency aid for displaced families.",
+    featured: true,
+  },
+  {
+    id: "ch-warriors",
+    name: "Example Wounded Service Project",
+    cause: "Veterans",
+    blurb: "Rehabilitation for injured service members.",
+    featured: true,
+  },
+  {
+    id: "ch-care",
+    name: "Sample Global Care",
+    cause: "Human Services",
+    blurb: "Fights poverty with local partners.",
+    featured: true,
+  },
+  {
+    id: "ch-victory",
+    name: "Placeholder Victory Over Illness Fund",
+    cause: "Health",
+    blurb: "Grants for rare-disease research.",
+    featured: true,
+  },
+  {
+    id: "ch-foodbank",
+    name: "Sample Food Bank Network",
+    cause: "Human Services",
+    blurb: "Stocks neighborhood food pantries.",
+    featured: false,
+  },
+  {
+    id: "ch-literacy",
+    name: "Example Literacy Project",
+    cause: "Education",
+    blurb: "Reading programs for young children.",
+    featured: false,
+  },
+  {
+    id: "ch-forest",
+    name: "Demo Forest Trust",
+    cause: "Environment",
+    blurb: "Buys and protects old-growth forest.",
+    featured: false,
+  },
+  {
+    id: "ch-shelter",
+    name: "Placeholder Animal Rescue",
+    cause: "Animals",
+    blurb: "No-kill shelter and adoption network.",
+    featured: false,
+  },
+  {
+    id: "ch-wildlife",
+    name: "Sample Wildlife Fund",
+    cause: "Animals",
+    blurb: "Habitat protection for endangered species.",
+    featured: false,
+  },
+];
+
+/** Institutions offered for financial, retirement and brokerage accounts. */
+export const financialInstitutions = [
+  "PNC",
+  "Ameriprise",
+  "Vanguard",
+  "TD Ameritrade",
+  "Fidelity",
+  "Charles Schwab",
+  "ETrade",
+  "TIAA",
+  "T Rowe Price",
+  "Wells Fargo",
+  "Bank of America",
+  "JP Morgan Chase",
+  "Edward Jones",
+  "Merrill Lynch",
+  "Morgan Stanley",
+  "Nationwide",
+  "Northwestern Mutual",
+  "State Farm",
+  "Liberty Mutual",
+  "Mutual of Omaha",
+  "Guardian Life",
+  "Other",
+];
+
+export const retirementAccountTypes = [
+  "IRA (Traditional, Roth, SEP, SIMPLE, etc.)",
+  "401(k)",
+  "Annuity",
+  "Other retirement account",
+];
+
+/** "What is the approximate total value of assets distributed by your will?" */
+export const estateValueBands = [
+  "Less than $200k",
+  "$200K-$500K",
+  "$500K-$1M",
+  "$1M-$2M",
+  "$2M-$5M",
+  "$5M-$10M",
+  "More than $10M",
+];
+
+export const relationshipOptions = [
+  "Spouse",
+  "Partner",
+  "Child",
+  "Stepchild",
+  "Grandchild",
+  "Parent",
+  "Sibling",
+  "Grandparent",
+  "Aunt / Uncle",
+  "Niece / Nephew",
+  "Cousin",
+  "In-law",
+  "Friend",
+  "Other",
+];
+
+export const usStates = [
+  ["AL", "Alabama"],
+  ["AK", "Alaska"],
+  ["AZ", "Arizona"],
+  ["AR", "Arkansas"],
+  ["CA", "California"],
+  ["CO", "Colorado"],
+  ["CT", "Connecticut"],
+  ["DE", "Delaware"],
+  ["DC", "District of Columbia"],
+  ["FL", "Florida"],
+  ["GA", "Georgia"],
+  ["HI", "Hawaii"],
+  ["ID", "Idaho"],
+  ["IL", "Illinois"],
+  ["IN", "Indiana"],
+  ["IA", "Iowa"],
+  ["KS", "Kansas"],
+  ["KY", "Kentucky"],
+  ["LA", "Louisiana"],
+  ["ME", "Maine"],
+  ["MD", "Maryland"],
+  ["MA", "Massachusetts"],
+  ["MI", "Michigan"],
+  ["MN", "Minnesota"],
+  ["MS", "Mississippi"],
+  ["MO", "Missouri"],
+  ["MT", "Montana"],
+  ["NE", "Nebraska"],
+  ["NV", "Nevada"],
+  ["NH", "New Hampshire"],
+  ["NJ", "New Jersey"],
+  ["NM", "New Mexico"],
+  ["NY", "New York"],
+  ["NC", "North Carolina"],
+  ["ND", "North Dakota"],
+  ["OH", "Ohio"],
+  ["OK", "Oklahoma"],
+  ["OR", "Oregon"],
+  ["PA", "Pennsylvania"],
+  ["RI", "Rhode Island"],
+  ["SC", "South Carolina"],
+  ["SD", "South Dakota"],
+  ["TN", "Tennessee"],
+  ["TX", "Texas"],
+  ["UT", "Utah"],
+  ["VT", "Vermont"],
+  ["VA", "Virginia"],
+  ["WA", "Washington"],
+  ["WV", "West Virginia"],
+  ["WI", "Wisconsin"],
+  ["WY", "Wyoming"],
+] as const;
+
+export function stateName(code: string): string {
+  return usStates.find(([c]) => c === code)?.[1] ?? code;
+}

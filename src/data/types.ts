@@ -72,6 +72,8 @@ export type Payment = {
 };
 
 export type Customer = {
+  /** Matches the household's `AdvisorCustomer.id` on the advisor side. */
+  id: string;
   firstName: string;
   lastName: string;
   tier: string;
@@ -114,6 +116,15 @@ export type HouseholdMember = {
   relationship: FamilyRelationship;
 };
 
+/** Where a customer is with adding a will to their account. */
+export type WillStatus = "none" | "in-progress" | "on-file";
+
+export type WillRecord = {
+  status: WillStatus;
+  /** ISO date the will was last saved (absent when there is no will). */
+  updated?: string;
+};
+
 /** A customer household assigned to the advisor by the bank. */
 export type AdvisorCustomer = {
   id: string;
@@ -125,9 +136,10 @@ export type AdvisorCustomer = {
   lastContact: string; // ISO date
   nextReview: string; // ISO date
   lossEvents: LossEvent[];
+  will: WillRecord;
 };
 
-export type AdvisorNotificationKind = "loss" | "review" | "deposit" | "document";
+export type AdvisorNotificationKind = "loss" | "review" | "deposit" | "document" | "will";
 
 export type AdvisorNotification = {
   id: string;
@@ -249,4 +261,25 @@ export type FamilyState = {
   roles: FamilyRole[];
   assets: FamilyAsset[];
   processes: SuccessionProcess[];
+};
+
+// ---------------------------------------------------------------------------
+// Will planner reference data.
+
+export type CharityCause =
+  | "Health"
+  | "Education"
+  | "Environment"
+  | "Animals"
+  | "Veterans"
+  | "Human Services"
+  | "International";
+
+/** A placeholder nonprofit offered in the will planner's charity grid. */
+export type PlaceholderCharity = {
+  id: string;
+  name: string;
+  cause: CharityCause;
+  blurb: string;
+  featured: boolean;
 };
