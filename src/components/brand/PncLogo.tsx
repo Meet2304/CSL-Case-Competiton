@@ -1,43 +1,43 @@
+import Image from "next/image";
 import { cn } from "@/lib/format";
 
 type PncLogoProps = {
-  /** "light" = white wordmark for blue backgrounds, "dark" = blue wordmark. */
+  /** "light" = white wordmark for blue backgrounds, "dark" = the official blue wordmark. */
   tone?: "light" | "dark";
   size?: "sm" | "md" | "lg";
   className?: string;
 };
 
-const sizes = {
-  sm: { mark: 22, text: "text-xl" },
-  md: { mark: 32, text: "text-3xl" },
-  lg: { mark: 64, text: "text-6xl" },
-};
+// The official logo is 512 × 141 (public/brand). Heights in px; width follows the aspect ratio.
+const heights = { sm: 26, md: 38, lg: 64 };
+const ASPECT = 512 / 141;
 
-/** Simplified PNC-style mark: orange disc with a split white triangle. */
+/** The PNC emblem on its own: orange disc with the white split triangle. */
 export function PncMark({ size = 32, className }: { size?: number; className?: string }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true" className={className}>
-      <circle cx="16" cy="16" r="16" fill="var(--color-pnc-orange)" />
-      <path d="M10 7.5 L25 16 L10 24.5 Z" fill="#fff" />
-      <path d="M10 13.2 L16.6 16 L10 18.8 Z" fill="var(--color-pnc-orange)" />
-    </svg>
+    <Image
+      src="/brand/pnc-mark.png"
+      alt=""
+      aria-hidden="true"
+      width={size}
+      height={size}
+      className={cn("shrink-0", className)}
+    />
   );
 }
 
+/** The PNC logo. The light version swaps the blue wordmark for white on dark headers. */
 export function PncLogo({ tone = "dark", size = "md", className }: PncLogoProps) {
-  const s = sizes[size];
+  const h = heights[size];
   return (
-    <span className={cn("inline-flex items-center gap-2", className)} aria-label="PNC">
-      <PncMark size={s.mark} />
-      <span
-        className={cn(
-          "font-serif font-semibold leading-none tracking-tight",
-          s.text,
-          tone === "light" ? "text-white" : "text-pnc-blue-800",
-        )}
-      >
-        PNC
-      </span>
-    </span>
+    <Image
+      src={tone === "light" ? "/brand/pnc-logo-light.png" : "/brand/pnc-logo.png"}
+      alt="PNC"
+      width={Math.round(h * ASPECT)}
+      height={h}
+      priority
+      className={cn("h-auto shrink-0", className)}
+      style={{ width: Math.round(h * ASPECT), height: h }}
+    />
   );
 }
