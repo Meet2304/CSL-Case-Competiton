@@ -40,4 +40,5 @@ and mobile views stay in one design language.
   the other view in `src/proxy.ts`. Top-level web pages get a nav entry in
   `WebHeader.tsx`; mobile headers pad their top with `var(--status-h)` (handled by
   `MobileHeader`).
-- Before finishing: `npm run build` and `npm run lint` must pass.
+- Before finishing: `npm run typecheck`, `npm run lint` and `npm run build` must pass
+  (the same checks run in GitHub Actions CI on every PR — `.github/workflows/ci.yml`).
