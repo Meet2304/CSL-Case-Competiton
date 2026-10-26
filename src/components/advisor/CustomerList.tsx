@@ -7,7 +7,7 @@ import { WillStatus } from "@/components/advisor/WillStatus";
 import { Money } from "@/components/ui/Money";
 import { MOCK_AS_OF } from "@/data/mock";
 import type { AdvisorCustomer } from "@/data/types";
-import { customerAnchor, openLoss } from "@/lib/advisor";
+import { customerAnchor, lossTag, openLoss } from "@/lib/advisor";
 import { cn, daysBetween, formatDate, relativeDay } from "@/lib/format";
 
 const PAGE_SIZE = 6;
@@ -37,9 +37,7 @@ export function CustomerList({ customers }: { customers: AdvisorCustomer[] }) {
               {/* Fixed-width slot keeps names aligned whether or not a row is flagged. */}
               <span className="flex w-8 shrink-0 justify-center pt-0.5">
                 {loss && (
-                  <AttentionIcon
-                    label={`Needs attention: loss of ${loss.relationship.toLowerCase()}`}
-                  />
+                  <AttentionIcon label={`Needs attention: ${lossTag(loss).toLowerCase()}`} />
                 )}
               </span>
               <div className="min-w-0 flex-1">
@@ -49,7 +47,7 @@ export function CustomerList({ customers }: { customers: AdvisorCustomer[] }) {
                 </p>
                 {loss && (
                   <p className="mt-1 whitespace-nowrap text-xs font-semibold text-attention">
-                    Loss of {loss.relationship.toLowerCase()} · {formatDate(loss.date, "monthDay")}
+                    {lossTag(loss)} · {formatDate(loss.date, "monthDay")}
                   </p>
                 )}
                 <div className="mt-1">

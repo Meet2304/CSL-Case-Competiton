@@ -5,14 +5,17 @@
  * sign-out / sign-in in the same browser, and synced between open tabs.
  */
 import { useSyncExternalStore } from "react";
-import type { FamilyRelationship } from "@/data/types";
+import type { AdvisorCustomer } from "@/data/types";
 
+/**
+ * A death as recorded by the bank: one customer, as a single unit. How it
+ * affects families (who the person was to whom) is assessed afterwards from
+ * the household records — see `assessImpact` in src/lib/advisor.ts.
+ */
 export type RecordedLoss = {
   id: string;
-  /** Advisor customer (household) id, e.g. "c-sample". */
-  customerId: string;
-  memberName: string;
-  relationship: FamilyRelationship;
+  /** The customer who passed away. */
+  personName: string;
   date: string; // date of death, ISO
   reportedVia: "Branch visit" | "Phone call" | "Mobile app" | "Estate attorney";
   recordedOn: string; // ISO
@@ -34,7 +37,7 @@ export type BereavementState = {
   flows: Record<string, FlowProgress>;
 };
 
-const STORAGE_KEY = "pnc-bereavement-demo-v1";
+const STORAGE_KEY = "pnc-bereavement-demo-v2";
 const EMPTY: BereavementState = { losses: [], flows: {} };
 const listeners = new Set<() => void>();
 
@@ -106,7 +109,12 @@ export function flowProgress(s: BereavementState, flowId: string): FlowProgress 
   return s.flows[flowId] ?? { status: "not-started", answers: {} };
 }
 
-/** The open loss for a household, if the bank has recorded one. */
-export function lossFor(s: BereavementState, customerId: string): RecordedLoss | undefined {
-  return [...s.losses].reverse().find((l) => l.customerId === customerId);
+/**
+ * The most recent recorded death of someone in this household other than the
+ * primary customer — i.e. a loss the primary customer is living through.
+ */
+export function lossFor(s: BereavementState, household: AdvisorCustomer): RecordedLoss | undefined {
+  return [...s.losses]
+    .reverse()
+    .find((l) => household.household.some((m) => m.name === l.personName));
 }

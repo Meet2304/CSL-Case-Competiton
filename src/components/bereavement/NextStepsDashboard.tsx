@@ -83,7 +83,7 @@ export function NextStepsDashboard() {
                     We&apos;re so sorry for your loss
                   </h2>
                   <p className="mt-1 max-w-2xl text-sm leading-relaxed text-pnc-muted">
-                    {loss.memberName} passed away on {formatDate(loss.date, "medium")}. Here&apos;s
+                    {loss.personName} passed away on {formatDate(loss.date, "medium")}. Here&apos;s
                     everything needed to look after {firstName}&apos;s accounts, in the order we
                     suggest. Take it one step at a time — we&apos;ll keep your place.
                   </p>

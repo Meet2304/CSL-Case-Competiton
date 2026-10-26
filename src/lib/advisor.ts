@@ -58,18 +58,25 @@ export function buildNotifications(
   const losses: AdvisorNotification[] = customers.flatMap((c) => {
     const loss = openLoss(c);
     if (!loss) return [];
+    const self = loss.relationship === "Self";
+    const contact = lossContact(c, loss);
+    const died = `passed away on ${formatDate(loss.date, "medium")}. Reported via ${loss.reportedVia.toLowerCase()}.`;
     return [
       {
         id: `n-loss-${loss.id}`,
         kind: "loss" as const,
         customerId: c.id,
-        title: "Loss of a family member",
-        summary: `${c.name} · ${loss.relationship.toLowerCase()} passed away`,
-        body: `${loss.memberName}, ${firstName(c.name)}'s ${loss.relationship.toLowerCase()}, passed away on ${formatDate(loss.date, "medium")}. Reported via ${loss.reportedVia.toLowerCase()}. Reach out to ${firstName(c.name)} and take the next steps below.`,
+        title: self ? "Customer passed away" : "Loss of a family member",
+        summary: self
+          ? `${c.name} · passed away`
+          : `${c.name} · ${loss.relationship.toLowerCase()} passed away`,
+        body: self
+          ? `${c.name} ${died} ${contact ? `Reach out to ${contact.name} (${contact.relationship.toLowerCase()}) and take the next steps below.` : "Work with the estate's executor on the next steps below."}`
+          : `${loss.memberName}, ${firstName(c.name)}'s ${loss.relationship.toLowerCase()}, ${died} Reach out to ${firstName(c.name)} and take the next steps below.`,
         date: loss.date,
         urgent: true,
         steps: lossFollowUpSteps,
-        outreach: outreachGuide(c.name, loss.memberName).script,
+        outreach: contact ? outreachGuide(contact.name, loss.memberName).script : undefined,
       },
     ];
   });
@@ -82,29 +89,76 @@ export function customerAnchor(id: string): string {
   return `customer-${id}`;
 }
 
-/** Recorded loss as entered by the bank (see src/lib/bereavement.ts). */
-type RecordedLossInput = Pick<LossEvent, "date" | "relationship" | "memberName" | "reportedVia"> & {
-  id: string;
-  customerId: string;
-};
+// ---------------------------------------------------------------------------
+// Deaths recorded by the bank. A death is recorded against one customer as a
+// single unit; its impact on families is assessed afterwards from the
+// household records, never entered at intake.
 
-/** Adds losses recorded by the bank to the advisor's customer book. */
+/** Short tag for a loss, e.g. "Loss of spouse" or "Customer passed away". */
+export function lossTag(loss: LossEvent): string {
+  return loss.relationship === "Self"
+    ? "Customer passed away"
+    : `Loss of ${loss.relationship.toLowerCase()}`;
+}
+
+/**
+ * Who the advisor should contact about a loss: the primary customer, or —
+ * when the primary customer is the one who died — their next of kin.
+ */
+export function lossContact(
+  c: AdvisorCustomer,
+  loss: LossEvent,
+): { name: string; relationship: string } | undefined {
+  if (loss.relationship !== "Self") return { name: c.name, relationship: "Customer" };
+  const order = ["Spouse", "Child", "Parent", "Sibling"];
+  const kin = [...c.household].sort(
+    (a, b) => order.indexOf(a.relationship) - order.indexOf(b.relationship),
+  )[0];
+  return kin && { name: kin.name, relationship: kin.relationship };
+}
+
+/** Every individual the bank serves: primary customers and their household members. */
+export function customerDirectory(customers: AdvisorCustomer[]): string[] {
+  const names = new Set(customers.flatMap((c) => [c.name, ...c.household.map((m) => m.name)]));
+  const last = (n: string) => n.split(" ").at(-1) ?? n;
+  return [...names].sort((a, b) => last(a).localeCompare(last(b)) || a.localeCompare(b));
+}
+
+export type LossImpact = { customer: AdvisorCustomer; relationship: LossEvent["relationship"] };
+
+/** How one customer's death affects each household they belong to. */
+export function assessImpact(customers: AdvisorCustomer[], personName: string): LossImpact[] {
+  return customers.flatMap<LossImpact>((c) => {
+    if (c.name === personName) return [{ customer: c, relationship: "Self" }];
+    const member = c.household.find((m) => m.name === personName);
+    return member ? [{ customer: c, relationship: member.relationship }] : [];
+  });
+}
+
+/** A death as recorded by the bank (see src/lib/bereavement.ts). */
+type RecordedDeath = Pick<LossEvent, "date" | "reportedVia"> & { id: string; personName: string };
+
+/** Adds the assessed impact of recorded deaths to the advisor's customer book. */
 export function withRecordedLosses(
   customers: AdvisorCustomer[],
-  recorded: RecordedLossInput[],
+  recorded: RecordedDeath[],
 ): AdvisorCustomer[] {
   if (recorded.length === 0) return customers;
-  return customers.map((c) => {
-    const extra = recorded
-      .filter((r) => r.customerId === c.id)
-      .map<LossEvent>((r) => ({
-        id: `rec-${r.id}`,
+  const extra = new Map<string, LossEvent[]>();
+  for (const r of recorded) {
+    for (const { customer, relationship } of assessImpact(customers, r.personName)) {
+      const event: LossEvent = {
+        id: `rec-${r.id}-${customer.id}`,
         date: r.date,
-        relationship: r.relationship,
-        memberName: r.memberName,
+        relationship,
+        memberName: r.personName,
         reportedVia: r.reportedVia,
         followUpComplete: false,
-      }));
-    return extra.length ? { ...c, lossEvents: [...c.lossEvents, ...extra] } : c;
-  });
+      };
+      extra.set(customer.id, [...(extra.get(customer.id) ?? []), event]);
+    }
+  }
+  return customers.map((c) =>
+    extra.has(c.id) ? { ...c, lossEvents: [...c.lossEvents, ...extra.get(c.id)!] } : c,
+  );
 }

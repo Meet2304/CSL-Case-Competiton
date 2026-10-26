@@ -9,7 +9,7 @@ import {
   useRef,
   type ReactNode,
 } from "react";
-import { SELF_HOUSEHOLD_ID } from "@/data/bereavement";
+import { selfHousehold } from "@/data/bereavement";
 import { initialFamilyState } from "@/data/family";
 import type { FamilyState } from "@/data/types";
 import { lossFor, useBereavement } from "@/lib/bereavement";
@@ -67,14 +67,14 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
   };
 
   // A death recorded by the bank shows here too (read-time overlay; saved family data is untouched).
-  const loss = lossFor(useBereavement(), SELF_HOUSEHOLD_ID);
+  const loss = lossFor(useBereavement(), selfHousehold);
   const view = useMemo(
     () =>
       loss
         ? {
             ...state,
             members: state.members.map((m) =>
-              m.name === loss.memberName ? { ...m, status: "Deceased" as const } : m,
+              m.name === loss.personName ? { ...m, status: "Deceased" as const } : m,
             ),
           }
         : state,

@@ -100,11 +100,14 @@ export type Advisor = {
 
 export type FamilyRelationship = "Spouse" | "Parent" | "Child" | "Sibling";
 
+/** Who died, relative to the household's primary customer ("Self" = the primary customer). */
+export type LossRelationship = FamilyRelationship | "Self";
+
 /** A life event recorded against a customer, e.g. the death of a family member. */
 export type LossEvent = {
   id: string;
   date: string; // ISO yyyy-mm-dd
-  relationship: FamilyRelationship;
+  relationship: LossRelationship;
   memberName: string;
   reportedVia: "Branch visit" | "Phone call" | "Mobile app" | "Estate attorney";
   /** Advisor has completed the follow-up steps; the customer is no longer flagged. */

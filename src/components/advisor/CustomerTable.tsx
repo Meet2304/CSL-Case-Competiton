@@ -7,7 +7,7 @@ import { WillStatus } from "@/components/advisor/WillStatus";
 import { Money } from "@/components/ui/Money";
 import { MOCK_AS_OF } from "@/data/mock";
 import type { AdvisorCustomer } from "@/data/types";
-import { customerAnchor, openLoss } from "@/lib/advisor";
+import { customerAnchor, lossTag, openLoss } from "@/lib/advisor";
 import { cn, daysBetween, formatDate, relativeDay } from "@/lib/format";
 
 const PAGE_SIZE = 8;
@@ -81,9 +81,7 @@ export function CustomerTable({ customers }: { customers: AdvisorCustomer[] }) {
                 >
                   <td className="py-4 pl-5 pr-3">
                     {loss && (
-                      <AttentionIcon
-                        label={`Needs attention: loss of ${loss.relationship.toLowerCase()}`}
-                      />
+                      <AttentionIcon label={`Needs attention: ${lossTag(loss).toLowerCase()}`} />
                     )}
                   </td>
                   <td className="py-4 pr-4">
@@ -99,8 +97,7 @@ export function CustomerTable({ customers }: { customers: AdvisorCustomer[] }) {
                     )}
                     {loss && (
                       <span className="mt-1.5 inline-flex items-center whitespace-nowrap rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-attention ring-1 ring-attention-line">
-                        Loss of {loss.relationship.toLowerCase()} ·{" "}
-                        {formatDate(loss.date, "monthDay")}
+                        {lossTag(loss)} · {formatDate(loss.date, "monthDay")}
                       </span>
                     )}
                   </td>
