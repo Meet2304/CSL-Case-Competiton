@@ -38,7 +38,7 @@ export function NotificationList({
         return (
           <li
             key={n.id}
-            className={cn("relative", n.urgent && "bg-attention-bg before:absolute before:inset-y-0 before:left-0 before:w-1 before:bg-attention")}
+            className={cn(n.urgent && "bg-attention-bg")}
           >
             <button
               type="button"

@@ -64,7 +64,7 @@ export function CustomerTable({ customers }: { customers: AdvisorCustomer[] }) {
                     loss ? "bg-attention-bg/60 hover:bg-attention-bg" : "hover:bg-pnc-surface/70",
                   )}
                 >
-                  <td className={cn("relative py-4 pl-5 pr-3", loss && "before:absolute before:inset-y-0 before:left-0 before:w-1 before:bg-attention")}>
+                  <td className="py-4 pl-5 pr-3">
                     {loss && <AttentionIcon label={`Needs attention: loss of ${loss.relationship.toLowerCase()}`} />}
                   </td>
                   <td className="py-4 pr-4">
