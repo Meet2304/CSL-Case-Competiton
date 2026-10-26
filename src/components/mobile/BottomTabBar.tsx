@@ -15,8 +15,8 @@ const tabsByRole: Record<Role, Tab[]> = {
     { label: "Pay & Transfer", href: routes.payTransfer, icon: CircleDollarSign },
     { label: "Rewards", href: routes.rewards, icon: Medal },
     { label: "Deposit", href: routes.deposit, icon: ReceiptText },
-    // Card Details lives under More in the native app.
-    { label: "More", href: routes.more, icon: Menu, also: [routes.cards] },
+    // Card Details and the Family dashboard live under More.
+    { label: "More", href: routes.more, icon: Menu, also: [routes.cards, routes.family] },
   ],
   // Advisors only have the home dashboard for now; add tabs here.
   advisor: [{ label: "Home", href: routes.advisor, icon: House }],
@@ -39,7 +39,12 @@ export function BottomTabBar({ variant = "customer" }: { variant?: Role }) {
                   active && "font-bold text-white",
                 )}
               >
-                <Icon className="size-6" strokeWidth={active ? 2.25 : 1.5} fill={active ? "currentColor" : "none"} fillOpacity={active ? 0.25 : 0} />
+                <Icon
+                  className="size-6"
+                  strokeWidth={active ? 2.25 : 1.5}
+                  fill={active ? "currentColor" : "none"}
+                  fillOpacity={active ? 0.25 : 0}
+                />
                 {label}
               </Link>
             </li>

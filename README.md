@@ -12,6 +12,8 @@ npm run dev        # http://localhost:3000
 npm run typecheck  # next typegen + tsc
 npm run build      # production build
 npm run lint
+npm run format       # Prettier --write
+npm run format:check # Prettier --check
 ```
 
 ## Routes — one URL, view chosen by device
@@ -19,16 +21,16 @@ npm run lint
 There is no view switcher. `src/proxy.ts` reads the user-agent: **phones get the
 mobile app, laptops/desktops/tablets get online banking**, on the same URL.
 
-| URL | Laptop / desktop (`app/web`) | Phone (`app/mobile`) |
-| --- | --- | --- |
-| `/` | Sign-on | Sign-on (Image 1) |
-| `/accounts` | Accounts dashboard (Image 7) | Home / Virtual Wallet (Image 2) |
-| `/pay-transfer` | Pay & Transfer + payment history | Pay & Transfer list (Image 3) |
-| `/rewards` | TotalRewards | TotalRewards (Images 4–5) |
-| `/cards` | All cards with controls | → redirects to `/more` |
-| `/cards/[cardId]` | → redirects to `/cards` | Card Details (Image 6) |
-| `/deposit`, `/more` | → redirect to `/accounts` | Mobile Deposit, More |
-| `/help` | Help | → redirects to `/more` |
+| URL                 | Laptop / desktop (`app/web`)     | Phone (`app/mobile`)            |
+| ------------------- | -------------------------------- | ------------------------------- |
+| `/`                 | Sign-on                          | Sign-on (Image 1)               |
+| `/accounts`         | Accounts dashboard (Image 7)     | Home / Virtual Wallet (Image 2) |
+| `/pay-transfer`     | Pay & Transfer + payment history | Pay & Transfer list (Image 3)   |
+| `/rewards`          | TotalRewards                     | TotalRewards (Images 4–5)       |
+| `/cards`            | All cards with controls          | → redirects to `/more`          |
+| `/cards/[cardId]`   | → redirects to `/cards`          | Card Details (Image 6)          |
+| `/deposit`, `/more` | → redirect to `/accounts`        | Mobile Deposit, More            |
+| `/help`             | Help                             | → redirects to `/more`          |
 
 To test the phone view on a laptop, use Chrome DevTools device mode (it sends a
 phone user-agent) and reload. For demos/recordings you can also pin a view with
@@ -40,10 +42,10 @@ it). A pinned mobile view on a wide screen is shown inside an iPhone frame.
 Sign-on decides the experience. Demo User IDs (any password; defined in
 `src/data/users.ts`):
 
-| User ID | Role | Lands on | Navigation |
-| --- | --- | --- | --- |
-| `customer` | Customer (Jordan Sample; spouse Casey) | `/accounts` — the banking dashboard | Accounts, Pay & Transfer, Cards, Rewards, Help (web) / 5 tabs (mobile) |
-| `advisor` | Bank representative (Alex Example, Senior Wealth Advisor) | `/advisor` — Notifications + paginated Your Customers | Home only (for now) |
+| User ID    | Role                                                      | Lands on                                              | Navigation                                                             |
+| ---------- | --------------------------------------------------------- | ----------------------------------------------------- | ---------------------------------------------------------------------- |
+| `customer` | Customer (Jordan Sample; spouse Casey)                    | `/accounts` — the banking dashboard                   | Accounts, Pay & Transfer, Cards, Rewards, Help (web) / 5 tabs (mobile) |
+| `advisor`  | Bank representative (Alex Example, Senior Wealth Advisor) | `/advisor` — Notifications + paginated Your Customers | Home only (for now)                                                    |
 
 The role is stored in a demo session cookie by the `signIn` Server Action
 (`src/lib/auth.ts`). `src/proxy.ts` then keeps each role on its own pages:
@@ -56,6 +58,32 @@ never see `/advisor`. Sign off via the profile icon (web), the header button
 an urgent "Loss of a family member" notification with next steps and moves
 that customer to the top of the advisor's table with a needs-attention icon
 (`src/lib/advisor.ts`). Add a loss event to any customer to see it surface.
+
+## Family dashboard (customer) — `/family`
+
+Laptop: **Family** in the top nav. Phone: **More → Family Dashboard**. The
+signed-in customer (Jordan) is an admin of the _Sample Family_.
+
+- **Role-based access.** The built-in **Admin** role (more than one allowed)
+  can add members, add assets and manage access. Admins create member roles
+  (e.g. Adult child, Teen, Trusted advisor) in a segmented access editor:
+  per asset, **Visibility** (view balance, view activity) and **Control**
+  (transact, manage), plus a Full column. Any permission implies view balance.
+  The last living admin can't be demoted or removed, and you can't remove your
+  own admin access.
+- **Access limits are confidential to admins.** A non-admin member only sees
+  the assets shared with them and the actions they can take — nothing tells
+  them an asset or action is hidden. Admins check this with **Preview as**
+  (Overview tab), which renders that exact member view.
+- **Assets** are grouped into 13 categories (Joint checking/savings, Real
+  Estate, Brokerage account, 401(k) / IRA, Life insurance, Social Security,
+  Pension, Employer benefits, Vehicles, Digital assets, Business interests,
+  Debts, IP). _Add asset_ asks only for name, category, value, optional last 4
+  and owners.
+- The legal-process model (how each asset passes on death and its steps) is
+  kept in `src/data/family.ts` / `src/lib/family.ts` but is not shown in the UI.
+- Changes are saved in the browser (`localStorage`); **Reset demo** restores
+  the seed data in `src/data/family.ts`.
 
 ## Structure
 
@@ -72,6 +100,9 @@ src/
   components/
     brand/            PncLogo, FacetBackdrop (the blue triangle pattern)
     advisor/          CustomerTable (web), CustomerList (mobile), NotificationList, Pagination
+    family/           FamilyProvider (state + persistence), FamilyDashboard (tabs) and its
+                      Overview / Members / Roles (RoleEditor, AccessMatrix) panels and
+                      MemberFamilyView (what non-admins see)
     mock/             MockBadge
     ui/               Money, IconChip, Toggle, CardArt (shared by both views)
     shared/           catalog.ts (Pay & Transfer options), CardLockRow
@@ -82,11 +113,13 @@ src/
     mock.ts           customer mock data
     advisor.ts        advisor profile, assigned customers, loss events, notifications
     users.ts          demo sign-on User IDs and roles
+    family.ts         family seed data + legal steps and timelines per succession method
   lib/format.ts       money/date formatting, cn()
   lib/routes.ts       public URL map + toPublicPath()
   lib/session.ts      session cookie + role helpers (shared by proxy and actions)
   lib/auth.ts         signIn / signOff Server Actions
   lib/advisor.ts      attention sorting + notification building
+  lib/family.ts       family access rules, succession rules and the state reducer
 ```
 
 See `AGENTS.md` for the conventions to follow when extending the app.

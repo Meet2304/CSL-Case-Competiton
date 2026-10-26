@@ -14,7 +14,10 @@ export default function MobileDepositPage() {
           <label htmlFor="deposit-to" className="text-sm text-pnc-muted">
             Deposit To
           </label>
-          <select id="deposit-to" className="mt-1 w-full border-b border-pnc-line bg-transparent py-2 text-[17px] outline-none">
+          <select
+            id="deposit-to"
+            className="mt-1 w-full border-b border-pnc-line bg-transparent py-2 text-[17px] outline-none"
+          >
             {depositAccounts.map((a) => (
               <option key={a.id}>
                 {a.name} x{a.last4}
@@ -47,10 +50,16 @@ export default function MobileDepositPage() {
             </button>
           ))}
         </div>
-        <button type="button" disabled className="w-full rounded-full bg-pnc-blue-700 py-3.5 font-semibold text-white disabled:opacity-40">
+        <button
+          type="button"
+          disabled
+          className="w-full rounded-full bg-pnc-blue-700 py-3.5 font-semibold text-white disabled:opacity-40"
+        >
           Continue
         </button>
-        <p className="text-center text-xs text-pnc-muted">Demo only — no images are captured or uploaded.</p>
+        <p className="text-center text-xs text-pnc-muted">
+          Demo only — no images are captured or uploaded.
+        </p>
       </div>
     </>
   );

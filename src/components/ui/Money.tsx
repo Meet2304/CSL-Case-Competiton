@@ -14,6 +14,7 @@ export function Money({
   /** "$8.42M" style; the exact amount is kept in the tooltip. */
   compact?: boolean;
 }) {
+  value = value || 0; // -0 would print as "-$0.00"
   const formatted = compact ? formatCompactMoney(value) : formatMoney(value);
   const text = signed && value > 0 ? `+${formatted}` : formatted;
   return (

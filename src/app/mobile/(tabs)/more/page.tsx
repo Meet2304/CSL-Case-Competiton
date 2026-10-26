@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Bell, CircleHelp, CreditCard, FileText, Settings, Shield } from "lucide-react";
+import { Bell, CircleHelp, CreditCard, FileText, Settings, Shield, Users } from "lucide-react";
 import { MobileCard, MobileIconRow, MobileSignOffRow } from "@/components/mobile/MobileCard";
 import { MobileHeader } from "@/components/mobile/MobileHeader";
 import { creditCardAccounts } from "@/data/mock";
@@ -26,6 +26,11 @@ export default function MobileMorePage() {
       </MobileHeader>
 
       <div className="space-y-4 px-3 pt-4">
+        <MobileCard>
+          <ul>
+            <MobileIconRow icon={Users} label="Family Dashboard" href={routes.family} />
+          </ul>
+        </MobileCard>
         <MobileCard>
           <ul>
             <MobileIconRow icon={Settings} label="Profile & Settings" />

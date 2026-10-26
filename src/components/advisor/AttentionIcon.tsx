@@ -2,7 +2,13 @@ import { HeartCrack } from "lucide-react";
 import { cn } from "@/lib/format";
 
 /** Marks a customer who needs the advisor's attention after a family loss. */
-export function AttentionIcon({ className, label = "Needs attention" }: { className?: string; label?: string }) {
+export function AttentionIcon({
+  className,
+  label = "Needs attention",
+}: {
+  className?: string;
+  label?: string;
+}) {
   return (
     <span
       role="img"

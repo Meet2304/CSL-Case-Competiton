@@ -42,7 +42,13 @@ export function Pagination({
         {from}–{to} of {total} {noun}
       </span>
       <span className="flex items-center gap-1">
-        <button type="button" className={arrow} onClick={() => setPage(page - 1)} disabled={page === 1} aria-label="Previous page">
+        <button
+          type="button"
+          className={arrow}
+          onClick={() => setPage(page - 1)}
+          disabled={page === 1}
+          aria-label="Previous page"
+        >
           <ChevronLeft className="size-5" />
         </button>
         {compact ? (
@@ -66,7 +72,13 @@ export function Pagination({
             </button>
           ))
         )}
-        <button type="button" className={arrow} onClick={() => setPage(page + 1)} disabled={page === pageCount} aria-label="Next page">
+        <button
+          type="button"
+          className={arrow}
+          onClick={() => setPage(page + 1)}
+          disabled={page === pageCount}
+          aria-label="Next page"
+        >
           <ChevronRight className="size-5" />
         </button>
       </span>

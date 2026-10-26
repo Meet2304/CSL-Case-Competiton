@@ -16,7 +16,9 @@ export function generateStaticParams() {
   return creditCardAccounts.map((c) => ({ cardId: c.id }));
 }
 
-export default async function MobileCardDetailsPage({ params }: PageProps<"/mobile/cards/[cardId]">) {
+export default async function MobileCardDetailsPage({
+  params,
+}: PageProps<"/mobile/cards/[cardId]">) {
   const { cardId } = await params;
   const card = creditCardAccounts.find((c) => c.id === cardId);
   if (!card) notFound();

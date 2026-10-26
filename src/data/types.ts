@@ -142,3 +142,111 @@ export type AdvisorNotification = {
   /** Suggested next steps (shown for urgent notifications). */
   steps?: string[];
 };
+
+// ---------------------------------------------------------------------------
+// Family dashboard (customer side): role-based access and asset control.
+
+export type FamilyMemberRelationship = "Self" | "Spouse" | "Child" | "Parent" | "Sibling" | "Other";
+
+export type FamilyMemberStatus = "Active" | "Invited" | "Deceased";
+
+export type FamilyMember = {
+  id: string;
+  name: string;
+  email: string;
+  relationship: FamilyMemberRelationship;
+  /** Free-text detail shown under the name, e.g. "Estate attorney". */
+  note?: string;
+  roleId: string;
+  status: FamilyMemberStatus;
+};
+
+/** What a role may do with one asset. View is implied by any other permission. */
+export type AssetAccess = {
+  /** Visibility: see the asset and its balance. */
+  view: boolean;
+  /** Visibility: see transactions, statements and documents. */
+  activity: boolean;
+  /** Control: move money, pay, trade. */
+  transact: boolean;
+  /** Control: change settings, cards, beneficiaries. */
+  manage: boolean;
+};
+
+export type FamilyRole = {
+  id: string;
+  name: string;
+  description: string;
+  /** Admins can add members and assets and manage access; full access to every asset. */
+  isAdmin: boolean;
+  /** Built-in roles cannot be renamed or deleted. */
+  builtIn: boolean;
+  /** Per-asset access, keyed by asset id. Missing = no access. */
+  access: Record<string, AssetAccess>;
+};
+
+export const assetCategories = [
+  "Joint checking/savings",
+  "Real Estate",
+  "Brokerage account",
+  "401(k) / IRA",
+  "Life insurance",
+  "Social Security",
+  "Pension",
+  "Employer benefits",
+  "Vehicles",
+  "Digital assets, crypto, loyalty points",
+  "Business interests",
+  "Debts",
+  "IP",
+] as const;
+
+export type AssetCategory = (typeof assetCategories)[number];
+
+/** How an asset legally passes when an owner dies. Drives the required steps. */
+export type SuccessionMethod =
+  "joint" | "pod" | "tod" | "retirement" | "trust" | "estate" | "close";
+
+export type SuccessionStep = { id: string; label: string; detail: string };
+
+export type FamilyAsset = {
+  id: string;
+  name: string;
+  last4?: string;
+  category: AssetCategory;
+  value: number;
+  /** Member ids of the legal owners (or trustees for a trust). */
+  owners: string[];
+  /** How the asset passes legally on an owner's death (not collected for new assets yet). */
+  method?: SuccessionMethod;
+  /**
+   * Who takes control after an owner's death, for methods that name someone
+   * (POD/TOD/retirement beneficiaries, estate executor). Joint and trust
+   * assets pass to the surviving owners/trustees instead.
+   */
+  successors?: string[];
+  /** Replaces the method's standard steps when an asset needs its own process. */
+  steps?: SuccessionStep[];
+  /** Held outside PNC (e.g. a home) — tracked for the family's plan only. */
+  external?: boolean;
+  closed?: boolean;
+};
+
+export type SuccessionProcess = {
+  id: string;
+  assetId: string;
+  deceasedId: string;
+  startedOn: string; // ISO date
+  completedStepIds: string[];
+  status: "in-progress" | "complete";
+};
+
+export type FamilyState = {
+  familyName: string;
+  /** The signed-in customer's member id. */
+  selfId: string;
+  members: FamilyMember[];
+  roles: FamilyRole[];
+  assets: FamilyAsset[];
+  processes: SuccessionProcess[];
+};

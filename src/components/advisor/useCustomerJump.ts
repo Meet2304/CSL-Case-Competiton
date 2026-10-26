@@ -20,7 +20,9 @@ export function useCustomerJump(
       setPage(Math.floor(index / pageSize) + 1);
       // Wait for the new page to render before scrolling.
       requestAnimationFrame(() =>
-        document.getElementById(customerAnchor(customers[index].id))?.scrollIntoView({ behavior: "smooth", block: "center" }),
+        document
+          .getElementById(customerAnchor(customers[index].id))
+          ?.scrollIntoView({ behavior: "smooth", block: "center" }),
       );
     }
     jump();

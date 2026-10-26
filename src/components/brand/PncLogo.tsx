@@ -16,13 +16,7 @@ const sizes = {
 /** Simplified PNC-style mark: orange disc with a split white triangle. */
 export function PncMark({ size = 32, className }: { size?: number; className?: string }) {
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 32 32"
-      aria-hidden="true"
-      className={className}
-    >
+    <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true" className={className}>
       <circle cx="16" cy="16" r="16" fill="var(--color-pnc-orange)" />
       <path d="M10 7.5 L25 16 L10 24.5 Z" fill="#fff" />
       <path d="M10 13.2 L16.6 16 L10 18.8 Z" fill="var(--color-pnc-orange)" />

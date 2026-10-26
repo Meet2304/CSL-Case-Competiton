@@ -52,7 +52,10 @@ export function WebSignOnForm() {
       >
         {pending ? "Signing On…" : "Sign On"}
       </button>
-      <div id="web-sign-on-help" className="mt-4 rounded-md bg-pnc-surface px-3 py-2.5 text-xs text-pnc-muted">
+      <div
+        id="web-sign-on-help"
+        className="mt-4 rounded-md bg-pnc-surface px-3 py-2.5 text-xs text-pnc-muted"
+      >
         <p>Demo sign-on — pick a User ID, any password works:</p>
         <p className="mt-1.5 flex flex-wrap gap-2">
           {demoUsers.map((u) => (

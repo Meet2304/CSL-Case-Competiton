@@ -45,12 +45,7 @@ export function FacetBackdrop({ className }: { className?: string }) {
     >
       <svg className="h-full w-full" preserveAspectRatio="none">
         <defs>
-          <pattern
-            id="pnc-facets"
-            width={COLS * W}
-            height={ROWS * H}
-            patternUnits="userSpaceOnUse"
-          >
+          <pattern id="pnc-facets" width={COLS * W} height={ROWS * H} patternUnits="userSpaceOnUse">
             {facets.map((f, i) => (
               <polygon key={i} points={f.points} fill={f.fill} fillOpacity={f.opacity} />
             ))}

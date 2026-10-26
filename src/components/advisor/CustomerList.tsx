@@ -29,13 +29,17 @@ export function CustomerList({ customers }: { customers: AdvisorCustomer[] }) {
               key={c.id}
               id={customerAnchor(c.id)}
               className={cn(
-                "relative flex scroll-mt-20 items-start gap-3 border-b border-pnc-line px-4 py-3.5 last:border-b-0 target:bg-pnc-blue-50",
-                loss && "bg-attention-bg before:absolute before:inset-y-0 before:left-0 before:w-1 before:bg-attention",
+                "flex scroll-mt-20 items-start gap-3 border-b border-pnc-line px-4 py-3.5 last:border-b-0 target:bg-pnc-blue-50",
+                loss && "bg-attention-bg",
               )}
             >
               {/* Fixed-width slot keeps names aligned whether or not a row is flagged. */}
               <span className="flex w-8 shrink-0 justify-center pt-0.5">
-                {loss && <AttentionIcon label={`Needs attention: loss of ${loss.relationship.toLowerCase()}`} />}
+                {loss && (
+                  <AttentionIcon
+                    label={`Needs attention: loss of ${loss.relationship.toLowerCase()}`}
+                  />
+                )}
               </span>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[15px] font-semibold text-pnc-link">{c.name}</p>
@@ -49,9 +53,21 @@ export function CustomerList({ customers }: { customers: AdvisorCustomer[] }) {
                 )}
               </div>
               <span className="shrink-0 text-right">
-                <Money value={c.relationshipValue} compact className="block text-[15px] font-bold" />
-                <span className={cn("text-xs", reviewSoon ? "font-semibold text-pnc-orange-600" : "text-pnc-muted")}>
-                  Review {reviewSoon ? relativeDay(c.nextReview, MOCK_AS_OF) : formatDate(c.nextReview, "monthDay")}
+                <Money
+                  value={c.relationshipValue}
+                  compact
+                  className="block text-[15px] font-bold"
+                />
+                <span
+                  className={cn(
+                    "text-xs",
+                    reviewSoon ? "font-semibold text-pnc-orange-600" : "text-pnc-muted",
+                  )}
+                >
+                  Review{" "}
+                  {reviewSoon
+                    ? relativeDay(c.nextReview, MOCK_AS_OF)
+                    : formatDate(c.nextReview, "monthDay")}
                 </span>
               </span>
             </li>

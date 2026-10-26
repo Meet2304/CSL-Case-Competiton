@@ -21,7 +21,9 @@ export function WebCard({
       <header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-pnc-line px-5 py-4">
         <h2 className="text-lg font-semibold text-pnc-ink">
           {title}
-          {subtitle && <span className="ml-1.5 text-xs font-normal text-pnc-muted">{subtitle}</span>}
+          {subtitle && (
+            <span className="ml-1.5 text-xs font-normal text-pnc-muted">{subtitle}</span>
+          )}
         </h2>
         {aside}
       </header>

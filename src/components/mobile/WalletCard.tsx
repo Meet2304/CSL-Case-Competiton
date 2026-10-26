@@ -59,7 +59,9 @@ export function WalletCard({ title, accounts }: { title: string; accounts: Walle
             >
               <ReceiptText className="size-6 text-pnc-blue-700" strokeWidth={1.75} />
               <span className="flex-1 text-[17px] font-medium">Low Cash Mode</span>
-              <ChevronDown className={cn("size-5 text-pnc-link transition", lowCashOpen && "rotate-180")} />
+              <ChevronDown
+                className={cn("size-5 text-pnc-link transition", lowCashOpen && "rotate-180")}
+              />
             </button>
             {lowCashOpen && (
               <p className="pb-4 text-sm text-pnc-muted">
@@ -83,7 +85,10 @@ export function WalletCard({ title, accounts }: { title: string; accounts: Walle
               </li>
             ))}
           </ul>
-          <a href="#" className="flex items-center justify-center gap-1.5 py-3 text-sm text-pnc-link">
+          <a
+            href="#"
+            className="flex items-center justify-center gap-1.5 py-3 text-sm text-pnc-link"
+          >
             <SquarePen className="size-4" /> Customize Tools
           </a>
         </>
@@ -100,7 +105,10 @@ function SubAccountRow({ account }: { account: WalletSubAccount }) {
         {account.label} x{account.last4}
       </a>
       <div className="text-right">
-        <Money value={account.balance} className={cn("block text-2xl font-bold", negative && "text-pnc-negative")} />
+        <Money
+          value={account.balance}
+          className={cn("block text-2xl font-bold", negative && "text-pnc-negative")}
+        />
         {account.note && <span className="mt-1 block text-xs text-pnc-muted">{account.note}</span>}
         {negative ? (
           <span className="mt-1 block text-xs text-pnc-muted">
@@ -110,7 +118,11 @@ function SubAccountRow({ account }: { account: WalletSubAccount }) {
           <span className="block text-xs text-pnc-muted">Available Balance</span>
         )}
       </div>
-      <button type="button" aria-label={`Options for ${account.label}`} className="pt-1.5 text-pnc-ink">
+      <button
+        type="button"
+        aria-label={`Options for ${account.label}`}
+        className="pt-1.5 text-pnc-ink"
+      >
         <EllipsisVertical className="size-5" />
       </button>
     </div>

@@ -14,6 +14,8 @@ export const routes = {
   deposit: "/deposit",
   more: "/more",
   help: "/help",
+  /** Customer family dashboard (members, roles, asset access, succession). */
+  family: "/family",
   /** Advisor (bank representative) home dashboard. */
   advisor: "/advisor",
 } as const;
