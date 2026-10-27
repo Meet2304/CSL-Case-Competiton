@@ -2,52 +2,35 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  BookOpenCheck,
-  HeartHandshake,
-  House,
-  Menu,
-  ScrollText,
-  Users,
-  Wallet,
-  type LucideIcon,
-} from "lucide-react";
+import { HeartHandshake, House, Menu, Users, Wallet, type LucideIcon } from "lucide-react";
 import { useCustomerNav } from "@/components/customer/useCustomerNav";
-import type { Role } from "@/data/types";
 import { cn } from "@/lib/format";
 import { routes, toPublicPath } from "@/lib/routes";
 
 type Tab = { label: string; href: string; icon: LucideIcon; badge?: number; also?: string[] };
 
-const advisorTabs: Tab[] = [
-  { label: "Home", href: routes.advisor, icon: House },
-  { label: "Rulebook", href: routes.advisorRules, icon: BookOpenCheck },
-];
-
-export function BottomTabBar({ variant = "customer" }: { variant?: Role }) {
+/** The customer app's tabs. Advisors have a single home screen, so no tab bar. */
+export function BottomTabBar() {
   const pathname = toPublicPath(usePathname());
   const nav = useCustomerNav();
-  const tabs: Tab[] =
-    variant === "advisor"
-      ? advisorTabs
-      : [
-          { label: "Home", href: routes.home, icon: House },
-          { label: "My Assets", href: routes.assets, icon: Wallet },
-          ...(nav.nextSteps
-            ? [{ label: "Next steps", href: routes.nextSteps, icon: HeartHandshake }]
-            : []),
-          { label: "Family", href: routes.family, icon: Users },
-          { label: "Planning", href: routes.plan, icon: ScrollText, badge: nav.reminders },
-          // Everyday banking (pay, cards, rewards, deposit) lives under More.
-          {
-            label: "More",
-            href: routes.more,
-            icon: Menu,
-            also: [routes.payTransfer, routes.cards, routes.rewards, routes.deposit, routes.help],
-          },
-        ];
+  const tabs: Tab[] = [
+    { label: "Home", href: routes.home, icon: House },
+    // Wills and beneficiaries are set up from My Assets, so its badge counts those reminders.
+    { label: "My Assets", href: routes.assets, icon: Wallet, badge: nav.reminders },
+    ...(nav.nextSteps
+      ? [{ label: "Next steps", href: routes.nextSteps, icon: HeartHandshake }]
+      : []),
+    { label: "Family", href: routes.family, icon: Users },
+    // Everyday banking (pay, cards, rewards, deposit) lives under More.
+    {
+      label: "More",
+      href: routes.more,
+      icon: Menu,
+      also: [routes.payTransfer, routes.cards, routes.rewards, routes.deposit, routes.help],
+    },
+  ];
   const matches = (p: string) => pathname === p || pathname.startsWith(`${p}/`);
-  // The tab with the longest matching path wins, so /advisor/rules lights up Rulebook, not Home.
+  // The tab with the longest matching path wins, so /cards lights up More, not Home.
   const activeHref = tabs
     .flatMap(({ href, also = [] }) => [href, ...also].filter(matches).map((p) => ({ href, p })))
     .sort((a, b) => b.p.length - a.p.length)[0]?.href;

@@ -3,14 +3,23 @@
  * rulebook's output for one client. The browser sends the client context (built
  * by findoeContext) and the conversation; this streams back plain text.
  *
- * Only signed-in advisors may call it. Without an API key it answers 503
- * { offline: true } and the browser falls back to the simulated assistant.
+ * Only signed-in advisors may call it. It reaches Claude, in order of
+ * preference, with:
+ * 1. ANTHROPIC_API_KEY (or ANTHROPIC_AUTH_TOKEN): straight to the Claude API.
+ * 2. AI_GATEWAY_API_KEY: through Vercel AI Gateway.
+ * 3. Nothing at all when deployed on Vercel: AI Gateway accepts the
+ *    deployment's own OIDC token (VERCEL_OIDC_TOKEN, or the
+ *    x-vercel-oidc-token request header), billed to the Vercel team.
+ * With none of these it answers 503 { offline: true } and the browser falls
+ * back to the simulated assistant.
  */
 import Anthropic from "@anthropic-ai/sdk";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { parseRole, SESSION_COOKIE } from "@/lib/session";
 
 const MODEL = "claude-haiku-5-5";
+const GATEWAY_URL = "https://ai-gateway.vercel.sh";
+const GATEWAY_MODEL = "anthropic/claude-haiku-5.5";
 const MAX_CONTEXT_CHARS = 60_000;
 const MAX_TURNS = 30;
 
@@ -45,13 +54,32 @@ function isTurns(x: unknown): x is Turn[] {
   );
 }
 
-const hasCredentials = () => !!(process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN);
+type Connection = { client: Anthropic; model: string; via: "anthropic" | "gateway" };
+
+/** How to reach Claude from this request, or null when no credentials are available. */
+async function connect(): Promise<Connection | null> {
+  if (process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN)
+    return { client: new Anthropic(), model: MODEL, via: "anthropic" };
+  const gatewayKey =
+    process.env.AI_GATEWAY_API_KEY ||
+    process.env.VERCEL_OIDC_TOKEN ||
+    (await headers()).get("x-vercel-oidc-token");
+  if (gatewayKey)
+    return {
+      client: new Anthropic({ apiKey: gatewayKey, baseURL: GATEWAY_URL }),
+      model: GATEWAY_MODEL,
+      via: "gateway",
+    };
+  return null;
+}
+
 const isAdvisor = async () => parseRole((await cookies()).get(SESSION_COOKIE)?.value) === "advisor";
 
 /** Whether Findoe can reach Claude, so the panel can say so before the first question. */
 export async function GET() {
   if (!(await isAdvisor())) return Response.json({ error: "Advisors only" }, { status: 401 });
-  return Response.json({ live: hasCredentials(), model: MODEL });
+  const connection = await connect();
+  return Response.json({ live: connection !== null, model: MODEL, via: connection?.via ?? null });
 }
 
 export async function POST(request: Request) {
@@ -67,14 +95,15 @@ export async function POST(request: Request) {
   if (typeof context !== "string" || context.length > MAX_CONTEXT_CHARS || !isTurns(messages))
     return Response.json({ error: "Invalid request" }, { status: 400 });
 
-  if (!hasCredentials()) return Response.json({ offline: true }, { status: 503 });
+  const connection = await connect();
+  if (!connection) return Response.json({ offline: true }, { status: 503 });
 
-  const client = new Anthropic();
-  const stream = client.messages.stream({
-    model: MODEL,
+  const stream = connection.client.messages.stream({
+    model: connection.model,
     max_tokens: 16000,
-    // Conversational advice over a fixed context: low effort keeps replies quick.
-    output_config: { effort: "low" },
+    // Conversational advice over a fixed context: low effort keeps replies quick. Sent only
+    // to the Claude API directly; AI Gateway gets the model's default.
+    ...(connection.via === "anthropic" && { output_config: { effort: "low" as const } }),
     system: [
       { type: "text", text: SYSTEM },
       {

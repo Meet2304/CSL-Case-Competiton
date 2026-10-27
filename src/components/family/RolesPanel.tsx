@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ChevronRight, Plus, ShieldCheck, UserRound } from "lucide-react";
 import { roleSummary } from "@/lib/family";
 import { useFamily } from "./FamilyProvider";
-import { Pill, primaryButton } from "./parts";
+import { PanelIntro, panelList, panelRow, Pill, primaryButton } from "./parts";
 import { RoleEditor } from "./RoleEditor";
 
 /** Lists family roles and opens the role editor. */
@@ -19,19 +19,20 @@ export function RolesPanel() {
 
   return (
     <div>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <p className="max-w-xl text-sm text-pnc-muted">
-          Roles decide what each family member can{" "}
-          <strong className="font-semibold text-pnc-ink">see</strong> and{" "}
-          <strong className="font-semibold text-pnc-ink">control</strong>, asset by asset. Admins
-          always have full access.
-        </p>
-        <button type="button" onClick={() => setEditing("new")} className={primaryButton}>
-          <Plus className="size-4" aria-hidden="true" /> Create role
-        </button>
-      </div>
+      <PanelIntro
+        action={
+          <button type="button" onClick={() => setEditing("new")} className={primaryButton}>
+            <Plus className="size-4" aria-hidden="true" /> Create role
+          </button>
+        }
+      >
+        Roles decide what each family member can{" "}
+        <strong className="font-semibold text-pnc-ink">see</strong> and{" "}
+        <strong className="font-semibold text-pnc-ink">control</strong>, asset by asset. Admins
+        always have full access.
+      </PanelIntro>
 
-      <ul className="mt-4 grid gap-3 @3xl:grid-cols-2">
+      <ul className={panelList}>
         {state.roles.map((role) => {
           const summary = roleSummary(state, role);
           const members = state.members.filter(
@@ -42,7 +43,7 @@ export function RolesPanel() {
               <button
                 type="button"
                 onClick={() => setEditing(role.id)}
-                className="flex h-full w-full items-start gap-3 rounded-md border border-pnc-line bg-white p-4 text-left transition-colors hover:border-pnc-link focus-visible:outline-2 focus-visible:outline-pnc-link"
+                className={`${panelRow} flex w-full items-center gap-3 text-left transition-colors hover:bg-pnc-surface/60 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-pnc-link`}
               >
                 <span className="grid size-10 shrink-0 place-items-center rounded-full bg-pnc-blue-50 text-pnc-blue-700">
                   {role.isAdmin ? (
@@ -69,7 +70,7 @@ export function RolesPanel() {
                     <span>Controls {summary.controls}</span>
                   </span>
                 </span>
-                <ChevronRight className="mt-2.5 size-4 shrink-0 text-pnc-link" aria-hidden="true" />
+                <ChevronRight className="size-4 shrink-0 text-pnc-link" aria-hidden="true" />
               </button>
             </li>
           );

@@ -8,6 +8,7 @@ import {
   type SecondaryPlan,
   type TertiaryPlan,
   type WillDraft,
+  type WillProgress,
 } from "./types";
 
 /**
@@ -468,6 +469,57 @@ export function incompleteScreens(d: WillDraft): string[] {
   return visible(d)
     .filter((s) => Object.keys(s.validate?.(d) ?? {}).length > 0)
     .map((s) => s.id);
+}
+
+// ---------------------------------------------------------------------------
+// Progress. Customers can open any section at any time, so progress is never
+// "how far did you get": a screen counts once it was answered with
+// "Save & Continue" and its answers still validate.
+
+/** Screens answered with "Save & Continue" (older saves: every screen before the furthest). */
+export function answeredScreens(progress: WillProgress | undefined): Set<string> {
+  if (!progress) return new Set();
+  return new Set(progress.answered ?? screens.slice(0, progress.furthest).map((s) => s.id));
+}
+
+export type SectionStatus = "complete" | "started" | "todo";
+
+export type SectionProgress = {
+  section: number;
+  status: SectionStatus;
+  /** Screen ids in this section that apply to this draft, in order. */
+  screens: string[];
+  /** Of those, the ones answered and still valid. */
+  done: string[];
+};
+
+/** Where each of the eight sections stands for this draft. */
+export function sectionProgress(
+  d: WillDraft,
+  progress: WillProgress | undefined,
+): SectionProgress[] {
+  const answered = answeredScreens(progress);
+  const shown = visible(d);
+  return sections.map((_, section) => {
+    const own = shown.filter((s) => s.section === section);
+    const done = own.filter(
+      (s) => answered.has(s.id) && Object.keys(s.validate?.(d) ?? {}).length === 0,
+    );
+    const status: SectionStatus =
+      own.length > 0 && done.length === own.length
+        ? "complete"
+        : own.some((s) => answered.has(s.id))
+          ? "started"
+          : "todo";
+    return { section, status, screens: own.map((s) => s.id), done: done.map((s) => s.id) };
+  });
+}
+
+/** Share of the will's applicable screens that are done, 0–100. */
+export function percentDone(parts: SectionProgress[]): number {
+  const total = parts.reduce((n, p) => n + p.screens.length, 0);
+  const done = parts.reduce((n, p) => n + p.done.length, 0);
+  return total ? Math.round((done / total) * 100) : 0;
 }
 
 /** Short screen names for the review page's "still needs answers" list. */

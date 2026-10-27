@@ -57,8 +57,8 @@ card, a life policy held outside PNC, Casey's savings and Roth IRA, and the
 kids' custodial accounts). The session keeps the role (`pnc-session`) and the
 person (`pnc-person`); `src/proxy.ts` keeps each role on its own pages.
 
-Customer navigation: **Accounts · Family · Planning · Help** on laptops, and
-**Accounts · Family · Planning · More** on phones (Pay & Transfer, Cards,
+Customer navigation: **Home · My Assets · Family · Help** on laptops, and
+**Home · My Assets · Family · More** on phones (Pay & Transfer, Cards,
 Rewards and Deposit live under More). **Next steps** appears for adults once
 the bank records a death in the household.
 
@@ -71,7 +71,8 @@ family (with what they're allowed to do).
 **Reminders** (`src/lib/nudges.ts`) come from what's on file: write or finish
 a will, add a beneficiary to each account that can take one, and update a
 beneficiary who has died. Avery gets a heads-up about turning 18; Riley gets
-none. The count also shows on **Planning** in the navigation.
+none. The count also shows on **My Assets** in the navigation, where both are
+resolved.
 
 ## Family — `/family`
 
@@ -91,14 +92,18 @@ Riley sees nothing, and Dana (the estate attorney) is invited.
   can use; admins check it with **Preview as**.
 - Families keep working after a death: the person shows as deceased.
 
-## Planning — `/plan`
+## Wills and beneficiaries — on My Assets (`/assets`)
 
-- **Your will** (`/plan#will`): an 8-step planner, pre-filled with your
-  household, saved per person as you go.
-- **Beneficiaries** (`/plan#beneficiaries`): name who inherits each account
-  that can take a beneficiary. Changes feed the reminders and, after a death,
-  decide whether an account passes directly or through the estate.
-- Under 18: a short note on what changes at 18.
+There's no separate Planning page; the old `/plan` URL redirects to My Assets.
+
+- **Your will** (`/assets#will`): open it from the ⋮ menu on _What you own_
+  (**Manage will**). An 8-step planner, pre-filled with your
+  household, saved per person as you go. Adults only.
+- **Beneficiaries** (`/assets#manage-<accountId>`): in each account's
+  **Manage** panel, name or change who inherits it. Changes feed the reminders
+  and, after a death, decide whether an account passes directly or through the
+  estate.
+- After a death, anyone the will names follows its execution on **Next steps**.
 
 ## Loss in the family
 
@@ -166,6 +171,12 @@ To switch it on, add your key to `.env.local` (git-ignored) and restart `npm run
 ANTHROPIC_API_KEY=sk-ant-...
 ```
 
+On Vercel, set the same `ANTHROPIC_API_KEY` in the project's environment
+variables. Without it, the route falls back to **Vercel AI Gateway**
+(`anthropic/claude-haiku-5.5`): it uses `AI_GATEWAY_API_KEY` if set, otherwise
+the deployment's own OIDC token, so a deployed project with AI Gateway credits
+needs no key at all. Locally, `vercel env pull` fetches a short-lived OIDC token.
+
 Without a key Findoe shows _Offline · answers from the rulebook only_ and falls
 back to the simulated rules-based answers, so the demo still works.
 
@@ -175,7 +186,7 @@ Avery Example; generated for everyone else so totals match the table). Every
 assistant panel is labeled "Simulated". It handles deaths recorded at runtime,
 including when the customer themself died (it then works with the next of kin).
 
-## Settlement rules engine — Next steps, the assistant and `/advisor/rules`
+## Settlement rules engine — Next steps and the assistant
 
 A deterministic, cited rules engine answers, for any household and any person in
 it: _when this person dies, what legally happens to each account, who gets it,
@@ -205,8 +216,8 @@ rulebook — **same protocols, run before the death instead of after**:
 - **Engine** lives in `src/lib/settlement` — pure functions, no clock, no model.
   `src/lib/assistant.ts` writes the words; the engine supplies routes, dates and
   citations.
-- **Rulebook page** `/advisor/rules` (nav: _Rulebook_) renders the whole tree,
-  every rule and the source list with verification status.
+- Advisors see the rules that apply through each account's decision path and
+  `SourceChip` citations; there is no standalone rulebook page.
 - **Add a rule:** add a node / overlay / household rule with a source in
   `src/data/settlement`, then a test in `src/lib/settlement/__tests__`. `npm test`
   checks every branch is covered, every source exists, and the golden plans for

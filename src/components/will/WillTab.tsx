@@ -1,22 +1,33 @@
 "use client";
 
-import { useState } from "react";
-import { Check, Download, PencilLine, ScrollText } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import {
+  ArrowRight,
+  BadgeCheck,
+  ChevronRight,
+  Clock,
+  CloudCheck,
+  Download,
+  PencilLine,
+  ScrollText,
+} from "lucide-react";
 import { useViewer } from "@/components/customer/Viewer";
 import { Avatar, Pill } from "@/components/family/parts";
 import { IconChip } from "@/components/ui/IconChip";
 import { buttonClass } from "@/components/will/ui";
-import { WillDocument, willParts } from "@/components/will/WillDocument";
-import { sectionsDone, WillPlanner } from "@/components/will/WillPlanner";
-import type { FamilyState } from "@/data/types";
+import { WillDocument } from "@/components/will/WillDocument";
+import { ProgressBar, StepDot, statusText } from "@/components/will/progress";
+import { sectionMeta } from "@/components/will/sections";
+import { WillPlanner } from "@/components/will/WillPlanner";
+import type { FamilyMember, FamilyState } from "@/data/types";
 import { firstName } from "@/lib/family";
-import { cn, formatDate } from "@/lib/format";
+import { formatDate } from "@/lib/format";
 import { householdAsFamily } from "@/lib/household";
-import { sections } from "@/lib/will/flow";
+import { percentDone, sectionProgress, sections, type SectionProgress } from "@/lib/will/flow";
 import { generateWill } from "@/lib/will/generate";
 import { namedMembers } from "@/lib/will/roles";
 import { readWillUpdated, useHydrated, useSavedWill, useWillStatus } from "@/lib/will/storage";
-import { newId, type WillDraft } from "@/lib/will/types";
+import { emptyDraft, newId, type WillDraft } from "@/lib/will/types";
 
 /** Living household members other than the testator, as the planner names them. */
 function householdPeople(state: FamilyState) {
@@ -53,107 +64,256 @@ function prefillFromHousehold(state: FamilyState) {
 }
 
 /**
- * The signed-in person's will: not started, in progress or on file, opening
- * the step-by-step planner. Lives on the Planning page.
+ * The signed-in person's will, opened in place on My Assets (`routes.will`):
+ * a short start page, the step-by-step planner, or the will on file. One
+ * breadcrumb above it is the only way back, so there's never a second
+ * "back" link.
  */
-export function WillSection() {
+export function WillSection({ onLeave }: { onLeave: () => void }) {
   const { person, accounts, deceasedIds } = useViewer();
   const hydrated = useHydrated();
   const saved = useSavedWill(person.id);
   const status = useWillStatus(person.id);
-  const [planning, setPlanning] = useState(false);
+  // A section number opens the planner there; "resume" opens it where they left off.
+  const [planning, setPlanning] = useState<number | "resume" | null>(null);
   const household = householdAsFamily(person.id, accounts, deceasedIds);
 
-  if (!hydrated)
-    return <p className="py-10 text-center text-sm text-pnc-muted">Loading your will…</p>;
+  const back = { label: "My Assets", onClick: onLeave };
+  const crumbs =
+    planning === null
+      ? [back, { label: "Your will" }]
+      : [back, { label: "Your will", onClick: () => setPlanning(null) }, { label: "Edit" }];
+  const savedNote = planning !== null && (
+    <span className="inline-flex items-center gap-1.5 text-xs text-pnc-muted">
+      <CloudCheck className="size-4 text-pnc-positive" aria-hidden="true" />
+      Saved as you go
+    </span>
+  );
 
-  if (planning) {
-    return (
-      <WillPlanner
-        accountHolder={person.name}
-        owner={person.id}
-        onExit={() => setPlanning(false)}
-        people={householdPeople(household)}
-        prefill={prefillFromHousehold(household)}
+  let body: ReactNode;
+  if (!hydrated) {
+    body = (
+      <div className={panel}>
+        <p className="py-10 text-center text-sm text-pnc-muted">Loading your will…</p>
+      </div>
+    );
+  } else if (planning !== null) {
+    body = (
+      <div className={panel}>
+        <WillPlanner
+          accountHolder={person.name}
+          owner={person.id}
+          openAt={planning === "resume" ? undefined : planning}
+          onExit={() => setPlanning(null)}
+          people={householdPeople(household)}
+          prefill={prefillFromHousehold(household)}
+        />
+      </div>
+    );
+  } else if (status === "on-file" && saved) {
+    body = (
+      <div className={panel}>
+        <WillOnFile
+          draft={saved.draft}
+          household={household}
+          onEdit={() => setPlanning("resume")}
+        />
+      </div>
+    );
+  } else {
+    const living = household.members.filter((m) => m.id !== person.id && m.status !== "Deceased");
+    const parts = sectionProgress(saved?.draft ?? emptyDraft(), saved?.progress);
+    body = (
+      <WillStart
+        parts={parts}
+        started={status === "in-progress" && parts.some((p) => p.status !== "todo")}
+        family={living.filter((m) => m.relationship === "Spouse" || m.relationship === "Child")}
+        indexOf={(m) => household.members.indexOf(m)}
+        onStart={() => setPlanning("resume")}
+        onOpen={(section) => setPlanning(section)}
       />
     );
   }
 
-  if (status === "on-file" && saved) {
-    return (
-      <WillOnFile draft={saved.draft} household={household} onEdit={() => setPlanning(true)} />
-    );
-  }
-
-  const done = sectionsDone(saved?.progress);
-  const started = status === "in-progress" && done > 0;
-  const living = household.members.filter((m) => m.id !== person.id && m.status !== "Deceased");
-  const close = living.filter((m) => m.relationship === "Spouse" || m.relationship === "Child");
-
   return (
-    <div className="@container">
-      <div className="grid items-start gap-8 @3xl:grid-cols-[minmax(0,1fr)_minmax(0,19rem)]">
-        <div className="max-w-xl">
-          <h2 className="font-display text-2xl font-medium text-pnc-ink">
+    <div className="@container space-y-4">
+      <Breadcrumb trail={crumbs} aside={savedNote} />
+      {body}
+    </div>
+  );
+}
+
+const panel = "rounded-lg bg-white p-5 shadow-card @2xl:p-6";
+
+/** Where you are, with every earlier level one click away. */
+function Breadcrumb({
+  trail,
+  aside,
+}: {
+  trail: { label: string; onClick?: () => void }[];
+  aside?: ReactNode;
+}) {
+  return (
+    <div className="flex min-h-6 flex-wrap items-center justify-between gap-3">
+      <nav aria-label="Breadcrumb">
+        <ol className="flex flex-wrap items-center gap-1.5 text-sm">
+          {trail.map((c, i) => (
+            <li key={c.label} className="flex items-center gap-1.5">
+              {i > 0 && <ChevronRight className="size-3.5 text-pnc-muted" aria-hidden="true" />}
+              {c.onClick ? (
+                <button
+                  type="button"
+                  onClick={c.onClick}
+                  className="font-semibold text-pnc-link hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pnc-link"
+                >
+                  {c.label}
+                </button>
+              ) : (
+                <span aria-current="page" className="font-semibold text-pnc-ink">
+                  {c.label}
+                </span>
+              )}
+            </li>
+          ))}
+        </ol>
+      </nav>
+      {aside}
+    </div>
+  );
+}
+
+const facts = [
+  { icon: Clock, text: "About 20 minutes" },
+  { icon: BadgeCheck, text: "Free" },
+  { icon: CloudCheck, text: "Saves as you go" },
+];
+
+/**
+ * Before the planner: what a will does, one button to begin (or carry on),
+ * and the eight sections as numbered steps, any of which opens directly.
+ */
+function WillStart({
+  parts,
+  started,
+  family,
+  indexOf,
+  onStart,
+  onOpen,
+}: {
+  parts: SectionProgress[];
+  started: boolean;
+  family: FamilyMember[];
+  indexOf: (m: FamilyMember) => number;
+  onStart: () => void;
+  onOpen: (section: number) => void;
+}) {
+  const done = parts.filter((p) => p.status === "complete").length;
+  const percent = percentDone(parts);
+  return (
+    <div className="overflow-hidden rounded-lg bg-white shadow-card">
+      <div className="relative bg-linear-to-br from-pnc-blue-50 via-white to-white px-6 py-8 @2xl:px-10 @2xl:py-10">
+        <ScrollText
+          aria-hidden="true"
+          strokeWidth={0.75}
+          className="pointer-events-none absolute -right-8 -top-6 hidden size-56 rotate-12 text-pnc-blue-700/[0.07] @2xl:block"
+        />
+        <div className="relative max-w-xl">
+          <span className="grid size-11 place-items-center rounded-full bg-white text-pnc-blue-700 shadow-card">
+            <ScrollText className="size-5" aria-hidden="true" />
+          </span>
+          <h2 className="mt-4 font-display text-3xl font-medium tracking-tight text-pnc-ink">
             {started ? "Finish your will" : "Write your will"}
           </h2>
-          <p className="mt-2 text-[15px] leading-relaxed text-pnc-ink">
+          <p className="mt-2 text-[15px] leading-relaxed text-pnc-muted">
             {started
-              ? `You've finished ${done} of ${sections.length} sections. Everything you've entered is saved, so pick up right where you left off.`
-              : "Decide who inherits what you own, who would raise your children, and who carries out your wishes. It takes about 20 minutes, it's free, and it saves as you go."}
+              ? `${done} of ${sections.length} sections done. Everything you've entered is saved, so pick up right where you left off.`
+              : "Decide who inherits what you own, who would raise your children and who carries out your wishes."}
           </p>
 
-          {!started && close.length > 0 && (
-            <div className="mt-5">
-              <p className="text-sm font-semibold text-pnc-ink">Your family is already filled in</p>
-              <ul className="mt-2 flex flex-wrap gap-2">
-                {close.map((m) => (
-                  <li
-                    key={m.id}
-                    className="flex items-center gap-2 rounded-full bg-pnc-surface py-1 pl-1 pr-3 text-sm"
-                  >
-                    <Avatar member={m} index={household.members.indexOf(m)} size="sm" />
-                    {m.name}
-                    <span className="text-pnc-muted">{m.relationship}</span>
-                  </li>
-                ))}
-              </ul>
+          {started ? (
+            <div className="mt-5 flex max-w-sm items-center gap-3">
+              <ProgressBar percent={percent} className="flex-1" />
+              <span
+                aria-hidden="true"
+                className="text-xs font-semibold tabular-nums text-pnc-muted"
+              >
+                {percent}%
+              </span>
             </div>
+          ) : (
+            <ul className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm text-pnc-ink">
+              {facts.map(({ icon: Icon, text }) => (
+                <li key={text} className="flex items-center gap-1.5">
+                  <Icon className="size-4 text-pnc-blue-700" aria-hidden="true" />
+                  {text}
+                </li>
+              ))}
+            </ul>
           )}
 
-          <div className="mt-6 flex flex-wrap items-center gap-4">
-            <button type="button" onClick={() => setPlanning(true)} className={buttonClass.primary}>
-              <PencilLine className="size-4" aria-hidden="true" />
+          <div className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-3">
+            <button type="button" onClick={onStart} className={buttonClass.primary}>
               {started ? "Continue your will" : "Start your will"}
+              <ArrowRight className="size-4" aria-hidden="true" />
             </button>
-            <span className="text-xs text-pnc-muted">
-              Legally valid once printed, signed and witnessed.
-            </span>
+            {!started && family.length > 0 && (
+              <p className="flex items-center gap-2 text-sm text-pnc-muted">
+                <span className="flex -space-x-1.5">
+                  {family.map((m) => (
+                    <Avatar key={m.id} member={m} index={indexOf(m)} size="sm" />
+                  ))}
+                </span>
+                Your family is already filled in
+              </p>
+            )}
           </div>
         </div>
-
-        <div className="rounded-lg bg-pnc-surface p-4 @3xl:p-5">
-          <p className="text-sm font-semibold text-pnc-ink">What your will covers</p>
-          <ol className="mt-3 space-y-2">
-            {sections.map((s, i) => (
-              <li key={s} className="flex items-center gap-2.5 text-sm">
-                <span
-                  className={cn(
-                    "grid size-5 shrink-0 place-items-center rounded-full text-[11px] font-semibold",
-                    i < done
-                      ? "bg-pnc-positive text-white"
-                      : "bg-white text-pnc-muted ring-1 ring-pnc-line",
-                  )}
-                >
-                  {i < done ? <Check className="size-3" aria-hidden="true" /> : i + 1}
-                  {i < done && <span className="sr-only">Done:</span>}
-                </span>
-                <span className={i < done ? "text-pnc-muted" : "text-pnc-ink"}>{willParts[s]}</span>
-              </li>
-            ))}
-          </ol>
-        </div>
       </div>
+
+      <nav
+        aria-labelledby="will-covers-title"
+        className="border-t border-pnc-line px-4 py-5 @2xl:px-8"
+      >
+        <div className="flex items-baseline justify-between gap-3 px-2">
+          <h3
+            id="will-covers-title"
+            className="text-xs font-semibold uppercase tracking-wider text-pnc-muted"
+          >
+            What your will covers
+          </h3>
+          <p className="text-xs text-pnc-muted">Open any section</p>
+        </div>
+        <ol className="mt-4 grid grid-cols-4 gap-y-3 @2xl:grid-cols-8">
+          {parts.map((p) => {
+            const meta = sectionMeta[sections[p.section]];
+            return (
+              <li key={p.section} className="flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => onOpen(p.section)}
+                  className="group flex flex-col items-center gap-2 rounded-md px-1.5 py-1.5 text-xs hover:bg-pnc-surface focus-visible:outline-2 focus-visible:outline-pnc-link"
+                >
+                  <StepDot part={p} />
+                  <span
+                    aria-hidden="true"
+                    className="text-center text-pnc-ink group-hover:text-pnc-link"
+                  >
+                    {meta.short}
+                  </span>
+                  <span className="sr-only">
+                    Section {p.section + 1}: {meta.label}, {statusText(p).toLowerCase()}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+      </nav>
+
+      <p className="border-t border-pnc-line bg-pnc-surface/60 px-6 py-3 text-xs text-pnc-muted @2xl:px-10">
+        Legally valid once printed, signed and witnessed. A draft for you to review, not legal
+        advice.
+      </p>
     </div>
   );
 }
@@ -238,7 +398,7 @@ function WillOnFile({
             <IconChip icon={ScrollText} size="sm" />
             <p>
               When the time comes, {executor ? firstName(executor.member.name) : "your executor"}{" "}
-              will see your will on their own Planning page and can begin settling your estate with
+              will see your will on their Next steps page and can begin settling your estate with
               PNC.
             </p>
           </section>

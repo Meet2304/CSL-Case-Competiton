@@ -17,28 +17,24 @@ type NavItem = {
   badge?: number;
 };
 
-const advisorNav: NavItem[] = [
-  { label: "Home", href: routes.advisor },
-  { label: "Rulebook", href: routes.advisorRules },
-];
+const advisorNav: NavItem[] = [{ label: "Home", href: routes.advisor }];
 
 export function WebHeader({ variant = "customer" }: { variant?: Role }) {
   const nav = useCustomerNav();
-  // Customers: Home, then their assets; the rest is about people and plans.
+  // Customers: Home, then their assets (where wills and beneficiaries live too), then people.
   const navItems: NavItem[] =
     variant === "advisor"
       ? advisorNav
       : [
           { label: "Home", href: routes.home },
-          { label: "My Assets", href: routes.assets },
+          { label: "My Assets", href: routes.assets, badge: nav.reminders },
           ...(nav.nextSteps ? [{ label: "Next steps", href: routes.nextSteps }] : []),
           { label: "Family", href: routes.family },
-          { label: "Planning", href: routes.plan, badge: nav.reminders },
           { label: "Help", href: routes.help },
         ];
   const home = navItems[0].href;
   const pathname = toPublicPath(usePathname());
-  // The longest matching entry wins, so /advisor/rules lights up Rulebook, not Home.
+  // The longest matching entry wins, so a nested path lights up its own entry, not Home.
   const activeHref = navItems
     .map((i) => i.href)
     .filter((h) => pathname === h || pathname.startsWith(`${h}/`))

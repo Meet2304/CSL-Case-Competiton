@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import type { ReactNode } from "react";
-import { ArrowLeftRight, ArrowRight, CreditCard, UserRoundPen } from "lucide-react";
+import { useId, useState, type ReactNode } from "react";
+import { ArrowLeftRight, ArrowRight, CreditCard, Info, UserRoundPen } from "lucide-react";
 import { nameList } from "@/components/customer/AccountList";
 import { accessText, RelationBadge } from "@/components/customer/assetDetail";
 import { useViewer } from "@/components/customer/Viewer";
@@ -10,12 +10,17 @@ import { applyFamilyAction } from "@/components/family/FamilyProvider";
 import { MockBadge } from "@/components/mock/Mock";
 import { Dialog } from "@/components/ui/Dialog";
 import { Money } from "@/components/ui/Money";
-import { formatDate } from "@/lib/format";
+import { people } from "@/data/household";
+import { MOCK_AS_OF } from "@/data/mock";
+import type { BankAccount } from "@/data/types";
+import { cn, formatDate } from "@/lib/format";
 import {
   accountLabel,
   designationTerm,
   familiesOf,
+  isMinor,
   kindLabels,
+  relationshipTo,
   takesBeneficiary,
   type PersonAsset,
 } from "@/lib/household";
@@ -36,7 +41,7 @@ const actionLink =
 
 /**
  * Managing one account from My Assets: what it is, quick actions, who
- * inherits it, which families it's shared with (owners who are a family's
+ * inherits it (owners name or change the beneficiary here), which families it's shared with (owners who are a family's
  * admin can share or stop sharing here), and recent activity. Only opened for
  * accounts the person may manage (see `canManage`).
  */
@@ -146,7 +151,9 @@ function ManageBody({ item }: { item: PersonAsset }) {
 
       {a.beneficiaries !== undefined && (
         <Section title="Beneficiary">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+          {owns && takesBeneficiary(a) ? (
+            <BeneficiaryEditor key={a.id} account={a} />
+          ) : (
             <p className="text-sm text-pnc-ink">
               {a.beneficiaries.length ? (
                 names(a.beneficiaries)
@@ -156,13 +163,7 @@ function ManageBody({ item }: { item: PersonAsset }) {
                 </span>
               )}
             </p>
-            {owns && takesBeneficiary(a) && (
-              <Link href={`${routes.plan}#beneficiaries`} className={actionLink}>
-                <UserRoundPen className="size-4" aria-hidden="true" />
-                {a.beneficiaries.length ? "Change beneficiary" : "Add beneficiary"}
-              </Link>
-            )}
-          </div>
+          )}
         </Section>
       )}
 
@@ -224,5 +225,121 @@ function ManageBody({ item }: { item: PersonAsset }) {
         </Section>
       )}
     </div>
+  );
+}
+
+/**
+ * Who inherits this account directly, outside the will, with an in-place
+ * editor. A beneficiary overrides the will for this account.
+ */
+function BeneficiaryEditor({ account: a }: { account: BankAccount }) {
+  const { person, deceasedIds } = useViewer();
+  const id = useId();
+  const names = nameList(deceasedIds);
+  const current = a.beneficiaries ?? [];
+  const stale = current.some((x) => deceasedIds.includes(x));
+  const choices = people.filter(
+    (p) => p.id !== person.id && !deceasedIds.includes(p.id) && p.relationship !== "Other",
+  );
+  const [editing, setEditing] = useState(false);
+  const [picked, setPicked] = useState<string[]>(current);
+  const minors = choices.filter((p) => picked.includes(p.id) && isMinor(p, MOCK_AS_OF));
+
+  if (!editing)
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0 flex-1 basis-56">
+          <p
+            className={cn(
+              "text-sm font-medium",
+              stale ? "text-attention" : current.length ? "text-pnc-ink" : "text-pnc-orange-600",
+            )}
+          >
+            {current.length ? names(current) : `No ${designationTerm(a)} named`}
+          </p>
+          <p className="mt-0.5 text-xs text-pnc-muted">
+            Inherits this account directly, without probate. It overrides your will for this
+            account.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setPicked(current.filter((x) => choices.some((p) => p.id === x)));
+            setEditing(true);
+          }}
+          className={actionLink}
+        >
+          <UserRoundPen className="size-4" aria-hidden="true" />
+          {current.length ? "Change beneficiary" : "Add beneficiary"}
+        </button>
+      </div>
+    );
+
+  return (
+    <form
+      className="space-y-3"
+      onSubmit={(e) => {
+        e.preventDefault();
+        householdActions.setBeneficiaries(a.id, picked);
+        setEditing(false);
+      }}
+    >
+      <fieldset>
+        <legend className="text-sm font-medium text-pnc-ink">
+          Who should inherit {a.name}? They share it equally.
+        </legend>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {choices.map((p) => {
+            const on = picked.includes(p.id);
+            return (
+              <label
+                key={p.id}
+                htmlFor={`${id}-${p.id}`}
+                className={cn(
+                  "flex cursor-pointer items-center gap-2 rounded-full px-3.5 py-2 text-sm ring-1 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-pnc-link",
+                  on ? "bg-pnc-blue-50 ring-pnc-blue-700" : "ring-pnc-line hover:ring-pnc-muted",
+                )}
+              >
+                <input
+                  id={`${id}-${p.id}`}
+                  type="checkbox"
+                  checked={on}
+                  onChange={() =>
+                    setPicked((xs) => (on ? xs.filter((x) => x !== p.id) : [...xs, p.id]))
+                  }
+                  className="size-4 accent-pnc-blue-700"
+                />
+                {p.name}
+                <span className="text-pnc-muted">{relationshipTo(person, p)}</span>
+              </label>
+            );
+          })}
+        </div>
+      </fieldset>
+      {minors.length > 0 && (
+        <p className="flex gap-2 rounded-md bg-pnc-blue-50 px-3 py-2 text-sm leading-relaxed text-pnc-ink">
+          <Info className="mt-0.5 size-4 shrink-0 text-pnc-blue-700" aria-hidden="true" />
+          {minors.map((m) => m.name.split(" ")[0]).join(" and ")} {minors.length > 1 ? "are" : "is"}{" "}
+          under 18 and can&apos;t take an account directly. A custodian holds it for them until they
+          turn 18 — your advisor can help set that up.
+        </p>
+      )}
+      <div className="flex flex-wrap gap-3">
+        <button
+          type="submit"
+          className="rounded-full bg-pnc-blue-700 px-5 py-2 text-sm font-semibold text-white hover:bg-pnc-blue-800"
+        >
+          Save
+        </button>
+        <button
+          type="button"
+          onClick={() => setEditing(false)}
+          className="rounded-full px-4 py-2 text-sm font-semibold text-pnc-muted hover:text-pnc-ink"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
   );
 }
