@@ -1,7 +1,8 @@
 /**
  * Planning reminders for one person, from what they own and what's on file:
- * a will, and a beneficiary on every account that can name one. Pure — the
- * dashboard shows these and the Planning page resolves them.
+ * a will, and a beneficiary on every account that can name one. Pure — Home
+ * shows these and My Assets resolves them (the will from its ⋮ menu, each
+ * beneficiary from that account's Manage panel).
  */
 import type { StoredFamily } from "@/data/household";
 import type { BankAccount, HouseholdPerson, WillStatus } from "@/data/types";
@@ -64,7 +65,7 @@ export function nudgesFor({
         id: "turning-18",
         title: `You turn 18 on ${formatDate(birthday, "medium")}`,
         body: `${own.map((a) => a.name).join(" and ")} becomes yours alone, and you'll be able to write your own will and choose beneficiaries.`,
-        action: { label: "See what changes", href: routes.plan },
+        action: { label: "See your accounts", href: routes.assets },
         tone: "info",
         kind: "birthday",
       });
@@ -79,7 +80,7 @@ export function nudgesFor({
         id: `update-${a.id}`,
         title: `Update the beneficiary on ${accountLabel(a)}`,
         body: `It still names ${gone.map((id) => firstName(personById(id)?.name ?? "someone")).join(" and ")}, who has died. Until you change it, ${formatCompactMoney(a.balance)} could go through probate.`,
-        action: { label: "Update beneficiary", href: `${routes.plan}#beneficiaries` },
+        action: { label: "Update beneficiary", href: routes.manageAsset(a.id) },
         tone: "important",
         kind: "beneficiary",
       });
@@ -95,7 +96,7 @@ export function nudgesFor({
           : "Name who inherits, who would raise your children and who carries out your wishes. Free, about 20 minutes.",
       action: {
         label: will === "in-progress" ? "Continue your will" : "Start your will",
-        href: `${routes.plan}#will`,
+        href: routes.will,
       },
       tone: "suggested",
       kind: "will",
@@ -107,7 +108,7 @@ export function nudgesFor({
         id: `add-${a.id}`,
         title: `Add a beneficiary to ${accountLabel(a)}`,
         body: `Without a ${designationTerm(a)}, ${formatCompactMoney(a.balance)} would go through probate. Naming someone passes it to them directly.`,
-        action: { label: "Add beneficiary", href: `${routes.plan}#beneficiaries` },
+        action: { label: "Add beneficiary", href: routes.manageAsset(a.id) },
         tone: "suggested",
         kind: "beneficiary",
       });

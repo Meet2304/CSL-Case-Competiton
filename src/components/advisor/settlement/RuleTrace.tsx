@@ -1,9 +1,7 @@
-import Link from "next/link";
-import { ArrowRight, BookOpenCheck, CircleHelp, Quote, TriangleAlert } from "lucide-react";
+import { ArrowRight, CircleHelp, Quote, TriangleAlert } from "lucide-react";
 import { Chip } from "@/components/advisor/assistant/parts";
 import type { AccountPlan } from "@/lib/settlement/engine";
 import { formatDate } from "@/lib/format";
-import { routes } from "@/lib/routes";
 import { firstName, ownerLabel, reviewLabels, reviewTone } from "./parts";
 import { SourceChips } from "./SourceChip";
 
@@ -160,24 +158,16 @@ export function RuleTrace({
         </figure>
       )}
 
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        {plan.review.length > 0 && (
-          <p className="flex flex-wrap items-center gap-1.5 text-xs text-pnc-muted">
-            Needs sign-off:
-            {plan.review.map((r) => (
-              <Chip key={r} className={reviewTone}>
-                {reviewLabels[r]}
-              </Chip>
-            ))}
-          </p>
-        )}
-        <Link
-          href={routes.advisorRuleNode(outcome.id)}
-          className="inline-flex items-center gap-1 text-sm font-semibold text-pnc-link hover:underline"
-        >
-          <BookOpenCheck className="size-4" aria-hidden="true" /> View this branch in the rulebook
-        </Link>
-      </div>
+      {plan.review.length > 0 && (
+        <p className="flex flex-wrap items-center gap-1.5 text-xs text-pnc-muted">
+          Needs sign-off:
+          {plan.review.map((r) => (
+            <Chip key={r} className={reviewTone}>
+              {reviewLabels[r]}
+            </Chip>
+          ))}
+        </p>
+      )}
     </div>
   );
 }

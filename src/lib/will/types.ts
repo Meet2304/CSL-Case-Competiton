@@ -125,8 +125,14 @@ export type WillDraft = {
 /** Where the planner is, saved alongside the answers so it resumes in place. */
 export type WillProgress = {
   screen: string;
-  /** Furthest screen index reached; earlier sections stay clickable. */
+  /** Furthest screen index reached. */
   furthest: number;
+  /**
+   * Screens answered with "Save & Continue". Section progress is derived from
+   * these plus the current answers (see `sectionProgress`). Older saves lack
+   * it and fall back to every screen before `furthest`.
+   */
+  answered?: string[];
   /** Set when a screen was opened from the review page's Edit link. */
   returnToReview: boolean;
 };

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ComponentType } from "react";
-import { ArrowLeft, Check, RotateCcw } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 import {
   PEOPLE_LIST_ID,
   PlannerContext,
@@ -35,21 +35,25 @@ import {
   TertiaryScreen,
 } from "@/components/will/screens/residuary";
 import { MirrorWillsScreen, ReviewScreen } from "@/components/will/screens/review";
+import { WillStepper } from "@/components/will/progress";
+import { sectionMeta } from "@/components/will/sections";
 import { buttonClass, ErrorBanner } from "@/components/will/ui";
-import { cn } from "@/lib/format";
 import {
+  answeredScreens,
   FIRST_SCREEN,
-  firstScreenOf,
   nextScreen,
   PAGE_ERROR,
+  percentDone,
   prevScreen,
   REVIEW_SCREEN,
   screenDef,
   screenIndex,
-  screens,
+  screenTitles,
+  sectionProgress,
   sections,
   validateScreen,
   type Errors,
+  type SectionProgress,
 } from "@/lib/will/flow";
 import {
   loadWill,
@@ -93,13 +97,16 @@ const startProgress = (): WillProgress => ({
   screen: FIRST_SCREEN,
   furthest: 0,
   returnToReview: false,
+  answered: [],
 });
 
-/** Sections finished so far (the will overview uses this for its progress). */
-export function sectionsDone(progress: WillProgress | undefined): number {
-  if (!progress) return 0;
-  const reached = screens[Math.min(progress.furthest, screens.length - 1)];
-  return progress.screen === REVIEW_SCREEN ? sections.length : reached.section;
+/** Sections finished so far (the will overview and reminders use this). */
+export function sectionsDone(
+  draft: WillDraft | undefined,
+  progress: WillProgress | undefined,
+): number {
+  if (!draft || !progress) return 0;
+  return sectionProgress(draft, progress).filter((p) => p.status === "complete").length;
 }
 
 /**
@@ -121,6 +128,8 @@ type PlannerProps = {
   owner: string;
   /** Leave the planner (back to the will overview). Answers are already saved. */
   onExit: () => void;
+  /** Open this section instead of where the customer left off. */
+  openAt?: number;
   /** Family members offered as suggestions wherever the will names a person. */
   people?: FamilyPerson[];
   /** Fills a brand-new will from what the bank already knows (e.g. the family). */
@@ -129,46 +138,64 @@ type PlannerProps = {
 
 type State = { draft: WillDraft; progress: WillProgress; errors: Errors };
 
-function PlannerBody({ accountHolder, owner, onExit, people = [], prefill }: PlannerProps) {
+/** The screen to open for a section: its first unanswered step, else its first. */
+function entryScreen(part: SectionProgress): string | undefined {
+  return part.screens.find((s) => !part.done.includes(s)) ?? part.screens[0];
+}
+
+function PlannerBody({ accountHolder, owner, onExit, openAt, people = [], prefill }: PlannerProps) {
   const [state, setState] = useState<State>(() => {
     const saved = loadWill(owner);
-    const fresh = !saved.progress;
-    return {
-      draft: fresh && prefill ? prefill(saved.draft) : saved.draft,
-      progress: saved.progress ?? startProgress(),
-      errors: {},
-    };
+    const draft = !saved.progress && prefill ? prefill(saved.draft) : saved.draft;
+    const base = saved.progress ?? startProgress();
+    const progress: WillProgress = { ...base, answered: [...answeredScreens(base)] };
+    if (openAt !== undefined) {
+      progress.screen = entryScreen(sectionProgress(draft, progress)[openAt]) ?? progress.screen;
+      progress.returnToReview = false;
+    }
+    return { draft, progress, errors: {} };
   });
   const top = useRef<HTMLDivElement>(null);
+  const region = useRef<HTMLElement>(null);
   const { draft, progress, errors } = state;
   const screen = screenComponents[progress.screen] ? progress.screen : FIRST_SCREEN;
   const section = screenDef(screen).section;
-  const furthestSection = Math.max(
-    section,
-    screens[Math.min(progress.furthest, screens.length - 1)].section,
-  );
+  const parts = sectionProgress(draft, progress);
 
   useEffect(() => saveWill(owner, { draft, progress }), [owner, draft, progress]);
 
-  // Bring the new screen's heading into view (the mobile view scrolls inside <main>).
+  // Bring the new screen into view (the mobile view scrolls inside <main>).
   const scrollTop = () =>
-    requestAnimationFrame(() =>
-      top.current?.scrollIntoView({ block: "start", behavior: "smooth" }),
-    );
+    requestAnimationFrame(() => {
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      top.current?.scrollIntoView({ block: "start", behavior: reduce ? "auto" : "smooth" });
+    });
 
-  const move = (to: (s: State) => string, returnToReview = false) => {
+  /** Open another screen; focus moves to it so keyboard and screen-reader users follow. */
+  const move = (
+    to: (s: State) => string,
+    opts: { returnToReview?: boolean; answered?: string } = {},
+  ) => {
     setState((s) => {
       const target = to(s);
+      const answered = new Set(s.progress.answered);
+      if (opts.answered) {
+        answered.add(opts.answered);
+        // Reaching the review by answering the last step counts as visiting it.
+        if (target === REVIEW_SCREEN) answered.add(REVIEW_SCREEN);
+      }
       return {
         ...s,
         errors: {},
         progress: {
           screen: target,
           furthest: Math.max(s.progress.furthest, screenIndex(target)),
-          returnToReview,
+          returnToReview: opts.returnToReview ?? false,
+          answered: [...answered],
         },
       };
     });
+    requestAnimationFrame(() => region.current?.focus({ preventScroll: true }));
     scrollTop();
   };
 
@@ -192,8 +219,8 @@ function PlannerBody({ accountHolder, owner, onExit, people = [], prefill }: Pla
     previous: prevScreen(draft, screen)
       ? () => move((s) => prevScreen(s.draft, screen) ?? screen)
       : undefined,
-    skip: () => move((s) => nextScreen(s.draft, screen)),
-    goTo: (target, opts) => move(() => target, opts?.returnToReview),
+    skip: () => move((s) => nextScreen(s.draft, screen), { answered: screen }),
+    goTo: (target, opts) => move(() => target, { returnToReview: opts?.returnToReview }),
     exit: onExit,
   };
 
@@ -206,7 +233,9 @@ function PlannerBody({ accountHolder, owner, onExit, people = [], prefill }: Pla
       return;
     }
     if (readWillStatus(owner) === null) setWillStatus(owner, "in-progress");
-    move((s) => (s.progress.returnToReview ? REVIEW_SCREEN : nextScreen(s.draft, screen)));
+    move((s) => (s.progress.returnToReview ? REVIEW_SCREEN : nextScreen(s.draft, screen)), {
+      answered: screen,
+    });
   }
 
   function startOver() {
@@ -225,12 +254,10 @@ function PlannerBody({ accountHolder, owner, onExit, people = [], prefill }: Pla
 
   return (
     <PlannerContext.Provider value={planner}>
-      <div ref={top} className="@container scroll-mt-4 space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <button type="button" onClick={onExit} className={buttonClass.link}>
-            <ArrowLeft className="size-4" aria-hidden="true" /> Will overview
-          </button>
-          {progress.returnToReview && screen !== REVIEW_SCREEN && (
+      <div ref={top} className="@container scroll-mt-4">
+        {/* The way back out lives in the breadcrumb above the planner (see WillSection). */}
+        {progress.returnToReview && screen !== REVIEW_SCREEN && (
+          <div className="mb-3 flex justify-end">
             <button
               type="button"
               onClick={() => planner.goTo(REVIEW_SCREEN)}
@@ -238,21 +265,32 @@ function PlannerBody({ accountHolder, owner, onExit, people = [], prefill }: Pla
             >
               Back to review
             </button>
-          )}
+          </div>
+        )}
+
+        <div>
+          <WillStepper
+            title={`${accountHolder.split(" ")[0]}'s last will & testament`}
+            parts={parts}
+            current={section}
+            screen={screen}
+            percent={percentDone(parts)}
+            onGo={(s) => planner.goTo(s)}
+          />
         </div>
 
-        <Stepper
-          current={section}
-          furthest={furthestSection}
-          finished={screen === REVIEW_SCREEN}
-          onSelect={(i) => planner.goTo(firstScreenOf(draft, i))}
-        />
-
-        {/* key: each screen starts with fresh local state (open modals, help toggles). */}
-        <form key={screen} onSubmit={submit} className="space-y-6">
-          {hasErrors && <ErrorBanner message={PAGE_ERROR} />}
-          <Screen />
-        </form>
+        <section
+          ref={region}
+          tabIndex={-1}
+          aria-label={`${sectionMeta[sections[section]].label}: ${screenTitles[screen]}`}
+          className="mt-6 space-y-6 rounded-lg outline-none"
+        >
+          {/* key: each screen starts with fresh local state (open modals, help toggles). */}
+          <form key={screen} onSubmit={submit} className="space-y-6">
+            {hasErrors && <ErrorBanner message={PAGE_ERROR} />}
+            <Screen />
+          </form>
+        </section>
 
         {people.length > 0 && (
           <datalist id={PEOPLE_LIST_ID}>
@@ -262,7 +300,7 @@ function PlannerBody({ accountHolder, owner, onExit, people = [], prefill }: Pla
           </datalist>
         )}
 
-        <p className="flex flex-wrap items-center justify-between gap-2 border-t border-pnc-line pt-4 text-xs text-pnc-muted">
+        <p className="mt-6 flex flex-wrap items-center justify-between gap-2 border-t border-pnc-line pt-4 text-xs text-pnc-muted">
           Saved on this device as you go. The planner makes a draft for you to review; it isn&apos;t
           legal advice.
           <button
@@ -275,89 +313,5 @@ function PlannerBody({ accountHolder, owner, onExit, people = [], prefill }: Pla
         </p>
       </div>
     </PlannerContext.Provider>
-  );
-}
-
-/**
- * The eight sections as a connected track. Done sections get a blue check,
- * the current one an orange ring (PNC's "you are here" accent). On narrow
- * screens it collapses to "Step 3 of 8" with a progress bar.
- */
-function Stepper({
-  current,
-  furthest,
-  finished,
-  onSelect,
-}: {
-  current: number;
-  furthest: number;
-  finished: boolean;
-  onSelect: (section: number) => void;
-}) {
-  const percent = finished ? 100 : ((current + 0.5) / sections.length) * 100;
-  return (
-    <nav aria-label="Will sections">
-      <div className="@2xl:hidden">
-        <p className="text-sm text-pnc-muted">
-          Step {current + 1} of {sections.length}:{" "}
-          <span className="font-semibold text-pnc-ink">{sections[current]}</span>
-        </p>
-        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-pnc-chip" aria-hidden="true">
-          <div
-            className="h-full rounded-full bg-pnc-blue-700 transition-[width] duration-500 motion-reduce:transition-none"
-            style={{ width: `${percent}%` }}
-          />
-        </div>
-      </div>
-      <ol className="hidden @2xl:flex">
-        {sections.map((name, i) => {
-          const isCurrent = i === current && !finished;
-          const done = finished || (i <= furthest && !isCurrent);
-          const reachable = i <= furthest;
-          return (
-            <li key={name} className="relative flex-1">
-              {/* Connector to the previous step: blue once that stretch is complete. */}
-              {i > 0 && (
-                <span
-                  aria-hidden="true"
-                  className={cn(
-                    "absolute right-1/2 top-3.5 h-0.5 w-full",
-                    i <= furthest || finished ? "bg-pnc-blue-700" : "bg-pnc-line",
-                  )}
-                />
-              )}
-              <button
-                type="button"
-                disabled={!reachable}
-                aria-current={isCurrent ? "step" : undefined}
-                onClick={() => onSelect(i)}
-                className={cn(
-                  "relative z-10 mx-auto flex flex-col items-center gap-1.5 rounded-md px-1 text-xs focus-visible:outline-2 focus-visible:outline-pnc-link",
-                  isCurrent
-                    ? "font-semibold text-pnc-ink"
-                    : reachable
-                      ? "text-pnc-ink hover:text-pnc-link"
-                      : "text-pnc-muted",
-                )}
-              >
-                <span
-                  className={cn(
-                    "grid size-7 place-items-center rounded-full text-xs font-semibold",
-                    done
-                      ? "bg-pnc-blue-700 text-white"
-                      : isCurrent
-                        ? "bg-white text-pnc-orange-600 ring-2 ring-pnc-orange"
-                        : "bg-white text-pnc-muted ring-1 ring-pnc-line",
-                  )}
-                >
-                  {done ? <Check className="size-4" strokeWidth={3} aria-hidden="true" /> : i + 1}
-                </span>
-                {name}
-              </button>
-            </li>
-          );
-        })}
-      </ol>
-    </nav>
   );
 }

@@ -109,6 +109,25 @@ export function Checkbox({ className, ...props }: InputHTMLAttributes<HTMLInputE
   );
 }
 
+/**
+ * The top of each Manage family tab: what the tab is for, with its main
+ * action on the right (below it in narrow panels). Every tab uses it, so the
+ * action is always in the same place.
+ */
+export function PanelIntro({ children, action }: { children: ReactNode; action?: ReactNode }) {
+  return (
+    <div className="flex flex-col items-start gap-3 @lg:flex-row @lg:items-center @lg:justify-between @lg:gap-6">
+      <p className="max-w-xl text-sm text-pnc-muted">{children}</p>
+      {action && <div className="shrink-0">{action}</div>}
+    </div>
+  );
+}
+
+/** The bordered list every Manage family tab uses for its rows. */
+export const panelList = "mt-4 divide-y divide-pnc-line rounded-md border border-pnc-line";
+/** One row of a `panelList`. */
+export const panelRow = "px-4 py-3.5";
+
 export const fieldLabel = "block text-sm font-semibold text-pnc-ink";
 export const fieldInput =
   "mt-1 w-full rounded-md border border-pnc-line bg-white px-3 py-2.5 text-sm outline-none focus:border-pnc-link focus:ring-2 focus:ring-pnc-link/15 aria-invalid:border-pnc-negative";

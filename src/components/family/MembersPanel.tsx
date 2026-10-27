@@ -14,6 +14,9 @@ import {
   fieldInput,
   fieldLabel,
   linkButton,
+  PanelIntro,
+  panelList,
+  panelRow,
   primaryButton,
   secondaryButton,
   StatusBadge,
@@ -30,17 +33,17 @@ export function MembersPanel() {
 
   return (
     <div>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <p className="max-w-xl text-sm text-pnc-muted">
-          Admins can add people to the family and choose their role. You can have more than one
-          admin.
-        </p>
-        <button type="button" onClick={() => setAdding(true)} className={primaryButton}>
-          <UserPlus className="size-4" aria-hidden="true" /> Add family member
-        </button>
-      </div>
+      <PanelIntro
+        action={
+          <button type="button" onClick={() => setAdding(true)} className={primaryButton}>
+            <UserPlus className="size-4" aria-hidden="true" /> Add member
+          </button>
+        }
+      >
+        Admins add people to the family and choose their role. You can have more than one admin.
+      </PanelIntro>
 
-      <ul className="mt-4 divide-y divide-pnc-line rounded-md border border-pnc-line">
+      <ul className={panelList}>
         {state.members.map((m, index) => {
           const isSelf = m.id === state.selfId;
           const deceased = m.status === "Deceased";
@@ -48,7 +51,7 @@ export function MembersPanel() {
           // You can't remove your own admin access, and the family always keeps one admin.
           const keepAdmin = lastAdmin || (isSelf && isAdminMember(state, m));
           return (
-            <li key={m.id} className={cn("px-4 py-3.5", deceased && "bg-pnc-surface/60")}>
+            <li key={m.id} className={cn(panelRow, deceased && "bg-pnc-surface/60")}>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
                 <span className="flex min-w-0 flex-1 basis-56 items-center gap-3">
                   <Avatar member={m} index={index} />
@@ -90,7 +93,10 @@ export function MembersPanel() {
                   </select>
                 </label>
 
-                {!isSelf && !deceased && (
+                {isSelf || deceased ? (
+                  // Keeps every row's role picker lined up.
+                  <span className="size-8" aria-hidden="true" />
+                ) : (
                   <button
                     type="button"
                     disabled={lastAdmin}

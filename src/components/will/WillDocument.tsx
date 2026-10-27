@@ -4,7 +4,6 @@ import { useState, type ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
 import { buttonClass } from "@/components/will/ui";
 import { cn } from "@/lib/format";
-import { sections } from "@/lib/will/flow";
 
 /**
  * The will drawn as a sheet of paper: the one bold element of the will
@@ -173,15 +172,3 @@ export function WillDocument({
 
 const titleCase = (upper: string) =>
   upper.replace(/\b(\w)(\w*)/g, (_, a: string, r: string) => a + r.toLowerCase());
-
-/** What each planner section becomes in the finished will. */
-export const willParts: Record<(typeof sections)[number], string> = {
-  Basics: "Who you are and where you live",
-  Nominees: "Your children and their guardian",
-  Assets: "What you own",
-  Residuary: "Who inherits the rest of your estate",
-  Gifts: "Specific gifts",
-  Funeral: "Funeral wishes",
-  Provisions: "Your executor and final instructions",
-  Review: "Signatures and witnesses",
-};

@@ -16,12 +16,14 @@ export const groupTone: Record<AssetGroup, string> = {
 
 /**
  * Money at a glance: one total, a bar showing how it splits, and a legend.
- * `children` sits under the legend (e.g. the "all accounts" dropdown).
+ * `children` sits under the legend (e.g. the "all accounts" dropdown);
+ * `menu` sits beside the title (e.g. an `ActionMenu`).
  */
 export function AssetSummary({
   summary,
   title = "Your money at a glance",
   caption,
+  menu,
   children,
   className,
 }: {
@@ -29,6 +31,7 @@ export function AssetSummary({
   title?: string;
   /** Overrides the default line under the total. */
   caption?: ReactNode;
+  menu?: ReactNode;
   children?: ReactNode;
   className?: string;
 }) {
@@ -46,7 +49,10 @@ export function AssetSummary({
           <h2 id="asset-summary-title" className="text-sm font-semibold text-pnc-muted">
             {title}
           </h2>
-          <MockBadge />
+          <div className="flex items-center gap-1">
+            <MockBadge />
+            {menu}
+          </div>
         </header>
 
         <p className="mt-3 font-display text-4xl font-medium tracking-tight text-pnc-ink @2xl:text-[2.75rem]">

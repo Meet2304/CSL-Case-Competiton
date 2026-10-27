@@ -17,7 +17,7 @@ export function useNudges() {
     accounts,
     deceasedIds,
     will,
-    willSectionsDone: sectionsDone(saved?.progress),
+    willSectionsDone: sectionsDone(saved?.draft, saved?.progress),
     totalSections: sections.length,
     today: MOCK_AS_OF,
   });

@@ -1,13 +1,16 @@
 "use client";
 
 import { useId, useState } from "react";
-import { Search, Users, X } from "lucide-react";
+import { ScrollText, Search, Users, X } from "lucide-react";
 import { AccountList } from "@/components/customer/AccountList";
 import { ManageAsset } from "@/components/customer/ManageAsset";
 import { RelationBadge, relationLabels, useAssetDetail } from "@/components/customer/assetDetail";
 import { AssetSummary } from "@/components/customer/AssetSummary";
 import { useViewer } from "@/components/customer/Viewer";
+import { useHash } from "@/components/shared/useHashTab";
+import { ActionMenu } from "@/components/ui/ActionMenu";
 import { Money } from "@/components/ui/Money";
+import { WillSection } from "@/components/will/WillTab";
 import { cn } from "@/lib/format";
 import {
   accountsOf,
@@ -18,7 +21,6 @@ import {
   assetSummary,
   canManage,
   type AssetRelation,
-  type PersonAsset,
 } from "@/lib/household";
 
 type Filter = "all" | AssetRelation;
@@ -28,20 +30,36 @@ const filters: { id: Filter; label: string }[] = [
   ...(["owned", "managed", "shared"] as const).map((id) => ({ id, label: relationLabels[id] })),
 ];
 
+const MANAGE = "manage-";
+
 /**
  * My Assets: a summary of what the person owns, then every account they can
  * see — their own, ones they manage for a child, and ones family shares with
- * them — searchable and grouped by type.
+ * them — searchable and grouped by type. Adults write their will from the ⋮
+ * menu on the summary (it opens in place at `#will`), and name beneficiaries
+ * from each account's Manage panel (`#manage-<id>`), so other pages can link
+ * straight to either.
  */
 export function MyAssets() {
-  const { person, accounts, household, deceasedIds } = useViewer();
+  const { person, accounts, household, deceasedIds, isMinor } = useViewer();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
-  const [managing, setManaging] = useState<PersonAsset | null>(null);
+  const [hash, setHash] = useHash();
   const searchId = useId();
   const detail = useAssetDetail();
 
   const items = assetsFor(household, person.id, accounts, deceasedIds);
+  const managing = hash.startsWith(MANAGE)
+    ? items.find((i) => i.account.id === hash.slice(MANAGE.length) && canManage(i, person.id))
+    : undefined;
+
+  if (hash === "will" && !isMinor)
+    return (
+      <section aria-label="Your will">
+        <WillSection onLeave={() => setHash(null)} />
+      </section>
+    );
+
   const summary = assetSummary(accountsOf(accounts, person.id).owned);
   const counts = (r: Filter) =>
     r === "all" ? items.length : items.filter((i) => i.relation === r).length;
@@ -62,7 +80,25 @@ export function MyAssets() {
 
   return (
     <div className="@container space-y-5">
-      <AssetSummary summary={summary} title="What you own">
+      <AssetSummary
+        summary={summary}
+        title="What you own"
+        menu={
+          // Wills start at 18, so minors get no menu at all.
+          !isMinor && (
+            <ActionMenu
+              label="More for what you own"
+              actions={[
+                {
+                  label: "Manage will",
+                  icon: ScrollText,
+                  onSelect: () => setHash("will"),
+                },
+              ]}
+            />
+          )
+        }
+      >
         {tiles.length > 1 && (
           <div className="grid border-t border-pnc-line @xl:grid-cols-3">
             {tiles.map((r) => (
@@ -207,7 +243,7 @@ export function MyAssets() {
                     return (
                       <button
                         type="button"
-                        onClick={() => setManaging(item)}
+                        onClick={() => setHash(`${MANAGE}${a.id}`)}
                         className="ml-2 rounded-full border border-pnc-line px-3 py-1 text-sm font-semibold text-pnc-link hover:border-pnc-link hover:bg-pnc-blue-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pnc-link"
                       >
                         Manage<span className="sr-only"> {a.name}</span>
@@ -220,7 +256,7 @@ export function MyAssets() {
           })
         )}
       </section>
-      <ManageAsset item={managing} onClose={() => setManaging(null)} />
+      <ManageAsset item={managing ?? null} onClose={() => setHash(null)} />
     </div>
   );
 }

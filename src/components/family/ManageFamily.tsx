@@ -8,6 +8,7 @@ import { firstName } from "@/lib/family";
 import { useFamily } from "./FamilyProvider";
 import { MemberFamilyView } from "./MemberFamilyView";
 import { MembersPanel } from "./MembersPanel";
+import { PanelIntro } from "./parts";
 import { RolesPanel } from "./RolesPanel";
 
 export const manageTabs = [
@@ -97,30 +98,35 @@ function VisibilityPanel() {
   const selectId = useId();
   const preview = others.find((m) => m.id === previewId);
 
+  const intro = "Preview the family exactly as one member sees it, based on their role.";
   if (!others.length)
-    return (
-      <p className="text-sm text-pnc-muted">Add someone to the family to preview their view.</p>
-    );
+    return <PanelIntro>{intro} Add someone to the family to preview their view.</PanelIntro>;
 
   return (
     <div className="space-y-4">
-      <label htmlFor={selectId} className="block text-sm font-semibold text-pnc-ink">
-        <span className="flex items-center gap-1.5">
-          <Eye className="size-4 text-pnc-blue-700" aria-hidden="true" /> Preview as
-        </span>
-        <select
-          id={selectId}
-          value={previewId}
-          onChange={(e) => setPreviewId(e.target.value)}
-          className="mt-1 w-full max-w-sm rounded-md border border-pnc-line bg-white px-2.5 py-2 font-normal outline-none focus:border-pnc-link"
-        >
-          {others.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.name}
-            </option>
-          ))}
-        </select>
-      </label>
+      <PanelIntro
+        action={
+          <label htmlFor={selectId} className="flex items-center gap-2 text-sm">
+            <span className="flex items-center gap-1.5 font-semibold text-pnc-ink">
+              <Eye className="size-4 text-pnc-blue-700" aria-hidden="true" /> Preview as
+            </span>
+            <select
+              id={selectId}
+              value={previewId}
+              onChange={(e) => setPreviewId(e.target.value)}
+              className="rounded-full border border-pnc-line bg-white px-4 py-2.5 text-sm font-semibold text-pnc-ink outline-none focus:border-pnc-link"
+            >
+              {others.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        }
+      >
+        {intro}
+      </PanelIntro>
       {preview && (
         <>
           {/* Admin-only context. The member's own view below never mentions limits. */}

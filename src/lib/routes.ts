@@ -23,17 +23,14 @@ export const routes = {
   familyDetail: (id: string) => `/family#${id}`,
   /** Surviving spouse's guided next steps after a loss in the family. */
   nextSteps: "/next-steps",
-  /** The Will section of the Planning page. */
-  familyWill: "/plan#will",
-  /** Planning: your will and the beneficiaries on your accounts. */
-  plan: "/plan",
+  /** Your will, opened in place on My Assets (from the ⋮ menu on "What you own"). */
+  will: "/assets#will",
+  /** Manage one account on My Assets, e.g. to name its beneficiary. */
+  manageAsset: (accountId: string) => `/assets#manage-${accountId}`,
   /** Advisor (bank representative) home dashboard. */
   advisor: "/advisor",
   /** Advisor: one client's summary, family, loss guide and assistant. */
   advisorClient: (id: string) => `/advisor/clients/${id}`,
-  /** Advisor: the settlement rulebook (decision tree, rules and sources). */
-  advisorRules: "/advisor/rules",
-  advisorRuleNode: (id: string) => `/advisor/rules#${id}`,
 } as const;
 
 export type View = "web" | "mobile";

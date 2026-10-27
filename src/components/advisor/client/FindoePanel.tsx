@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState, type Ref } from "react";
 import {
   BookOpenCheck,
@@ -31,7 +30,6 @@ import type { ClientFacts } from "@/lib/assistant";
 import type { Guidance } from "@/lib/nextSteps";
 import type { AskOption, OpenQuestion } from "@/lib/settlement/engine";
 import { cn } from "@/lib/format";
-import { routes } from "@/lib/routes";
 
 /** The stages every reply goes through, in order. */
 export const agentSteps = ["read", "walk", "rules", "write"] as const;
@@ -182,14 +180,6 @@ export function FindoePanel({
               {brief.reasoning.map((r) => (
                 <ChainOfThoughtStep key={r} icon={Scale} status="done" label={r} />
               ))}
-              <li className="pl-[2.125rem] pt-1">
-                <Link
-                  href={routes.advisorRules}
-                  className="text-[13px] text-pnc-link hover:underline"
-                >
-                  Open the rulebook
-                </Link>
-              </li>
             </ChainOfThought>
           </Message>
 
