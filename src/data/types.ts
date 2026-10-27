@@ -127,12 +127,12 @@ export type DemoUser = {
 // read by every customer login and by the advisor.
 
 /** How a household member's illustrated profile picture is drawn (see PersonAvatar). */
-export type AvatarLook = "father" | "mother" | "teen" | "child";
+export type AvatarLook = "husband" | "wife" | "teen" | "child";
 
 export type HouseholdPerson = {
   id: string;
   name: string;
-  /** Relationship to the household's primary customer (Father). */
+  /** Relationship to the household's primary customer (Husband). */
   relationship: FamilyMemberRelationship;
   birthdate: string; // ISO
   email: string;

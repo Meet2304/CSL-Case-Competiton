@@ -18,7 +18,7 @@ and mobile views stay in one design language.
 - **Mock data only.** Every name, balance and account number lives in
   `src/data/mock.ts` (customer), `src/data/advisor.ts` (advisor) or
   `src/data/users.ts` (demo logins); shapes are in `src/data/types.ts`. Never hard-code figures in
-  components. Keep names obviously fake (e.g. "Father", "Morgan Placeholder", "Sample Grocer",
+  components. Keep names obviously fake (e.g. "Husband", "Morgan Placeholder", "Sample Grocer",
   account numbers x0001–x0099).
 - **Label mock data.** Any section that shows figures gets a `MockBadge`.
 - **Colors come from tokens** in `src/app/globals.css` (`bg-pnc-blue-700`,

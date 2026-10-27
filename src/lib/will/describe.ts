@@ -141,7 +141,7 @@ export function lastResortSummary(d: WillDraft): string {
   return plan === "heirs" ? "Leave it to my heirs" : describeRows(planRows(plan, beneficiaries));
 }
 
-/** Second sentence of the secondary-beneficiary question, e.g. "If your spouse, Mother does not survive you". */
+/** Second sentence of the secondary-beneficiary question, e.g. "If your spouse, Wife does not survive you". */
 export function secondaryQuestion(d: WillDraft): string {
   return d.residuary.primary.plan === "spouse"
     ? `If your spouse, ${spouseName(d)} does not survive you, to whom should their portion of the estate go?`

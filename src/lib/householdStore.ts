@@ -42,7 +42,7 @@ function read(): HouseholdState {
 /**
  * Brings families saved by earlier builds in line with the seed: household
  * members' names and emails come from the seed (so a rename such as Jordan
- * Sample → Father reaches them), families hold family only (an outside
+ * Sample → Husband reaches them), families hold family only (an outside
  * professional such as the estate attorney is dropped), and retired roles go
  * once nobody holds them.
  */

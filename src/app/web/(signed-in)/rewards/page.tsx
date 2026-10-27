@@ -13,7 +13,7 @@ export default function WebRewardsPage() {
 
   return (
     <>
-      <WebHero title="PNC TotalRewards" showDate={false} />
+      <WebHero title="PNC TotalRewards" />
 
       <div className="mx-auto max-w-6xl space-y-6 px-4 py-8 sm:px-6">
         <div className="flex flex-wrap items-center justify-between gap-4 rounded-md bg-white p-5 shadow-card">

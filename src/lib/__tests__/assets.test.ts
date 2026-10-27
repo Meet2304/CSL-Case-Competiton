@@ -42,7 +42,7 @@ describe("my assets", () => {
       assetsFor(seed, personId, all, [])
         .filter((i) => canManage(i, personId))
         .map((i) => i.account.id);
-    // Father: everything they own, Child 2's account (custodian), and Mother's accounts (admin).
+    // Husband: everything they own, Child 2's account (custodian), and Wife's accounts (admin).
     expect(manageable("p-jordan")).toEqual(
       expect.arrayContaining(["acct-jordan-savings", "acct-riley-savings", "acct-casey-roth"]),
     );
@@ -63,7 +63,7 @@ describe("my assets", () => {
       assetsFor(seed, personId, all, [])
         .filter((i) => canPayFrom(i, personId))
         .map((i) => i.account.id);
-    // Father: his own cash accounts and Child 2's account he's custodian of; never the IRA or card.
+    // Husband: his own cash accounts and Child 2's account he's custodian of; never the IRA or card.
     expect(payable("p-jordan")).toEqual(
       expect.arrayContaining(["acct-joint-checking", "acct-jordan-savings", "acct-riley-savings"]),
     );
@@ -78,7 +78,7 @@ describe("my assets", () => {
     const items = assetsFor(seed, "p-jordan", all, []);
     const find = (q: string) => items.filter((i) => assetMatches(i, q)).map((i) => i.account.id);
     expect(find("x0011")).toEqual(["acct-jordan-ira"]);
-    expect(find("mother roth")).toEqual(["acct-casey-roth"]);
+    expect(find("wife roth")).toEqual(["acct-casey-roth"]);
     expect(find("sample family")).toEqual(["acct-casey-savings", "acct-casey-roth"]);
     expect(find("")).toHaveLength(items.length);
   });

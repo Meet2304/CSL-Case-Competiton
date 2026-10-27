@@ -22,7 +22,7 @@ type Look = {
 
 /** Fixed looks for the household's roles, so each profile reads at a glance. */
 const looks: Record<AvatarLook, Look> = {
-  father: {
+  husband: {
     skin: "fill-avatar-skin-2",
     hair: "fill-avatar-hair-1",
     shirt: "fill-pnc-navy",
@@ -31,7 +31,7 @@ const looks: Record<AvatarLook, Look> = {
     stubble: true,
     collar: true,
   },
-  mother: {
+  wife: {
     skin: "fill-avatar-skin-2",
     hair: "fill-avatar-hair-2",
     shirt: "fill-pnc-orange",
@@ -98,7 +98,7 @@ function seeded(seed: string): Look {
 
 /**
  * A flat vector portrait of a person (head, hair, shoulders) in a circle,
- * used for profiles. `look` draws a household role (father, mother, teen,
+ * used for profiles. `look` draws a household role (husband, wife, teen,
  * child); otherwise the portrait is picked from `seed`. Decorative: give the
  * surrounding control its own label.
  */

@@ -14,7 +14,7 @@ export const metadata: Metadata = { title: "Pay & Transfer" };
 export default function WebPayTransferPage() {
   return (
     <>
-      <WebHero title="Pay & Transfer" showDate={false} />
+      <WebHero title="Pay & Transfer" />
 
       <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[1fr_24rem]">
         <div className="space-y-4">

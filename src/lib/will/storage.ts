@@ -7,7 +7,7 @@ import { emptyDraft, type WillDraft, type WillProgress } from "./types";
  * Demo persistence for each household member's will, keyed by their person id
  * (the will's owner). There is no backend, so drafts live in this browser's
  * localStorage, where every login and the advisor can see them: finish a will
- * as `father`, sign in as `advisor` and Father shows "Will on file". After the
+ * as `husband`, sign in as `advisor` and Husband shows "Will on file". After the
  * bank records the owner's death, the executor's progress settling the estate
  * is stored here too.
  */

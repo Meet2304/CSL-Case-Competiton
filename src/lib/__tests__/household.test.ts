@@ -175,7 +175,7 @@ describe("survivor plan", () => {
     expect(plan(seed, avery).some((i) => i.id.startsWith("custodian:"))).toBe(false);
   });
 
-  it("covers every account Father owned", () => {
+  it("covers every account Husband owned", () => {
     const covered = plan().flatMap((i) => i.accounts.map((a) => a.id));
     const owned = people.length && accountsOf(currentAccounts(seed), "p-jordan").owned;
     for (const a of owned || []) expect(covered).toContain(a.id);
