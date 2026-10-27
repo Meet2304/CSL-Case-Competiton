@@ -23,8 +23,8 @@ export const routes = {
   familyDetail: (id: string) => `/family#${id}`,
   /** Surviving spouse's guided next steps after a loss in the family. */
   nextSteps: "/next-steps",
-  /** Your will, opened in place on My Assets (from the ⋮ menu on "What you own"). */
-  will: "/assets#will",
+  /** Your will: write it, see it on file (adults only). */
+  will: "/will",
   /** Manage one account on My Assets, e.g. to name its beneficiary. */
   manageAsset: (accountId: string) => `/assets#manage-${accountId}`,
   /** Advisor (bank representative) home dashboard. */

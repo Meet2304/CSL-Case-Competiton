@@ -1,16 +1,14 @@
 "use client";
 
 import { useId, useState } from "react";
-import { ScrollText, Search, Users, X } from "lucide-react";
+import { Search, Users, X } from "lucide-react";
 import { AccountList } from "@/components/customer/AccountList";
 import { ManageAsset } from "@/components/customer/ManageAsset";
-import { RelationBadge, relationLabels, useAssetDetail } from "@/components/customer/assetDetail";
+import { RelationBadge, useAssetDetail } from "@/components/customer/assetDetail";
 import { AssetSummary } from "@/components/customer/AssetSummary";
 import { useViewer } from "@/components/customer/Viewer";
 import { useHash } from "@/components/shared/useHashTab";
-import { ActionMenu } from "@/components/ui/ActionMenu";
 import { Money } from "@/components/ui/Money";
-import { WillSection } from "@/components/will/WillTab";
 import { cn } from "@/lib/format";
 import {
   accountsOf,
@@ -23,25 +21,29 @@ import {
   type AssetRelation,
 } from "@/lib/household";
 
-type Filter = "all" | AssetRelation;
+type Group = "personal" | "shared";
+type Filter = "all" | Group;
 
 const filters: { id: Filter; label: string }[] = [
   { id: "all", label: "All" },
-  ...(["owned", "managed", "shared"] as const).map((id) => ({ id, label: relationLabels[id] })),
+  { id: "personal", label: "Personal" },
+  { id: "shared", label: "Shared" },
 ];
+
+/** Personal: accounts you own, or hold for your child. Shared: what family shares with you. */
+const groupOf = (r: AssetRelation): Group => (r === "shared" ? "shared" : "personal");
 
 const MANAGE = "manage-";
 
 /**
  * My Assets: a summary of what the person owns, then every account they can
  * see — their own, ones they manage for a child, and ones family shares with
- * them — searchable and grouped by type. Adults write their will from the ⋮
- * menu on the summary (it opens in place at `#will`), and name beneficiaries
- * from each account's Manage panel (`#manage-<id>`), so other pages can link
- * straight to either.
+ * them — searchable and grouped by type. Owners name beneficiaries from each
+ * account's Manage panel (`#manage-<id>`), so other pages can link straight
+ * to it.
  */
 export function MyAssets() {
-  const { person, accounts, household, deceasedIds, isMinor } = useViewer();
+  const { person, accounts, household, deceasedIds } = useViewer();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
   const [hash, setHash] = useHash();
@@ -53,54 +55,29 @@ export function MyAssets() {
     ? items.find((i) => i.account.id === hash.slice(MANAGE.length) && canManage(i, person.id))
     : undefined;
 
-  if (hash === "will" && !isMinor)
-    return (
-      <section aria-label="Your will">
-        <WillSection onLeave={() => setHash(null)} />
-      </section>
-    );
-
   const summary = assetSummary(accountsOf(accounts, person.id).owned);
-  const counts = (r: Filter) =>
-    r === "all" ? items.length : items.filter((i) => i.relation === r).length;
-  const totalOf = (r: AssetRelation) =>
+  const counts = (f: Filter) =>
+    f === "all" ? items.length : items.filter((i) => groupOf(i.relation) === f).length;
+  const totalOf = (g: Group) =>
     items
-      .filter((i) => i.relation === r && !i.account.external)
+      .filter((i) => groupOf(i.relation) === g && !i.account.external)
       .reduce((s, i) => s + i.account.balance, 0);
 
   const shown = items.filter(
-    (i) => (filter === "all" || i.relation === filter) && assetMatches(i, query),
+    (i) => (filter === "all" || groupOf(i.relation) === filter) && assetMatches(i, query),
   );
   const byId = new Map(shown.map((i) => [i.account.id, i]));
   const sections = assetGroups
     .map((g) => ({ ...g, items: shown.filter((i) => assetGroupOf(i.account) === g.id) }))
     .filter((g) => g.items.length > 0);
 
-  const tiles = (["owned", "managed", "shared"] as const).filter((r) => counts(r) > 0);
+  const tiles = (["personal", "shared"] as const).filter((g) => counts(g) > 0);
 
   return (
     <div className="@container space-y-5">
-      <AssetSummary
-        summary={summary}
-        title="What you own"
-        menu={
-          // Wills start at 18, so minors get no menu at all.
-          !isMinor && (
-            <ActionMenu
-              label="More for what you own"
-              actions={[
-                {
-                  label: "Manage will",
-                  icon: ScrollText,
-                  onSelect: () => setHash("will"),
-                },
-              ]}
-            />
-          )
-        }
-      >
+      <AssetSummary summary={summary} title="What you own">
         {tiles.length > 1 && (
-          <div className="grid border-t border-pnc-line @xl:grid-cols-3">
+          <div className="grid border-t border-pnc-line @xl:grid-cols-2">
             {tiles.map((r) => (
               <button
                 key={r}

@@ -67,9 +67,9 @@ and mobile views stay in one design language.
   land; `/assets` (My Assets) lists everything they own, manage or have shared with them.
   Derive these from `assetsFor` / `assetSummary` / `familySummary` in `src/lib/household.ts`.
   The Family page opens one family in place via the hash (`routes.familyDetail(id)`).
-  There is no Planning page: the will opens in place on My Assets from the ⋮ menu on _What you
-  own_ (`routes.will`), and beneficiaries are named in each account's Manage panel
-  (`routes.manageAsset(id)`).
+  There is no Planning page: adults write their will on the Will page (`routes.will`, its own nav
+  entry), and beneficiaries are named in each account's Manage panel on My Assets
+  (`routes.manageAsset(id)`). My Assets filters by All / Personal (owned or custodial) / Shared.
 - **Family dashboard rules live in `src/lib/family.ts`** (`effectiveAccess`,
   `isLocked`, `successorsFor`, `familyReducer`). Components read state through
   `useFamily()` and change it only via `dispatch` actions; add a reducer action

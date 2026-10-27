@@ -1,7 +1,8 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { ArrowLeft, CircleHelp, ShoppingCart, UserCog } from "lucide-react";
+import { ArrowLeft, CircleHelp, ShoppingCart } from "lucide-react";
 import { FacetBackdrop } from "@/components/brand/FacetBackdrop";
+import { ViewerAvatar } from "@/components/customer/ViewerAvatar";
 import { routes } from "@/lib/routes";
 
 /** Round dark icon button used in the header toolbar. */
@@ -46,8 +47,12 @@ export function MobileHeader({
           ) : leading ? (
             leading
           ) : (
-            <Link href={routes.more} aria-label="Profile and settings" className={iconButton}>
-              <UserCog className="size-4.5" />
+            <Link
+              href={routes.more}
+              aria-label="Profile and settings"
+              className="rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            >
+              <ViewerAvatar className="size-9" />
             </Link>
           )}
           <div className="flex gap-3">

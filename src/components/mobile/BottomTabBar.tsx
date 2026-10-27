@@ -2,7 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { HeartHandshake, House, Menu, Users, Wallet, type LucideIcon } from "lucide-react";
+import {
+  HeartHandshake,
+  House,
+  Menu,
+  ScrollText,
+  Users,
+  Wallet,
+  type LucideIcon,
+} from "lucide-react";
 import { useCustomerNav } from "@/components/customer/useCustomerNav";
 import { cn } from "@/lib/format";
 import { routes, toPublicPath } from "@/lib/routes";
@@ -15,8 +23,10 @@ export function BottomTabBar() {
   const nav = useCustomerNav();
   const tabs: Tab[] = [
     { label: "Home", href: routes.home, icon: House },
-    // Wills and beneficiaries are set up from My Assets, so its badge counts those reminders.
-    { label: "My Assets", href: routes.assets, icon: Wallet, badge: nav.reminders },
+    { label: "My Assets", href: routes.assets, icon: Wallet, badge: nav.assetReminders },
+    ...(nav.showWill
+      ? [{ label: "Will", href: routes.will, icon: ScrollText, badge: nav.willReminders }]
+      : []),
     ...(nav.nextSteps
       ? [{ label: "Next steps", href: routes.nextSteps, icon: HeartHandshake }]
       : []),

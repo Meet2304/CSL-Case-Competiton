@@ -57,8 +57,8 @@ card, a life policy held outside PNC, Casey's savings and Roth IRA, and the
 kids' custodial accounts). The session keeps the role (`pnc-session`) and the
 person (`pnc-person`); `src/proxy.ts` keeps each role on its own pages.
 
-Customer navigation: **Home · My Assets · Family · Help** on laptops, and
-**Home · My Assets · Family · More** on phones (Pay & Transfer, Cards,
+Customer navigation: **Home · My Assets · Will · Family · Help** on laptops, and
+**Home · My Assets · Will · Family · More** on phones (Pay & Transfer, Cards,
 Rewards and Deposit live under More). **Next steps** appears for adults once
 the bank records a death in the household.
 
@@ -71,8 +71,8 @@ family (with what they're allowed to do).
 **Reminders** (`src/lib/nudges.ts`) come from what's on file: write or finish
 a will, add a beneficiary to each account that can take one, and update a
 beneficiary who has died. Avery gets a heads-up about turning 18; Riley gets
-none. The count also shows on **My Assets** in the navigation, where both are
-resolved.
+none. Beneficiary reminders show as a count on **My Assets** and the will
+reminder on **Will** in the navigation, where each is resolved.
 
 ## Family — `/family`
 
@@ -92,13 +92,14 @@ Riley sees nothing, and Dana (the estate attorney) is invited.
   can use; admins check it with **Preview as**.
 - Families keep working after a death: the person shows as deceased.
 
-## Wills and beneficiaries — on My Assets (`/assets`)
+## Wills and beneficiaries
 
-There's no separate Planning page; the old `/plan` URL redirects to My Assets.
+There's no separate Planning page; the old `/plan` URL redirects to the Will page.
 
-- **Your will** (`/assets#will`): open it from the ⋮ menu on _What you own_
-  (**Manage will**). An 8-step planner, pre-filled with your
-  household, saved per person as you go. Adults only.
+- **Your will** (`/will`, **Will** in the navigation): an 8-step planner,
+  pre-filled with your household, saved per person as you go. Progress shows as
+  numbered steps across the top, each with a dropdown of its steps. Adults only;
+  under-18s see a short note instead.
 - **Beneficiaries** (`/assets#manage-<accountId>`): in each account's
   **Manage** panel, name or change who inherits it. Changes feed the reminders
   and, after a death, decide whether an account passes directly or through the
