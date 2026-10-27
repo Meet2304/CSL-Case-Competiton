@@ -2,6 +2,8 @@
 
 import { useId, useState } from "react";
 import { FilePlus2, RotateCcw } from "lucide-react";
+import { ActionMenu } from "@/components/ui/ActionMenu";
+import { Dialog } from "@/components/ui/Dialog";
 import { advisorCustomers } from "@/data/advisor";
 import { MOCK_AS_OF } from "@/data/mock";
 import type { LossEvent } from "@/data/types";
@@ -24,20 +26,55 @@ const people = customerDirectory(advisorCustomers);
 const DEFAULT_PERSON = "Jordan Sample";
 
 const input =
-  "mt-1 w-full rounded-md border border-pnc-line bg-white px-3 py-2 text-sm outline-none focus:border-pnc-link";
+  "mt-1 w-full rounded-md border border-pnc-line bg-white px-3 py-2.5 text-sm outline-none focus:border-pnc-link";
 const label = "block text-xs font-semibold text-pnc-ink";
 
-/**
- * Bank-side intake: record that a customer has died. Only the person, date and
- * source are taken here — the impact on their family is assessed afterwards
- * from the household records (see the outreach banner).
- */
-export function RecordPassingPanel({ className }: { className?: string }) {
+/** The ⋮ menu on the customer list: rare, book-level actions. */
+export function BookActions() {
+  const [recording, setRecording] = useState(false);
+  const touched = useDemoTouched();
+  return (
+    <>
+      <ActionMenu
+        label="More actions"
+        actions={[
+          { label: "Record a death notice", icon: FilePlus2, onSelect: () => setRecording(true) },
+          ...(touched
+            ? [{ label: "Reset demo", icon: RotateCcw, onSelect: resetDemo, subtle: true }]
+            : []),
+        ]}
+      />
+      <RecordDeathDialog open={recording} onClose={() => setRecording(false)} />
+    </>
+  );
+}
+
+/** Whether there is anything for "Reset demo" to undo. */
+export function useDemoTouched(): boolean {
   const { recorded } = useAdvisorBook();
   const reviews = useReviews();
   const hasCasework = useHasCasework();
+  return recorded.length > 0 || Object.keys(reviews).length > 0 || hasCasework;
+}
+
+/** Clears every recorded death, answer, review and saved will in this browser. */
+export function resetDemo() {
+  bereavementActions.reset();
+  reviewActions.reset();
+  caseworkActions.reset();
+  householdActions.reset();
+  resetAllWills();
+}
+
+/**
+ * Bank-side intake, opened from the Next Steps menu: record that a customer
+ * has died. Only the person, date and source are taken here — the impact on
+ * their family is assessed afterwards from the household records (see the
+ * outreach banner).
+ */
+export function RecordDeathDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { recorded } = useAdvisorBook();
   const id = useId();
-  const [open, setOpen] = useState(false);
   const [personName, setPersonName] = useState(
     people.includes(DEFAULT_PERSON) ? DEFAULT_PERSON : people[0],
   );
@@ -56,50 +93,19 @@ export function RecordPassingPanel({ className }: { className?: string }) {
       recordedOn: MOCK_AS_OF,
     };
     bereavementActions.recordLoss(loss);
-    setOpen(false);
+    onClose();
   }
 
   return (
-    <div className={className}>
-      <div className="flex flex-wrap items-center gap-3">
-        <button
-          type="button"
-          aria-expanded={open}
-          aria-controls={`${id}-form`}
-          onClick={() => setOpen(!open)}
-          className="inline-flex items-center gap-1.5 rounded-full border border-pnc-line bg-white px-4 py-2 text-sm font-semibold text-pnc-ink hover:border-pnc-link hover:text-pnc-link"
-        >
-          <FilePlus2 className="size-4" aria-hidden="true" /> Record a death notice
-        </button>
-        {(recorded.length > 0 || Object.keys(reviews).length > 0 || hasCasework) && (
-          <button
-            type="button"
-            onClick={() => {
-              bereavementActions.reset();
-              reviewActions.reset();
-              caseworkActions.reset();
-              householdActions.reset();
-              resetAllWills();
-            }}
-            className="inline-flex items-center gap-1 text-xs font-semibold text-pnc-muted hover:text-pnc-link"
-          >
-            <RotateCcw className="size-3.5" aria-hidden="true" /> Reset demo
-          </button>
-        )}
-      </div>
-
+    <Dialog
+      open={open}
+      onClose={onClose}
+      title="Record a death notice"
+      description="We'll assess how it affects their family from the household records."
+    >
       {open && (
-        <form
-          id={`${id}-form`}
-          onSubmit={submit}
-          className="mt-3 rounded-md bg-white p-4 shadow-card"
-          aria-label="Record a death notice"
-        >
-          <p className="text-sm text-pnc-muted">
-            Record the customer who passed away. We&apos;ll assess how it affects their family from
-            the household records.
-          </p>
-          <div className="mt-3 grid gap-3 @2xl:grid-cols-3">
+        <form onSubmit={submit} className="p-5" aria-label="Record a death notice">
+          <div className="grid gap-4">
             <div>
               <label htmlFor={`${id}-person`} className={label}>
                 Customer who passed away
@@ -157,7 +163,7 @@ export function RecordPassingPanel({ className }: { className?: string }) {
             </button>
             <button
               type="button"
-              onClick={() => setOpen(false)}
+              onClick={onClose}
               className="text-sm font-semibold text-pnc-muted hover:text-pnc-link"
             >
               Cancel
@@ -170,6 +176,6 @@ export function RecordPassingPanel({ className }: { className?: string }) {
           </div>
         </form>
       )}
-    </div>
+    </Dialog>
   );
 }

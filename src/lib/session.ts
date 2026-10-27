@@ -15,7 +15,7 @@ export function parseRole(value: string | undefined): Role | undefined {
 }
 
 export function homeFor(role: Role): string {
-  return role === "advisor" ? routes.advisor : routes.accounts;
+  return role === "advisor" ? routes.advisor : routes.home;
 }
 
 export function isAdvisorPath(path: string): boolean {

@@ -4,9 +4,9 @@ import { WebHero } from "@/components/web/WebHero";
 import { firstName, personById } from "@/lib/household";
 import { viewerId } from "@/lib/viewer";
 
-export const metadata: Metadata = { title: "Accounts" };
+export const metadata: Metadata = { title: "Home" };
 
-export default async function WebAccountsPage() {
+export default async function WebHomePage() {
   const person = personById(await viewerId())!;
   return (
     <>

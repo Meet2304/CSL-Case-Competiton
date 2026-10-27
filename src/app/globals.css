@@ -42,6 +42,17 @@
 
   /* One-shot reveal for assistant output (Ask tab). */
   --animate-reveal: reveal 0.35s ease-out both;
+  /* A light sweeping across text while Findoe works. */
+  --animate-shimmer: shimmer 2.2s linear infinite;
+
+  @keyframes shimmer {
+    from {
+      background-position: 100% 0;
+    }
+    to {
+      background-position: 0% 0;
+    }
+  }
 
   @keyframes reveal {
     from {

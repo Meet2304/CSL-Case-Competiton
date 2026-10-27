@@ -118,3 +118,23 @@ export const secondaryButton =
   "inline-flex items-center justify-center gap-1.5 rounded-full border border-pnc-line bg-white px-5 py-2.5 text-sm font-semibold text-pnc-ink hover:border-pnc-link hover:text-pnc-link";
 export const linkButton =
   "inline-flex items-center gap-1 text-sm font-semibold text-pnc-link hover:underline disabled:text-pnc-muted disabled:no-underline";
+
+/** A family's emblem: its initials on a faceted blue tile. */
+export function FamilyEmblem({ name, size = "md" }: { name: string; size?: "md" | "lg" }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        "relative grid shrink-0 place-items-center overflow-hidden rounded-xl bg-linear-135 from-pnc-blue-700 to-pnc-blue-950 font-display font-semibold text-white",
+        size === "lg" ? "size-14 text-lg" : "size-11 text-sm",
+      )}
+    >
+      <span className="absolute -right-3 -top-3 size-8 rotate-45 bg-white/10" />
+      <span className="absolute -bottom-4 -left-2 size-8 rotate-12 bg-pnc-orange/40" />
+      <span className="relative">{initials(name.replace(/\s+family$/i, "") || name)}</span>
+    </span>
+  );
+}
+
+/** "an Admin", "a Trusted advisor". */
+export const withArticle = (role: string) => `${/^[AEIOU]/i.test(role) ? "an" : "a"} ${role}`;

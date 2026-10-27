@@ -66,10 +66,10 @@ export function NotificationList({
                 <Icon className="size-4.5" strokeWidth={1.75} aria-hidden="true" />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="flex items-baseline justify-between gap-2">
+                <span className="flex items-start justify-between gap-2">
                   <span
                     className={cn(
-                      "truncate text-sm font-semibold",
+                      "min-w-0 text-sm font-semibold leading-snug",
                       n.urgent ? "text-attention" : "text-pnc-ink",
                     )}
                   >

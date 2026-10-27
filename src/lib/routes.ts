@@ -6,7 +6,10 @@
  */
 export const routes = {
   signOn: "/",
-  accounts: "/accounts",
+  /** Customer home: money at a glance, notifications and families. */
+  home: "/home",
+  /** My Assets: everything the customer owns, manages, or family shares with them. */
+  assets: "/assets",
   payTransfer: "/pay-transfer",
   rewards: "/rewards",
   cards: "/cards",
@@ -16,6 +19,8 @@ export const routes = {
   help: "/help",
   /** Customer family dashboard (members, roles, asset access, succession). */
   family: "/family",
+  /** One family's assets, and (for admins) the way to manage it. */
+  familyDetail: (id: string) => `/family#${id}`,
   /** Surviving spouse's guided next steps after a loss in the family. */
   nextSteps: "/next-steps",
   /** The Will section of the Planning page. */

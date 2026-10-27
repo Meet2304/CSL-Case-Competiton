@@ -22,11 +22,9 @@ const facets = Array.from({ length: COLS * ROWS * 2 }, (_, i) => {
     ? `${x},${y} ${x + W},${y} ${x},${y + H}`
     : `${x + W},${y} ${x + W},${y + H} ${x},${y + H}`;
   const r = seeded(i + 1);
-  return {
-    points,
-    fill: r > 0.5 ? "#ffffff" : "#000000",
-    opacity: r > 0.5 ? (r - 0.5) * 0.12 : r * 0.12,
-  };
+  // Rounded so server and browser print the same value (Math.sin can differ in the last digits).
+  const opacity = Math.round((r > 0.5 ? (r - 0.5) * 0.12 : r * 0.12) * 1e4) / 1e4;
+  return { points, fill: r > 0.5 ? "#ffffff" : "#000000", opacity };
 });
 
 /**

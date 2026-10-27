@@ -18,6 +18,7 @@ import {
 import { FindoeMonogram } from "@/components/advisor/assistant/parts";
 import { EngagementPanel } from "@/components/advisor/client/EngagementPanel";
 import { DeadlineList } from "@/components/advisor/settlement/DeadlineList";
+import { FindingList } from "@/components/advisor/settlement/FindingList";
 import { HouseholdChecklist } from "@/components/advisor/settlement/HouseholdChecklist";
 import { CopyButton, Disclosure } from "@/components/advisor/settlement/layout";
 import { ReviewQueue } from "@/components/advisor/settlement/ReviewQueue";
@@ -103,8 +104,8 @@ function StepRow({
             onClick={() => onAskAI(step)}
             className={cn(small, "text-pnc-ink ring-1 ring-pnc-line hover:ring-pnc-muted")}
           >
-            <FindoeMonogram className="size-4 text-[9px]" />
-            Ask AI<span className="sr-only">: {step.title}</span>
+            <FindoeMonogram className="size-4.5" />
+            Ask Findoe<span className="sr-only">: {step.title}</span>
           </button>
         )}
         {step.checkable && (
@@ -134,7 +135,6 @@ export function NextStepsView({
   reviews,
   onAskAI,
   onAnswer,
-  onOpenWhatIf,
   onAsk,
 }: {
   facts: ClientFacts;
@@ -142,7 +142,6 @@ export function NextStepsView({
   reviews: ReviewState;
   onAskAI: (s: NextStep) => void;
   onAnswer: (q: OpenQuestion) => void;
-  onOpenWhatIf: () => void;
   onAsk: (q: string) => void;
 }) {
   const baseId = useId();
@@ -386,17 +385,10 @@ export function NextStepsView({
               title={`If ${facts.first} died today`}
               summary={`${plural(g.readiness.findings.length, "gap")} · ${formatCompactMoney(g.readiness.plan.totals.probate)} would go through probate`}
             >
-              <p className="text-sm text-pnc-ink">
-                The fixes above come from running the rulebook as if {facts.first} died today. The
-                What if tab shows every account, and lets you run it for anyone in the household.
+              <p className="mb-3 text-sm text-pnc-ink">
+                The fixes above come from running the rulebook as if {facts.first} died today.
               </p>
-              <button
-                type="button"
-                onClick={onOpenWhatIf}
-                className={cn(small, "mt-3 bg-pnc-blue-700 text-white hover:bg-pnc-blue-800")}
-              >
-                Open the what-if
-              </button>
+              <FindingList findings={g.readiness.findings} onAsk={onAsk} />
             </Disclosure>
           )}
 

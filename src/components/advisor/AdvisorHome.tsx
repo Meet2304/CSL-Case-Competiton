@@ -4,6 +4,7 @@ import { LogOut } from "lucide-react";
 import { MobileCard } from "@/components/mobile/MobileCard";
 import { iconButton, MobileHeader } from "@/components/mobile/MobileHeader";
 import { MockBadge } from "@/components/mock/Mock";
+import { ScrollArea } from "@/components/ui/ScrollArea";
 import { SignOffButton } from "@/components/shared/SignOffButton";
 import { WebCard } from "@/components/web/WebCard";
 import { WebHero } from "@/components/web/WebHero";
@@ -12,10 +13,9 @@ import { AdvisorStats } from "./AdvisorStats";
 import { ClientSearch } from "./ClientSearch";
 import { CustomerList } from "./CustomerList";
 import { CustomerTable } from "./CustomerTable";
-import { DailyBrief } from "./DailyBrief";
 import { NotificationList } from "./NotificationList";
 import { OutreachBanner } from "./OutreachBanner";
-import { RecordPassingPanel } from "./RecordPassingPanel";
+import { BookActions } from "./RecordDeathDialog";
 import { useAdvisorBook } from "./useAdvisorBook";
 
 const pill =
@@ -30,23 +30,36 @@ export function WebAdvisorHome() {
       <WebHero
         title={`Welcome, ${advisor.firstName}`}
         subtitle={`${advisor.title} · ${advisor.team}`}
-      />
-
-      <div className="@container mx-auto max-w-6xl space-y-6 px-4 py-8 sm:px-6">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <h2 className="font-display text-2xl font-medium text-pnc-ink">Your Customers</h2>
+        className="pb-16"
+        aside={
+          <div className="@container flex w-full items-center gap-3 md:w-[26rem]">
+            <ClientSearch customers={customers} className="min-w-0 flex-1" />
             <MockBadge />
           </div>
-          <RecordPassingPanel className="w-full @3xl:w-auto" />
-        </div>
+        }
+      />
 
-        <ClientSearch customers={customers} className="max-w-2xl" />
+      <div className="@container mx-auto max-w-6xl space-y-6 px-4 pb-10 sm:px-6">
+        {/* Headline numbers first, lifted onto the hero band. */}
+        <AdvisorStats stats={stats} className="relative -mt-10" />
+
         <OutreachBanner />
 
-        {/* What needs the advisor today, side by side; both panels share one height. */}
-        <div className="grid items-stretch gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-          <DailyBrief customers={customers} className="h-full" />
+        {/* Like the customer home: the main list, with a slimmer notifications card beside it. */}
+        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_21rem]">
+          <WebCard
+            title="Your Customers"
+            subtitle={`(${customers.length})`}
+            aside={
+              <span className="flex items-center gap-2">
+                <MockBadge />
+                <BookActions />
+              </span>
+            }
+            className="min-w-0 overflow-hidden rounded-lg"
+          >
+            <CustomerTable customers={customers} />
+          </WebCard>
           <WebCard
             title="Notifications"
             subtitle={`(${notifications.length})`}
@@ -57,18 +70,13 @@ export function WebAdvisorHome() {
                 </span>
               )
             }
-            className="h-full overflow-hidden"
+            className="flex h-[32rem] flex-col overflow-hidden rounded-lg lg:sticky lg:top-4"
           >
-            <NotificationList notifications={notifications} />
+            <ScrollArea label="Notifications" className="flex-1">
+              <NotificationList notifications={notifications} />
+            </ScrollArea>
           </WebCard>
         </div>
-
-        <AdvisorStats stats={stats} />
-
-        {/* Full width, so every column of the table fits without scrolling. */}
-        <WebCard title="Assigned Customers" subtitle={`(${customers.length} customers)`}>
-          <CustomerTable customers={customers} />
-        </WebCard>
       </div>
     </>
   );
@@ -112,15 +120,16 @@ export function MobileAdvisorHome() {
       <div className="@container space-y-4 px-3 pt-4">
         <ClientSearch customers={customers} />
         <OutreachBanner />
-        <DailyBrief customers={customers} />
-        <RecordPassingPanel />
         <MobileCard>
           <h2 className="flex items-center justify-between border-b border-pnc-line px-4 py-3 font-semibold">
             <span>
               Your Customers{" "}
               <span className="text-xs font-normal text-pnc-muted">({customers.length})</span>
             </span>
-            {attentionCount > 0 && <span className={pill}>{attentionCount} need attention</span>}
+            <span className="flex items-center gap-1">
+              {attentionCount > 0 && <span className={pill}>{attentionCount} need attention</span>}
+              <BookActions />
+            </span>
           </h2>
           <CustomerList customers={customers} />
         </MobileCard>

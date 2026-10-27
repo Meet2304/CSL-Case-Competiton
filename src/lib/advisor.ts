@@ -42,7 +42,6 @@ export function advisorStats(customers: AdvisorCustomer[], todayIso: string) {
   return {
     customers: customers.length,
     needAttention: customers.filter(needsAttention).length,
-    totalValue: customers.reduce((sum, c) => sum + c.relationshipValue, 0),
     reviewsNext30Days: customers.filter((c) => {
       const d = daysBetween(todayIso, c.nextReview);
       return d >= 0 && d <= 30;

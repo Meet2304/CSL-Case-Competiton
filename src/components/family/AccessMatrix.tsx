@@ -59,23 +59,23 @@ export function AccessMatrix({
 
   return (
     <div className="@container">
-      {/* Wide: one table per category, like a permissions matrix. */}
-      <div className="hidden space-y-5 @2xl:block">
+      {/* Wide: one table per category, like a permissions matrix; "Full access" closes each row. */}
+      <div className="hidden space-y-5 @xl:block">
         {groups.map(({ category, items }) => (
           <table key={category} className="w-full table-fixed text-sm">
             <colgroup>
               <col />
-              <col className="w-16" />
               {columns.map((c) => (
-                <col key={c.key} className="w-24" />
+                <col key={c.key} className="w-[4.75rem]" />
               ))}
+              <col className="w-[4.75rem]" />
             </colgroup>
             <thead>
               <tr className="bg-pnc-surface">
                 <th
-                  scope="colgroup"
-                  colSpan={2}
-                  className="rounded-tl-md px-4 py-2 text-left font-semibold text-pnc-ink"
+                  scope="col"
+                  rowSpan={2}
+                  className="rounded-tl-md px-4 py-2 text-left align-bottom font-semibold text-pnc-ink"
                 >
                   {category}
                 </th>
@@ -89,18 +89,20 @@ export function AccessMatrix({
                 <th
                   scope="colgroup"
                   colSpan={2}
-                  className="rounded-tr-md border-l border-pnc-line px-2 py-2 text-center text-xs font-semibold uppercase tracking-wide text-pnc-muted"
+                  className="border-l border-pnc-line px-2 py-2 text-center text-xs font-semibold uppercase tracking-wide text-pnc-muted"
                 >
                   Control
                 </th>
+                <th
+                  scope="col"
+                  rowSpan={2}
+                  title="Every permission on this asset"
+                  className="rounded-tr-md border-l border-pnc-line bg-pnc-blue-50 px-2 py-2 text-center align-bottom text-xs font-semibold text-pnc-blue-800"
+                >
+                  Full access
+                </th>
               </tr>
               <tr className="border-b border-pnc-line text-xs text-pnc-muted">
-                <th scope="col" className="px-4 py-2 text-left font-semibold">
-                  Asset
-                </th>
-                <th scope="col" className="px-2 py-2 text-center font-semibold">
-                  Full
-                </th>
                 {columns.map((c, i) => (
                   <th
                     key={c.key}
@@ -133,14 +135,6 @@ export function AccessMatrix({
                         </span>
                       )}
                     </th>
-                    <td className="px-2 py-2.5 text-center">
-                      <Checkbox
-                        aria-label={`Full access to ${label(asset)}`}
-                        checked={isFull(access)}
-                        disabled={disabledFor(asset, "full")}
-                        onChange={() => onChange?.(asset.id, toggle(access, "full"))}
-                      />
-                    </td>
                     {columns.map((c, i) => (
                       <td
                         key={c.key}
@@ -157,6 +151,14 @@ export function AccessMatrix({
                         />
                       </td>
                     ))}
+                    <td className="border-l border-pnc-line bg-pnc-blue-50/50 px-2 py-2.5 text-center">
+                      <Checkbox
+                        aria-label={`Full access to ${label(asset)}`}
+                        checked={isFull(access)}
+                        disabled={disabledFor(asset, "full")}
+                        onChange={() => onChange?.(asset.id, toggle(access, "full"))}
+                      />
+                    </td>
                   </tr>
                 );
               })}
@@ -165,41 +167,27 @@ export function AccessMatrix({
         ))}
       </div>
 
-      {/* Narrow: one card per asset with labelled toggles. */}
-      <div className="space-y-5 @2xl:hidden">
+      {/* Narrow: one card per asset; "Full access" is its own row at the bottom. */}
+      <div className="space-y-5 @xl:hidden">
         {groups.map(({ category, items }) => (
           <section key={category}>
             <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-pnc-muted">
               {category}
             </h4>
-            <ul className="divide-y divide-pnc-line rounded-md border border-pnc-line">
+            <ul className="divide-y divide-pnc-line overflow-hidden rounded-md border border-pnc-line">
               {items.map((asset) => {
                 const access = value(asset.id);
                 const locked = lockedIds.has(asset.id);
                 return (
-                  <li key={asset.id} className="px-3 py-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <span className="min-w-0">
-                        <span className="block text-sm font-semibold text-pnc-ink">
-                          {label(asset)}
-                        </span>
-                        {(locked || asset.closed) && (
-                          <span className="flex items-center gap-1 text-xs text-pnc-muted">
-                            <Lock className="size-3" aria-hidden="true" />{" "}
-                            {asset.closed ? "Closed" : "Control locked"}
-                          </span>
-                        )}
-                      </span>
-                      <label className="flex shrink-0 items-center gap-1.5 text-xs font-semibold text-pnc-ink">
-                        <Checkbox
-                          checked={isFull(access)}
-                          disabled={disabledFor(asset, "full")}
-                          onChange={() => onChange?.(asset.id, toggle(access, "full"))}
-                        />
-                        Full
-                      </label>
-                    </div>
-                    <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5">
+                  <li key={asset.id} className="px-3 pt-3">
+                    <p className="text-sm font-semibold text-pnc-ink">{label(asset)}</p>
+                    {(locked || asset.closed) && (
+                      <p className="flex items-center gap-1 text-xs text-pnc-muted">
+                        <Lock className="size-3" aria-hidden="true" />{" "}
+                        {asset.closed ? "Closed" : "Control locked"}
+                      </p>
+                    )}
+                    <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2">
                       {[
                         { title: "Visibility", cols: visibility },
                         { title: "Control", cols: control },
@@ -224,6 +212,15 @@ export function AccessMatrix({
                         </Fragment>
                       ))}
                     </div>
+                    <label className="-mx-3 mt-3 flex items-center gap-2 border-t border-pnc-line bg-pnc-blue-50/50 px-3 py-2.5 text-sm font-semibold text-pnc-blue-800">
+                      <Checkbox
+                        checked={isFull(access)}
+                        disabled={disabledFor(asset, "full")}
+                        onChange={() => onChange?.(asset.id, toggle(access, "full"))}
+                      />
+                      Full access
+                      <span className="font-normal text-pnc-muted">· everything above</span>
+                    </label>
                   </li>
                 );
               })}
