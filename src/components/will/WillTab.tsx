@@ -64,12 +64,12 @@ function prefillFromHousehold(state: FamilyState) {
 }
 
 /**
- * The signed-in person's will, opened in place on My Assets (`routes.will`):
- * a short start page, the step-by-step planner, or the will on file. One
- * breadcrumb above it is the only way back, so there's never a second
- * "back" link.
+ * The signed-in person's will (the Will page, `routes.will`): a short start
+ * page, the step-by-step planner, or the will on file. While editing, one
+ * breadcrumb leads back to the start page, so there's never a second "back"
+ * link.
  */
-export function WillSection({ onLeave }: { onLeave: () => void }) {
+export function WillSection() {
   const { person, accounts, deceasedIds } = useViewer();
   const hydrated = useHydrated();
   const saved = useSavedWill(person.id);
@@ -78,12 +78,8 @@ export function WillSection({ onLeave }: { onLeave: () => void }) {
   const [planning, setPlanning] = useState<number | "resume" | null>(null);
   const household = householdAsFamily(person.id, accounts, deceasedIds);
 
-  const back = { label: "My Assets", onClick: onLeave };
-  const crumbs =
-    planning === null
-      ? [back, { label: "Your will" }]
-      : [back, { label: "Your will", onClick: () => setPlanning(null) }, { label: "Edit" }];
-  const savedNote = planning !== null && (
+  const crumbs = [{ label: "Your will", onClick: () => setPlanning(null) }, { label: "Edit" }];
+  const savedNote = (
     <span className="inline-flex items-center gap-1.5 text-xs text-pnc-muted">
       <CloudCheck className="size-4 text-pnc-positive" aria-hidden="true" />
       Saved as you go
@@ -137,7 +133,7 @@ export function WillSection({ onLeave }: { onLeave: () => void }) {
 
   return (
     <div className="@container space-y-4">
-      <Breadcrumb trail={crumbs} aside={savedNote} />
+      {planning !== null && <Breadcrumb trail={crumbs} aside={savedNote} />}
       {body}
     </div>
   );

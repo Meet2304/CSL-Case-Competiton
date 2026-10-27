@@ -20,7 +20,7 @@ const VIEW_COOKIE = "pnc-view";
 // Retired pages and where their content lives now.
 const legacy: Record<string, string> = {
   "/accounts": routes.assets,
-  "/plan": routes.assets,
+  "/plan": routes.will,
   "/advisor/rules": routes.advisor,
 };
 

@@ -1,8 +1,8 @@
 /**
  * Planning reminders for one person, from what they own and what's on file:
  * a will, and a beneficiary on every account that can name one. Pure — Home
- * shows these and My Assets resolves them (the will from its ⋮ menu, each
- * beneficiary from that account's Manage panel).
+ * shows these; the Will page resolves the will, and each account's Manage
+ * panel on My Assets resolves its beneficiary.
  */
 import type { StoredFamily } from "@/data/household";
 import type { BankAccount, HouseholdPerson, WillStatus } from "@/data/types";

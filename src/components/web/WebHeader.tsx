@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CircleUserRound } from "lucide-react";
 import { PncLogo } from "@/components/brand/PncLogo";
 import { useCustomerNav } from "@/components/customer/useCustomerNav";
 import { SignOffButton } from "@/components/shared/SignOffButton";
+import { PersonAvatar } from "@/components/ui/PersonAvatar";
 import type { Role } from "@/data/types";
 import { cn } from "@/lib/format";
 import { routes, toPublicPath } from "@/lib/routes";
@@ -21,13 +21,14 @@ const advisorNav: NavItem[] = [{ label: "Home", href: routes.advisor }];
 
 export function WebHeader({ variant = "customer" }: { variant?: Role }) {
   const nav = useCustomerNav();
-  // Customers: Home, then their assets (where wills and beneficiaries live too), then people.
+  // Customers: Home, their assets (beneficiaries live there), their will, then people.
   const navItems: NavItem[] =
     variant === "advisor"
       ? advisorNav
       : [
           { label: "Home", href: routes.home },
-          { label: "My Assets", href: routes.assets, badge: nav.reminders },
+          { label: "My Assets", href: routes.assets, badge: nav.assetReminders },
+          ...(nav.showWill ? [{ label: "Will", href: routes.will, badge: nav.willReminders }] : []),
           ...(nav.nextSteps ? [{ label: "Next steps", href: routes.nextSteps }] : []),
           { label: "Family", href: routes.family },
           { label: "Help", href: routes.help },
@@ -79,7 +80,10 @@ export function WebHeader({ variant = "customer" }: { variant?: Role }) {
           className="ml-auto flex shrink-0 items-center gap-2 text-sm font-semibold text-white/90 hover:text-white md:ml-0"
         >
           {variant === "customer" && <span className="hidden lg:inline">{nav.first}</span>}
-          <CircleUserRound className="size-7" strokeWidth={1.5} aria-hidden="true" />
+          <PersonAvatar
+            seed={variant === "customer" ? nav.personId : "advisor"}
+            className="size-8"
+          />
         </SignOffButton>
       </div>
     </header>
