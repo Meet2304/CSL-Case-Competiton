@@ -1,6 +1,6 @@
 /**
  * MOCK DATA for the family dashboard (customer side). The signed-in customer
- * is Jordan Sample, an admin of the Sample family. Balances for accounts that
+ * is Father, an admin of the Sample family. Balances for accounts that
  * also appear on the Accounts dashboard come from ./mock so they always match.
  *
  * This is only the starting state: admins can add members, roles and assets
@@ -32,24 +32,24 @@ export const initialFamilyState: FamilyState = {
   members: [
     {
       id: "m-jordan",
-      name: "Jordan Sample",
-      email: "jordan@example.com",
+      name: "Father",
+      email: "father@example.com",
       relationship: "Self",
       roleId: "r-admin",
       status: "Active",
     },
     {
       id: "m-casey",
-      name: "Casey Sample",
-      email: "casey@example.com",
+      name: "Mother",
+      email: "mother@example.com",
       relationship: "Spouse",
       roleId: "r-admin",
       status: "Active",
     },
     {
       id: "m-avery",
-      name: "Avery Sample",
-      email: "avery@example.com",
+      name: "Child 1",
+      email: "child1@example.com",
       relationship: "Child",
       note: "Age 21",
       roleId: "r-adult-child",
@@ -57,8 +57,8 @@ export const initialFamilyState: FamilyState = {
     },
     {
       id: "m-riley",
-      name: "Riley Sample",
-      email: "riley@example.com",
+      name: "Child 2",
+      email: "child2@example.com",
       relationship: "Child",
       note: "Age 15",
       roleId: "r-teen",

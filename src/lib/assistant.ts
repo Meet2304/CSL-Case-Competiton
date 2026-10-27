@@ -13,7 +13,7 @@
 import { rulebook } from "@/data/settlement";
 import type { AdvisorCustomer, ClientMember, ClientProfile, Holding } from "@/data/types";
 import { lossContact, openLoss } from "@/lib/advisor";
-import { daysBetween, formatCompactMoney, formatDate } from "@/lib/format";
+import { daysBetween, firstName, formatCompactMoney, formatDate } from "@/lib/format";
 import { settlementInputFromFacts } from "@/lib/settlement/adapters";
 import { addDays } from "@/lib/settlement/dates";
 import { settlementPlan, type Answers, type SettlementPlan } from "@/lib/settlement/engine";
@@ -22,7 +22,6 @@ import { readinessReport, type ReadinessReport } from "@/lib/settlement/simulate
 // ---------------------------------------------------------------------------
 // Facts about a client, shared by every assistant feature.
 
-const firstName = (name: string) => name.split(" ")[0];
 /** Lowercases only the first letter, so names inside a phrase keep their capitals. */
 const lcFirst = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
 const money = formatCompactMoney;

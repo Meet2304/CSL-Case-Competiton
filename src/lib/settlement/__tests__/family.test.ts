@@ -23,7 +23,7 @@ const caseyAssets = initialFamilyState.assets.filter(
   (a) => a.owners.includes("m-casey") && a.method,
 );
 
-describe("Sample family — Casey's death", () => {
+describe("Sample family — Mother's death", () => {
   it("assumes Pennsylvania", () => {
     expect(plan.state).toBe("PA");
     expect(plan.assumptions).toContain("Assumes the family lives in Pennsylvania.");

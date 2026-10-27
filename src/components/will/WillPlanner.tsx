@@ -64,6 +64,7 @@ import {
   useHydrated,
 } from "@/lib/will/storage";
 import { emptyDraft, type WillDraft, type WillProgress } from "@/lib/will/types";
+import { firstName } from "@/lib/format";
 
 const screenComponents: Record<string, ComponentType> = {
   "basics.details": BasicDetails,
@@ -270,7 +271,7 @@ function PlannerBody({ accountHolder, owner, onExit, openAt, people = [], prefil
 
         <div>
           <WillStepper
-            title={`${accountHolder.split(" ")[0]}'s last will & testament`}
+            title={`${firstName(accountHolder)}'s last will & testament`}
             parts={parts}
             current={section}
             screen={screen}

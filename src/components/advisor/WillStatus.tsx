@@ -26,7 +26,7 @@ export function WillStatus({
   customer: AdvisorCustomer;
   compact?: boolean;
 }) {
-  // The Sample household is live: its will is the one Jordan saves in this browser.
+  // The Sample household is live: its will is the one Father saves in this browser.
   const live = useWillStatus(JORDAN, customer.will.status);
   const isDemo = customer.id === HOUSEHOLD_ID;
   const status = isDemo ? live : customer.will.status;

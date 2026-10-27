@@ -29,10 +29,9 @@ import type { Guidance, NextStep } from "@/lib/nextSteps";
 import { caseworkActions } from "@/lib/settlement/casework";
 import type { OpenQuestion, SettlementPlan } from "@/lib/settlement/engine";
 import { pendingReviews, type ReviewState } from "@/lib/settlement/reviews";
-import { cn, formatCompactMoney, formatDate } from "@/lib/format";
+import { cn, firstName, formatCompactMoney, formatDate } from "@/lib/format";
 
 const VISIBLE = 5;
-const firstName = (name: string) => name.split(" ")[0];
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 const small =
   "inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pnc-link";

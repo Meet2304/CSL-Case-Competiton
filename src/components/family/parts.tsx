@@ -1,7 +1,9 @@
 import type { InputHTMLAttributes, ReactNode } from "react";
+import { PersonAvatar } from "@/components/ui/PersonAvatar";
 import type { FamilyMember, FamilyMemberStatus } from "@/data/types";
 import { initials } from "@/lib/family";
 import { cn } from "@/lib/format";
+import { personById } from "@/lib/household";
 
 // Small building blocks shared by the family dashboard panels.
 
@@ -21,6 +23,18 @@ export function Avatar({
   index?: number;
   size?: "sm" | "md";
 }) {
+  // Household members with a profile picture show it; anyone who has died keeps quiet initials.
+  const look = personById(member.id)?.avatar;
+  if (look && member.status !== "Deceased")
+    return (
+      <span title={member.name} className="shrink-0">
+        <PersonAvatar
+          seed={member.id}
+          look={look}
+          className={cn("block", size === "sm" ? "size-7" : "size-10")}
+        />
+      </span>
+    );
   return (
     <span
       title={member.name}
@@ -155,5 +169,5 @@ export function FamilyEmblem({ name, size = "md" }: { name: string; size?: "md" 
   );
 }
 
-/** "an Admin", "a Trusted advisor". */
+/** "an Admin", "an Older child". */
 export const withArticle = (role: string) => `${/^[AEIOU]/i.test(role) ? "an" : "a"} ${role}`;

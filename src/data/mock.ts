@@ -5,6 +5,7 @@
  * figures in components) so the mock source stays obvious and swappable.
  */
 import type {
+  Biller,
   CreditCardAccount,
   Customer,
   DepositAccount,
@@ -20,7 +21,7 @@ export const MOCK_AS_OF = "2026-10-25";
 
 export const customer: Customer = {
   id: "c-sample",
-  firstName: "Jordan",
+  firstName: "Father",
   lastName: "Sample",
   tier: "Silver Tier Member",
   userIdMasked: "••••••0000",
@@ -262,3 +263,74 @@ export const totals = {
   deposits: depositAccounts.reduce((sum, a) => sum + a.availableBalance, 0),
   creditBalance: creditCardAccounts.reduce((sum, a) => sum + a.balance, 0),
 };
+
+/** Billers for the family dashboard's Pay bills section (MOCK: invented payees and amounts). */
+export const billers: Biller[] = [
+  {
+    category: "electricity",
+    payee: "Sample Power & Light",
+    last4: "4410",
+    amountDue: 142.18,
+    dueDate: "2026-11-04",
+  },
+  { category: "mobile-prepaid", payee: "Demo Wireless Prepaid", last4: "0192" },
+  {
+    category: "phone",
+    payee: "Demo Wireless",
+    last4: "7731",
+    amountDue: 86.4,
+    dueDate: "2026-11-09",
+  },
+  { category: "investments", payee: "Sample Index Fund", last4: "2208" },
+  { category: "tolls", payee: "Sample Turnpike E-ZPass", last4: "5530" },
+  {
+    category: "insurance",
+    payee: "Example Mutual Insurance",
+    last4: "9012",
+    amountDue: 124,
+    dueDate: "2026-11-01",
+  },
+  {
+    category: "rent",
+    payee: "Sample Property Management",
+    last4: "0300",
+    amountDue: 1850,
+    dueDate: "2026-11-01",
+  },
+  {
+    category: "credit-card",
+    payee: "PNC Cash Rewards Visa",
+    last4: "0071",
+    amountDue: 1284.19,
+    dueDate: "2026-11-12",
+  },
+  {
+    category: "gas",
+    payee: "Demo Gas Co.",
+    last4: "6618",
+    amountDue: 58.73,
+    dueDate: "2026-11-06",
+  },
+  {
+    category: "water",
+    payee: "Sample City Water",
+    last4: "3307",
+    amountDue: 41.2,
+    dueDate: "2026-11-15",
+  },
+  {
+    category: "cable",
+    payee: "Example Cable & TV",
+    last4: "8820",
+    amountDue: 79.99,
+    dueDate: "2026-11-08",
+  },
+  {
+    category: "tuition",
+    payee: "Sample High School",
+    last4: "1146",
+    amountDue: 250,
+    dueDate: "2026-11-20",
+  },
+  { category: "foreign-currency", payee: "PNC Foreign Currency Exchange" },
+];

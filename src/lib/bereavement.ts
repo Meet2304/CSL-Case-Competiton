@@ -5,6 +5,7 @@
  * sign-out / sign-in in the same browser, and synced between open tabs.
  */
 import { useSyncExternalStore } from "react";
+import { previousNames } from "@/data/household";
 import type { AdvisorCustomer } from "@/data/types";
 
 /**
@@ -56,6 +57,15 @@ function read(): BereavementState {
   try {
     state = raw ? { ...EMPTY, ...(JSON.parse(raw) as BereavementState) } : EMPTY;
   } catch {}
+  // Deaths recorded before the household was renamed carry the old name.
+  if (state.losses.some((l) => previousNames[l.personName]))
+    state = {
+      ...state,
+      losses: state.losses.map((l) => ({
+        ...l,
+        personName: previousNames[l.personName] ?? l.personName,
+      })),
+    };
   cached = { raw, state };
   return state;
 }

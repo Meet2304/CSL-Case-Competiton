@@ -1,6 +1,6 @@
 import type { AdvisorCustomer, AdvisorNotification, LossEvent } from "@/data/types";
 import { outreachGuide } from "@/data/bereavement";
-import { daysBetween, formatDate } from "@/lib/format";
+import { daysBetween, firstName, formatDate } from "@/lib/format";
 
 /** The most recent loss event the advisor has not finished following up on. */
 export function openLoss(customer: AdvisorCustomer): LossEvent | undefined {
@@ -34,8 +34,6 @@ export const lossFollowUpSteps = [
   "Review joint, beneficiary and trust accounts before any changes are made",
   "Pause routine marketing and automated outreach to the household",
 ];
-
-const firstName = (name: string) => name.split(" ")[0];
 
 /** Headline numbers for the advisor's summary strip. */
 export function advisorStats(customers: AdvisorCustomer[], todayIso: string) {

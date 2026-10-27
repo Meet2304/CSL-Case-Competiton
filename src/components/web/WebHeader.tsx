@@ -82,6 +82,7 @@ export function WebHeader({ variant = "customer" }: { variant?: Role }) {
           {variant === "customer" && <span className="hidden lg:inline">{nav.first}</span>}
           <PersonAvatar
             seed={variant === "customer" ? nav.personId : "advisor"}
+            look={variant === "customer" ? nav.avatar : undefined}
             className="size-8"
           />
         </SignOffButton>

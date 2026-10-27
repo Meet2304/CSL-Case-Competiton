@@ -6,5 +6,5 @@ import { useViewer } from "./Viewer";
 /** The signed-in customer's illustrated avatar. */
 export function ViewerAvatar({ className }: { className?: string }) {
   const { person } = useViewer();
-  return <PersonAvatar seed={person.id} className={className} />;
+  return <PersonAvatar seed={person.id} look={person.avatar} className={className} />;
 }

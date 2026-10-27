@@ -96,7 +96,7 @@ describe("families", () => {
       type: "addMember" as const,
       member: {
         id: "p-riley",
-        name: "Riley Sample",
+        name: "Child 2",
         email: "x@example.com",
         relationship: "Child" as const,
         roleId: "r-trusted",
@@ -127,7 +127,7 @@ describe("nudges", () => {
     expect(list[0].tone).toBe("important");
   });
 
-  it("gives Avery a heads-up before turning 18, and nothing to do", () => {
+  it("gives Child 1 a heads-up before turning 18, and nothing to do", () => {
     const list = nudges(avery);
     expect(list.map((n) => n.tone)).toEqual(["info"]);
   });
@@ -175,7 +175,7 @@ describe("survivor plan", () => {
     expect(plan(seed, avery).some((i) => i.id.startsWith("custodian:"))).toBe(false);
   });
 
-  it("covers every account Jordan owned", () => {
+  it("covers every account Father owned", () => {
     const covered = plan().flatMap((i) => i.accounts.map((a) => a.id));
     const owned = people.length && accountsOf(currentAccounts(seed), "p-jordan").owned;
     for (const a of owned || []) expect(covered).toContain(a.id);

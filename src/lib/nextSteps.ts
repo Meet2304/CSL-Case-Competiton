@@ -19,7 +19,7 @@ import {
   whoKnows,
   type ClientFacts,
 } from "@/lib/assistant";
-import { daysBetween, formatCompactMoney, formatDate, relativeDay } from "@/lib/format";
+import { daysBetween, firstName, formatCompactMoney, formatDate, relativeDay } from "@/lib/format";
 import type { Casework } from "@/lib/settlement/casework";
 import type {
   AccountPlan,
@@ -83,7 +83,6 @@ export type Guidance = {
   answered: AnsweredQuestion[];
 };
 
-const firstName = (name: string) => name.split(" ")[0];
 const uniq = <T>(xs: T[]) => xs.filter((x, i) => xs.indexOf(x) === i);
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 const money = formatCompactMoney;

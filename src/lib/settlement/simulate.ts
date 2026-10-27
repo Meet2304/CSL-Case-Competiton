@@ -4,7 +4,7 @@
  * beneficiary, a minor named directly) becomes a finding with a fix.
  */
 import type { AdvisorCustomer, ClientProfile, Holding } from "@/data/types";
-import { formatCompactMoney } from "@/lib/format";
+import { firstName, formatCompactMoney } from "@/lib/format";
 import { simulationInput } from "./adapters";
 import { settlementPlan, type Answers, type SettlementPlan } from "./engine";
 import { label } from "./facts";
@@ -32,7 +32,6 @@ export type ReadinessReport = {
 };
 
 const SEVERITY_ORDER: FindingSeverity[] = ["high", "medium", "low"];
-const firstName = (name: string) => name.split(" ")[0];
 const list = (xs: string[]) =>
   xs.length <= 1 ? (xs[0] ?? "") : `${xs.slice(0, -1).join(", ")} and ${xs.at(-1)}`;
 const uniq = <T>(xs: T[]) => xs.filter((x, i) => xs.indexOf(x) === i);

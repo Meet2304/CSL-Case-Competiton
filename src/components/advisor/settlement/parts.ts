@@ -3,6 +3,7 @@
 import type { DeadlineKind, ReviewLevel, SettlementRoute } from "@/data/types";
 import type { StepWhen } from "@/lib/nextSteps";
 import type { FindingSeverity, ReadinessReport } from "@/lib/settlement/simulate";
+import { firstName } from "@/lib/format";
 
 export { ownerLabel } from "@/lib/settlement/labels";
 export { routeLabels } from "@/lib/settlement/engine";
@@ -79,4 +80,4 @@ export const linkButton =
   "inline-flex items-center gap-1 rounded-sm text-sm font-semibold text-pnc-link hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pnc-link";
 export const pillButton =
   "inline-flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-sm font-semibold text-pnc-link ring-1 ring-pnc-blue-600/20 hover:ring-pnc-link focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pnc-link";
-export const firstName = (name: string) => name.split(" ")[0];
+export { firstName };

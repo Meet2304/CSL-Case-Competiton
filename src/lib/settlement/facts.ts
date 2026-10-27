@@ -17,7 +17,7 @@ import type {
   StateCode,
   TriState,
 } from "@/data/types";
-import { formatCompactMoney } from "@/lib/format";
+import { firstName, formatCompactMoney } from "@/lib/format";
 
 export type DerivationContext = {
   deceased: { name: string; age?: number };
@@ -268,7 +268,7 @@ export function accountAssumptions(
   ctx: DerivationContext,
 ): string[] {
   const out: string[] = [];
-  const d = ctx.deceased.name.split(" ")[0];
+  const d = firstName(ctx.deceased.name);
   const deadCo = h.owners.filter((o) => o !== ctx.deceased.name && isDeceased(o, ctx.members));
   if (
     h.ownership === "Joint" &&

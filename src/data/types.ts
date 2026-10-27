@@ -71,6 +71,33 @@ export type Payment = {
   status: "Complete" | "Scheduled";
 };
 
+/** Everyday bills and payments offered on the family dashboard. */
+export type BillCategory =
+  | "electricity"
+  | "mobile-prepaid"
+  | "phone"
+  | "investments"
+  | "tolls"
+  | "insurance"
+  | "rent"
+  | "credit-card"
+  | "gas"
+  | "water"
+  | "cable"
+  | "tuition"
+  | "foreign-currency";
+
+/** Who a bill in one category is paid to, and what is due (if the biller sends a bill). */
+export type Biller = {
+  category: BillCategory;
+  payee: string;
+  /** The customer's account number with the biller. */
+  last4?: string;
+  /** Left out for top-ups and contributions, where the customer picks the amount. */
+  amountDue?: number;
+  dueDate?: string; // ISO
+};
+
 export type Customer = {
   /** Matches the household's `AdvisorCustomer.id` on the advisor side. */
   id: string;
@@ -99,10 +126,13 @@ export type DemoUser = {
 // The demo household: one source of truth for people and their accounts,
 // read by every customer login and by the advisor.
 
+/** How a household member's illustrated profile picture is drawn (see PersonAvatar). */
+export type AvatarLook = "father" | "mother" | "teen" | "child";
+
 export type HouseholdPerson = {
   id: string;
   name: string;
-  /** Relationship to the household's primary customer (Jordan). */
+  /** Relationship to the household's primary customer (Father). */
   relationship: FamilyMemberRelationship;
   birthdate: string; // ISO
   email: string;
@@ -110,6 +140,8 @@ export type HouseholdPerson = {
   note?: string;
   /** Has an online banking login. */
   login?: string;
+  /** Their profile picture's look; without one, it's picked from their id. */
+  avatar?: AvatarLook;
 };
 
 export type AccountKind =

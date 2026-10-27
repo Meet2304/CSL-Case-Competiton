@@ -7,7 +7,7 @@ import type { BankAccount } from "@/data/types";
 import { cn, formatDate } from "@/lib/format";
 import { firstName, kindLabels, personById } from "@/lib/household";
 
-/** "Casey" or "Jordan (deceased)". */
+/** "Mother" or "Father (deceased)". */
 export function nameList(deceasedIds: string[]) {
   return (ids: string[]) =>
     ids

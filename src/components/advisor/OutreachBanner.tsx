@@ -4,7 +4,7 @@ import { HeartHandshake, Mail, Phone, Users } from "lucide-react";
 import { advisorCustomers } from "@/data/advisor";
 import { outreachGuide } from "@/data/bereavement";
 import { assessImpact, customerAnchor, lossContact } from "@/lib/advisor";
-import { formatDate } from "@/lib/format";
+import { firstName, formatDate } from "@/lib/format";
 import { useAdvisorBook } from "./useAdvisorBook";
 
 /**
@@ -31,7 +31,7 @@ export function OutreachBanner() {
             reportedVia: loss.reportedVia,
             followUpComplete: false,
           });
-        const first = contact?.name.split(" ")[0];
+        const first = contact ? firstName(contact.name) : undefined;
         const guide = contact && outreachGuide(contact.name, loss.personName);
 
         return (

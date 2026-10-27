@@ -51,3 +51,12 @@ export function relativeDay(iso: string, todayIso: string): string {
 export function cn(...classes: Array<string | false | null | undefined>): string {
   return classes.filter(Boolean).join(" ");
 }
+
+/**
+ * The name to address someone by: "Morgan" from "Morgan Placeholder". A
+ * numbered name stays whole, so "Child 1" and "Child 2" don't both become "Child".
+ */
+export function firstName(name: string): string {
+  const [first = "", second] = name.trim().split(/\s+/);
+  return second && /^\d+$/.test(second) ? `${first} ${second}` : first;
+}

@@ -5,7 +5,13 @@
  * people actually do are stored; everything else is derived in ./household.
  */
 import { useMemo, useSyncExternalStore } from "react";
-import { adminRole, people, seedFamilies, type StoredFamily } from "@/data/household";
+import {
+  adminRole,
+  people,
+  retiredRoleIds,
+  seedFamilies,
+  type StoredFamily,
+} from "@/data/household";
 import { MOCK_AS_OF } from "@/data/mock";
 import type { FamilyMember } from "@/data/types";
 import { personByName, type HouseholdState } from "@/lib/household";
@@ -29,8 +35,33 @@ function read(): HouseholdState {
   try {
     state = raw ? { ...EMPTY, ...(JSON.parse(raw) as HouseholdState) } : EMPTY;
   } catch {}
-  cached = { raw, state };
-  return state;
+  cached = { raw, state: normalize(state) };
+  return cached.state;
+}
+
+/**
+ * Brings families saved by earlier builds in line with the seed: household
+ * members' names and emails come from the seed (so a rename such as Jordan
+ * Sample → Father reaches them), families hold family only (an outside
+ * professional such as the estate attorney is dropped), and retired roles go
+ * once nobody holds them.
+ */
+function normalize(state: HouseholdState): HouseholdState {
+  return {
+    ...state,
+    families: state.families.map((f) => {
+      const members = f.members.flatMap((m) => {
+        const p = people.find((x) => x.id === m.id);
+        if (!p) return [m];
+        if (p.relationship === "Other") return [];
+        return [{ ...m, name: p.name, email: p.email }];
+      });
+      const roles = f.roles.filter(
+        (r) => !retiredRoleIds.includes(r.id) || members.some((m) => m.roleId === r.id),
+      );
+      return { ...f, members, roles };
+    }),
+  };
 }
 
 function write(next: HouseholdState) {

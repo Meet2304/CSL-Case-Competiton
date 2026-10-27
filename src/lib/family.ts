@@ -14,13 +14,14 @@ import type {
   SuccessionProcess,
   SuccessionStep,
 } from "@/data/types";
+import { firstName } from "@/lib/format";
 
 // ---------------------------------------------------------------------------
 // Lookups
 
 export const memberById = (s: FamilyState, id: string) => s.members.find((m) => m.id === id);
 export const roleById = (s: FamilyState, id: string) => s.roles.find((r) => r.id === id);
-export const firstName = (name: string) => name.split(" ")[0];
+export { firstName };
 
 export function initials(name: string): string {
   return name

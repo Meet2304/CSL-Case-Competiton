@@ -21,11 +21,11 @@ type Seed = Omit<AdvisorCustomer, "lossEvents" | "will"> &
 const seeds: Seed[] = [
   {
     id: "c-sample",
-    name: "Jordan Sample",
+    name: "Father",
     household: [
-      { name: "Casey Sample", relationship: "Spouse" },
-      { name: "Avery Sample", relationship: "Child" },
-      { name: "Riley Sample", relationship: "Child" },
+      { name: "Mother", relationship: "Spouse" },
+      { name: "Child 1", relationship: "Child" },
+      { name: "Child 2", relationship: "Child" },
     ],
     segment: "Preferred Banking",
     relationshipValue: 49_092.3,
