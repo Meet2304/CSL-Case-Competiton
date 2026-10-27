@@ -20,7 +20,7 @@ const manageLinks = [
 export default function WebCardsPage() {
   return (
     <>
-      <WebHero title="Cards" showDate={false} />
+      <WebHero title="Cards" />
 
       <div className="mx-auto max-w-6xl space-y-6 px-4 py-8 sm:px-6">
         <div className="flex items-center gap-3">

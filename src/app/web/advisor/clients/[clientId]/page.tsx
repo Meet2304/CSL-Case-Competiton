@@ -31,7 +31,6 @@ export default async function WebAdvisorClientPage({
       <WebHero
         title={customer.name}
         subtitle={`${customer.segment} client since ${profile.clientSince} · ${formatCompactMoney(customer.relationshipValue)} · ${profile.city}`}
-        showDate={false}
       />
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
         <ClientWorkspace customerId={customer.id} />

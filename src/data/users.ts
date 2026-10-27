@@ -2,24 +2,24 @@
  * MOCK sign-on accounts. The User ID decides who is signed in; any password
  * is accepted. Each customer is a person in the Sample household
  * (src/data/household.ts), so every login sees their own dashboard. The
- * household's earlier User IDs (jordan, casey, avery, riley) still sign in.
+ * household's earlier User IDs (father, mother; jordan, casey, avery, riley) still sign in.
  */
 import type { DemoUser } from "./types";
 
 export const demoUsers: DemoUser[] = [
   {
-    userId: "father",
+    userId: "husband",
     role: "customer",
-    displayName: "Father",
+    displayName: "Husband",
     personId: "p-jordan",
-    hint: "Father, 52",
+    hint: "Husband, 52",
   },
   {
-    userId: "mother",
+    userId: "wife",
     role: "customer",
-    displayName: "Mother",
+    displayName: "Wife",
     personId: "p-casey",
-    hint: "Mother, 49",
+    hint: "Wife, 49",
   },
   {
     userId: "child1",
@@ -40,8 +40,10 @@ export const demoUsers: DemoUser[] = [
 
 /** User IDs from before the household was renamed, so rehearsed sign-ins keep working. */
 const previousIds: Record<string, string> = {
-  jordan: "father",
-  casey: "mother",
+  jordan: "husband",
+  casey: "wife",
+  father: "husband",
+  mother: "wife",
   avery: "child1",
   riley: "child2",
 };

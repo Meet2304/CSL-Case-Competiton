@@ -2,10 +2,10 @@
  * MOCK DATA — the Sample household, the one family every customer login and
  * the advisor read from. Every name and figure is invented.
  *
- * Father (52) and Mother (49) are married; Child 1 is 17 and turns 18 on
+ * Husband (52) and Wife (49) are married; Child 1 is 17 and turns 18 on
  * Nov 30, 2026; Child 2 is 14. Dana is the family's estate attorney (no login).
  * A few gaps are deliberate so the planning reminders have something to say:
- * Father's savings has no payable-on-death beneficiary, the brokerage account
+ * Husband's savings has no payable-on-death beneficiary, the brokerage account
  * has no transfer-on-death beneficiary, and nobody has a will yet.
  */
 import { NO_ACCESS } from "./family";
@@ -17,21 +17,21 @@ export const HOUSEHOLD_ID = "c-sample";
 export const people: HouseholdPerson[] = [
   {
     id: "p-jordan",
-    name: "Father",
+    name: "Husband",
     relationship: "Self",
     birthdate: "1974-05-14",
-    email: "father@example.com",
-    login: "father",
-    avatar: "father",
+    email: "husband@example.com",
+    login: "husband",
+    avatar: "husband",
   },
   {
     id: "p-casey",
-    name: "Mother",
+    name: "Wife",
     relationship: "Spouse",
     birthdate: "1977-03-02",
-    email: "mother@example.com",
-    login: "mother",
-    avatar: "mother",
+    email: "wife@example.com",
+    login: "wife",
+    avatar: "wife",
   },
   {
     id: "p-avery",
@@ -69,8 +69,10 @@ export const people: HouseholdPerson[] = [
 export const retiredRoleIds = ["r-trusted"];
 
 export const previousNames: Record<string, string> = {
-  "Jordan Sample": "Father",
-  "Casey Sample": "Mother",
+  "Jordan Sample": "Husband",
+  "Casey Sample": "Wife",
+  Father: "Husband",
+  Mother: "Wife",
   "Avery Sample": "Child 1",
   "Riley Sample": "Child 2",
 };
@@ -245,7 +247,7 @@ export const accounts: BankAccount[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// The family Father has set up: who's in it, their roles, and what's shared.
+// The family Husband has set up: who's in it, their roles, and what's shared.
 
 const view: AssetAccess = { ...NO_ACCESS, view: true };
 const viewActivity: AssetAccess = { ...view, activity: true };
@@ -281,16 +283,16 @@ export const seedFamilies: StoredFamily[] = [
     members: [
       {
         id: "p-jordan",
-        name: "Father",
-        email: "father@example.com",
+        name: "Husband",
+        email: "husband@example.com",
         relationship: "Self",
         roleId: "r-admin",
         status: "Active",
       },
       {
         id: "p-casey",
-        name: "Mother",
-        email: "mother@example.com",
+        name: "Wife",
+        email: "wife@example.com",
         relationship: "Spouse",
         roleId: "r-admin",
         status: "Active",

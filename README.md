@@ -45,19 +45,19 @@ Sign-on decides the experience. Demo User IDs (any password; defined in
 
 | User ID   | Who                                                       | Lands on   |
 | --------- | --------------------------------------------------------- | ---------- |
-| `father`  | Father, 52                                                | `/home`    |
-| `mother`  | Mother, 49 — Father's spouse                              | `/home`    |
+| `husband` | Husband, 52                                               | `/home`    |
+| `wife`    | Wife, 49 — Husband's spouse                               | `/home`    |
 | `child1`  | Child 1, 17 — turns 18 on Nov 30, 2026                    | `/home`    |
 | `child2`  | Child 2, 14                                               | `/home`    |
 | `advisor` | Bank representative (Alex Example, Senior Wealth Advisor) | `/advisor` |
 
-The earlier IDs `jordan`, `casey`, `avery` and `riley` still sign in as the
-same people. Each person's profile picture is an illustration that matches
+Earlier IDs still sign in as the same people: `father` and `mother`, and
+before them `jordan`, `casey`, `avery` and `riley`. Each person's profile picture is an illustration that matches
 their role (`PersonAvatar`, set by `avatar` in `src/data/household.ts`).
 
 All four customers read one shared household (`src/data/household.ts`): ten
 simple accounts (joint checking, savings, an IRA, a brokerage account, a credit
-card, a life policy held outside PNC, Mother's savings and Roth IRA, and the
+card, a life policy held outside PNC, Wife's savings and Roth IRA, and the
 kids' custodial accounts). The session keeps the role (`pnc-session`) and the
 person (`pnc-person`); `src/proxy.ts` keeps each role on its own pages.
 
@@ -82,8 +82,8 @@ reminder on **Will** in the navigation, where each is resolved.
 
 A family is a group of people you trust with access to your finances. Anyone
 18 or over can **create a family** and becomes its admin; a person can belong
-to several families and switch between them. Father's _Sample Family_ is
-seeded: Father and Mother are admins, Child 1 can see the joint checking account,
+to several families and switch between them. Husband's _Sample Family_ is
+seeded: Husband and Wife are admins, Child 1 can see the joint checking account,
 and Child 2 sees nothing. Families are just family: no outside advisors.
 
 - **Share an account** you own with a family, or stop sharing it. Nobody sees
@@ -118,19 +118,19 @@ There's no separate Planning page; the old `/plan` URL redirects to the Will pag
 
 Nothing happens automatically. A death only exists once the bank records it.
 
-1. **Advisor** (`advisor`): _Record a death notice_ (defaults to Father).
-2. **Father's login** shows that the accounts are being settled.
-3. **Mother** sees a soft condolence strip and a **Next steps** page
-   (`src/lib/survivor.ts`), built from Father's accounts as they stand:
-   - _Coming to you_: a guided flow for each account that passes to Mother (the
+1. **Advisor** (`advisor`): _Record a death notice_ (defaults to Husband).
+2. **Husband's login** shows that the accounts are being settled.
+3. **Wife** sees a soft condolence strip and a **Next steps** page
+   (`src/lib/survivor.ts`), built from Husband's accounts as they stand:
+   - _Coming to you_: a guided flow for each account that passes to Wife (the
      joint account, the IRA, Child 2's account as new custodian, and any
-     account where Father had named Mother as beneficiary). The life policy is
+     account where Husband had named Wife as beneficiary). The life policy is
      claimed with the insurer.
    - _Handled through the estate_: accounts with no beneficiary, and the
      credit card.
    - The death certificate is uploaded once and reused. _Send to PNC_ leaves a
      flow **In review**; nothing approves itself.
-   - If Father's will is on file and names Mother, the executor can begin
+   - If Husband's will is on file and names Wife, the executor can begin
      executing it from this page.
 4. **Child 1 and Child 2** get a gentle message and nothing to do.
 

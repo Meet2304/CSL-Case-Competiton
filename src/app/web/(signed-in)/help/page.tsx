@@ -21,7 +21,7 @@ const faqs = [
 export default function WebHelpPage() {
   return (
     <>
-      <WebHero title="Help" showDate={false} />
+      <WebHero title="Help" />
 
       <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[1fr_20rem]">
         <WebCard title="Frequently Asked Questions">
