@@ -25,20 +25,42 @@ export function nameList(deceasedIds: string[]) {
 export function AccountList({
   accounts,
   detail,
+  badge,
+  action,
 }: {
   accounts: BankAccount[];
   detail: (a: BankAccount) => ReactNode;
+  /** Optional pill after the account name (e.g. "Shared"). */
+  badge?: (a: BankAccount) => ReactNode;
+  /** Optional control beside the balance (e.g. a "Manage" button). */
+  action?: (a: BankAccount) => ReactNode;
 }) {
   return (
     <ul className="divide-y divide-pnc-line">
       {accounts.map((a) => (
-        <AccountItem key={a.id} account={a} detail={detail(a)} />
+        <AccountItem
+          key={a.id}
+          account={a}
+          detail={detail(a)}
+          badge={badge?.(a)}
+          action={action?.(a)}
+        />
       ))}
     </ul>
   );
 }
 
-function AccountItem({ account: a, detail }: { account: BankAccount; detail: ReactNode }) {
+function AccountItem({
+  account: a,
+  detail,
+  badge,
+  action,
+}: {
+  account: BankAccount;
+  detail: ReactNode;
+  badge?: ReactNode;
+  action?: ReactNode;
+}) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
   const activity = a.transactions ?? [];
@@ -49,6 +71,7 @@ function AccountItem({ account: a, detail }: { account: BankAccount; detail: Rea
           <p className="font-semibold text-pnc-ink">
             {a.name}
             {a.last4 && <span className="ml-1 text-xs font-normal text-pnc-muted">x{a.last4}</span>}
+            {badge}
           </p>
           <p className="mt-0.5 text-sm text-pnc-muted">
             {kindLabels[a.kind]}
@@ -58,6 +81,7 @@ function AccountItem({ account: a, detail }: { account: BankAccount; detail: Rea
         </div>
         <div className="flex shrink-0 items-start gap-1">
           <Money value={a.balance} className="pt-0.5 text-base font-semibold @2xl:text-lg" />
+          {action}
           {activity.length > 0 ? (
             <button
               type="button"

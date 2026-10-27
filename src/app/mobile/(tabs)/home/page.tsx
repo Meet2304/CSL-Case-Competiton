@@ -4,9 +4,9 @@ import { MobileHeader } from "@/components/mobile/MobileHeader";
 import { firstName, personById } from "@/lib/household";
 import { viewerId } from "@/lib/viewer";
 
-export const metadata: Metadata = { title: "Accounts" };
+export const metadata: Metadata = { title: "Home" };
 
-export default async function MobileAccountsPage() {
+export default async function MobileHomePage() {
   const person = personById(await viewerId())!;
   return (
     <>

@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "Planning" };
 export default function MobilePlanPage() {
   return (
     <>
-      <MobileHeader title="Planning" backHref={routes.accounts} />
+      <MobileHeader title="Planning" backHref={routes.home} />
       <div className="px-3 pt-4">
         <Planning />
       </div>

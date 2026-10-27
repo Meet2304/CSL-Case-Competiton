@@ -1,22 +1,13 @@
 import type { ReactNode } from "react";
+import { FindoeLogo } from "@/components/brand/FindoeLogo";
 import { cn } from "@/lib/format";
 
 // Shared look for everything Findoe, the advisor's assistant, writes — so
 // advisors can always tell generated guidance apart from account data.
 
-/** Findoe's monogram. */
+/** Findoe's logo, sized for inline use beside text. */
 export function FindoeMonogram({ className }: { className?: string }) {
-  return (
-    <span
-      aria-hidden="true"
-      className={cn(
-        "grid size-5 shrink-0 place-items-center rounded-full bg-pnc-navy font-display text-[11px] font-semibold text-white",
-        className,
-      )}
-    >
-      F
-    </span>
-  );
+  return <FindoeLogo className={cn("size-5", className)} />;
 }
 
 /** "Findoe" mark, optionally with what this output is ("Findoe · Daily brief"). */

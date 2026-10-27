@@ -17,11 +17,12 @@ import { homeFor, isAdvisorPath, parseRole, SESSION_COOKIE } from "@/lib/session
  */
 
 const VIEW_COOKIE = "pnc-view";
+const LEGACY_ACCOUNTS = "/accounts";
 
 // Customer pages that only exist in one view are sent to the closest equivalent.
 const fallbacks: Record<View, (path: string) => string | undefined> = {
   web: (path) => {
-    if (path === routes.deposit || path === routes.more) return routes.accounts;
+    if (path === routes.deposit || path === routes.more) return routes.home;
     if (path.startsWith(`${routes.cards}/`)) return routes.cards;
   },
   mobile: (path) => {
@@ -41,7 +42,9 @@ function roleRedirect(request: NextRequest, path: string): string | undefined {
   if (path === routes.signOn) return role ? homeFor(role) : undefined;
   if (!role) return routes.signOn;
   if (role === "advisor" && !isAdvisorPath(path)) return routes.advisor;
-  if (role === "customer" && isAdvisorPath(path)) return routes.accounts;
+  if (role === "customer" && isAdvisorPath(path)) return routes.home;
+  // The old Accounts page is now My Assets.
+  if (path === LEGACY_ACCOUNTS) return routes.assets;
 }
 
 export function proxy(request: NextRequest) {

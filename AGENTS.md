@@ -27,7 +27,9 @@ and mobile views stay in one design language.
 - **Reuse the building blocks:** `FacetBackdrop` for blue headers, `WebHero` +
   `WebCard` on web pages, `MobileHeader` (with an overlapping first card as
   `children`) + `MobileCard`/`MobileIconRow`/`MobileLinkRow` on mobile pages,
-  `Money` for every currency value, `IconChip` for round icon discs.
+  `Money` for every currency value, `IconChip` for round icon discs. Fixed-height lists
+  that can overflow use `ScrollArea` (fades plus a "More below" hint); rare actions go in an
+  `ActionMenu` (⋮); modals and side panels use `Dialog` (native `<dialog>`).
 - **Icons:** `lucide-react` only.
 - **One URL, two views, chosen by device.** `src/proxy.ts` rewrites every public URL
   (e.g. `/accounts`) to `app/web/...` for laptops/tablets or `app/mobile/...` for
@@ -55,10 +57,16 @@ and mobile views stay in one design language.
   profiles in `src/data/clients.ts` (keep each profile's PNC holdings summing to
   the customer's `relationshipValue`). Add a step by adding a rule, not by
   hard-coding it in a component. Label assistant output with `AssistantMark` /
-  `AssistantPanel` so it's never mistaken for account data.
+  `AssistantPanel` so it's never mistaken for account data. Findoe's chat is built from the
+  AI-Elements-style blocks in `src/components/ai-elements` (Conversation, Message,
+  ChainOfThought, Tool, Sources, PromptInput); its logo is `FindoeLogo`.
 - **Advisor attention logic** lives in `src/lib/advisor.ts`; drive UI from
   `openLoss` / `needsAttention` / `sortByAttention` / `buildNotifications` rather
   than re-implementing the rules in components.
+- **Customer pages:** `/home` (money at a glance, notifications, families) is where customers
+  land; `/assets` (My Assets) lists everything they own, manage or have shared with them.
+  Derive these from `assetsFor` / `assetSummary` / `familySummary` in `src/lib/household.ts`.
+  The Family page opens one family in place via the hash (`routes.familyDetail(id)`).
 - **Family dashboard rules live in `src/lib/family.ts`** (`effectiveAccess`,
   `isLocked`, `successorsFor`, `familyReducer`). Components read state through
   `useFamily()` and change it only via `dispatch` actions; add a reducer action

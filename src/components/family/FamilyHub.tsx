@@ -1,37 +1,48 @@
 "use client";
 
-import { useId, useState, type KeyboardEvent } from "react";
-import { Plus, Users } from "lucide-react";
+import { useId, useState } from "react";
+import { ArrowRight, Plus, ShieldCheck, Users } from "lucide-react";
+import { FacetBackdrop } from "@/components/brand/FacetBackdrop";
 import { useViewer } from "@/components/customer/Viewer";
 import { MockBadge } from "@/components/mock/Mock";
+import { useHash } from "@/components/shared/useHashTab";
+import { Money } from "@/components/ui/Money";
+import type { StoredFamily } from "@/data/household";
 import { cn, formatDate } from "@/lib/format";
-import { familiesOf, firstName, personById, roleName } from "@/lib/household";
+import { familiesOf, familySummary, firstName, personById } from "@/lib/household";
 import { householdActions } from "@/lib/householdStore";
-import { FamilyDashboard } from "./FamilyDashboard";
+import { FamilyDetail } from "./FamilyDetail";
 import { FamilyProvider } from "./FamilyProvider";
-import { fieldInput, fieldLabel, primaryButton, secondaryButton } from "./parts";
+import {
+  AvatarStack,
+  FamilyEmblem,
+  fieldInput,
+  fieldLabel,
+  primaryButton,
+  secondaryButton,
+  withArticle,
+} from "./parts";
 
 /**
- * Every family the signed-in person belongs to, and the way to create one.
- * A family is a group of people you trust with access to your finances; the
- * dashboard below decides who sees and controls what.
+ * Every family the signed-in person belongs to, as cards with what matters at
+ * a glance. Opening one shows its assets in the person's role (the hash holds
+ * which, e.g. /family#fam-sample, so Back returns to the cards).
  */
 export function FamilyHub() {
   const { person, isMinor, household } = useViewer();
   const families = familiesOf(household, person.id);
-  const [picked, setPicked] = useState<string>();
+  const [hash, setHash] = useHash();
   const [creating, setCreating] = useState(false);
-  const baseId = useId();
-  const current = families.find((f) => f.id === picked) ?? families[0];
+  const current = families.find((f) => f.id === hash);
 
-  function onKey(e: KeyboardEvent<HTMLButtonElement>, index: number) {
-    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
-    e.preventDefault();
-    const n = families.length;
-    const next = families[(index + (e.key === "ArrowRight" ? 1 : n - 1)) % n];
-    setPicked(next.id);
-    document.getElementById(`${baseId}-${next.id}`)?.focus();
-  }
+  if (current)
+    return (
+      <div className="@container">
+        <FamilyProvider key={current.id} familyId={current.id}>
+          <FamilyDetail onBack={() => setHash(null)} />
+        </FamilyProvider>
+      </div>
+    );
 
   return (
     <div className="@container space-y-5">
@@ -40,11 +51,6 @@ export function FamilyHub() {
           <h2 className="font-display text-2xl font-medium text-pnc-ink">Your families</h2>
           <MockBadge />
         </div>
-        {!isMinor && !creating && (
-          <button type="button" onClick={() => setCreating(true)} className={secondaryButton}>
-            <Plus className="size-4" aria-hidden="true" /> Create a family
-          </button>
-        )}
       </div>
 
       {creating && (
@@ -52,8 +58,9 @@ export function FamilyHub() {
           defaultName={families.length ? "" : `${person.name.split(" ").at(-1)} Family`}
           onCancel={() => setCreating(false)}
           onCreate={(name) => {
-            setPicked(householdActions.createFamily(name, person.id));
+            const id = householdActions.createFamily(name, person.id);
             setCreating(false);
+            setHash(id);
           }}
         />
       )}
@@ -83,56 +90,117 @@ export function FamilyHub() {
           </section>
         )
       ) : (
-        <>
-          {families.length > 1 && (
-            <div
-              role="tablist"
-              aria-label="Your families"
-              className="no-scrollbar flex gap-2 overflow-x-auto"
-            >
-              {families.map((f, i) => {
-                const selected = f.id === current.id;
-                return (
-                  <button
-                    key={f.id}
-                    id={`${baseId}-${f.id}`}
-                    type="button"
-                    role="tab"
-                    aria-selected={selected}
-                    tabIndex={selected ? 0 : -1}
-                    onClick={() => setPicked(f.id)}
-                    onKeyDown={(e) => onKey(e, i)}
-                    className={cn(
-                      "shrink-0 rounded-full px-4 py-2 text-sm font-semibold ring-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pnc-link",
-                      selected
-                        ? "bg-pnc-ink text-white ring-pnc-ink"
-                        : "bg-white text-pnc-ink ring-pnc-line hover:ring-pnc-muted",
-                    )}
-                  >
-                    {f.familyName}
-                  </button>
-                );
-              })}
-            </div>
+        <ul className="grid gap-5 @3xl:grid-cols-2">
+          {families.map((f) => (
+            <li key={f.id}>
+              <FamilyCard family={f} />
+            </li>
+          ))}
+          {!isMinor && !creating && (
+            <li>
+              <button
+                type="button"
+                onClick={() => setCreating(true)}
+                className="flex h-full min-h-48 w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-pnc-line p-6 text-center hover:border-pnc-link hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pnc-link"
+              >
+                <span className="grid size-11 place-items-center rounded-full bg-pnc-blue-50 text-pnc-blue-700">
+                  <Plus className="size-5" aria-hidden="true" />
+                </span>
+                <span className="font-semibold text-pnc-ink">Create another family</span>
+                <span className="max-w-xs text-sm text-pnc-muted">
+                  For example, with your parents or siblings. You&apos;ll be its admin.
+                </span>
+              </button>
+            </li>
           )}
-          <div>
-            <h3 className="font-display text-xl font-medium text-pnc-ink">{current.familyName}</h3>
-            <p className="mt-0.5 text-sm text-pnc-muted">
-              Created by{" "}
-              {current.createdBy === person.id
-                ? "you"
-                : firstName(personById(current.createdBy)?.name ?? "a family member")}{" "}
-              on {formatDate(current.createdOn, "medium")} · You&apos;re{" "}
-              {/^[AEIOU]/.test(roleName(current, person.id) ?? "") ? "an" : "a"}{" "}
-              {roleName(current, person.id)}
-            </p>
-          </div>
-          <FamilyProvider key={current.id} familyId={current.id}>
-            <FamilyDashboard />
-          </FamilyProvider>
-        </>
+        </ul>
       )}
     </div>
+  );
+}
+
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
+/** One family as a card: who's in it, your role, and what's shared, at a glance. */
+function FamilyCard({ family: f }: { family: StoredFamily }) {
+  const { person, accounts, deceasedIds } = useViewer();
+  const s = familySummary(f, person.id, accounts, deceasedIds);
+  const indexOf = (id: string) => s.state.members.findIndex((m) => m.id === id);
+  const creator =
+    f.createdBy === person.id ? "you" : firstName(personById(f.createdBy)?.name ?? "family");
+  // One line on what deserves a look; admins also hear about pending invites.
+  const note = s.deceased.length
+    ? `Remembering ${s.deceased.map((m) => firstName(m.name)).join(" and ")}`
+    : s.isAdmin && s.invited.length
+      ? `${s.invited.map((m) => firstName(m.name)).join(" and ")} ${s.invited.length === 1 ? "hasn't" : "haven't"} accepted the invite yet`
+      : undefined;
+
+  return (
+    // A plain hash link: the browser records it in history, so Back returns here.
+    <a
+      href={`#${f.id}`}
+      className="group block h-full overflow-hidden rounded-xl bg-white shadow-card ring-1 ring-transparent transition hover:-translate-y-0.5 hover:shadow-raised hover:ring-pnc-link/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pnc-link motion-reduce:hover:translate-y-0"
+    >
+      <div className="relative isolate px-5 pb-5 pt-5 text-white">
+        <FacetBackdrop className="-z-10" />
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <FamilyEmblem name={f.familyName} size="lg" />
+            <div className="min-w-0">
+              <h3 className="truncate font-display text-xl font-medium">{f.familyName}</h3>
+              <p className="text-sm text-white/80">
+                Created by {creator} · {formatDate(f.createdOn, "medium")}
+              </p>
+            </div>
+          </div>
+          {s.role && (
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold ring-1 ring-white/30">
+              {s.isAdmin && <ShieldCheck className="size-3.5" aria-hidden="true" />}
+              {s.role.name}
+            </span>
+          )}
+        </div>
+        {/* On white, so every avatar tone stays legible over the blue. */}
+        <div className="mt-4 inline-flex rounded-full bg-white p-1">
+          <AvatarStack members={s.living} indexOf={(m) => indexOf(m.id)} />
+        </div>
+      </div>
+
+      <dl className="grid grid-cols-3 divide-x divide-pnc-line border-b border-pnc-line">
+        <div className="px-4 py-3.5">
+          <dt className="text-xs text-pnc-muted">Members</dt>
+          <dd className="mt-0.5 text-lg font-semibold tabular-nums text-pnc-ink">
+            {s.living.length}
+          </dd>
+        </div>
+        <div className="px-4 py-3.5">
+          <dt className="text-xs text-pnc-muted">
+            {s.isAdmin ? "Accounts shared" : "Shared with you"}
+          </dt>
+          <dd className="mt-0.5 text-lg font-semibold tabular-nums text-pnc-ink">
+            {s.visible.length}
+          </dd>
+        </div>
+        <div className="px-4 py-3.5">
+          <dt className="text-xs text-pnc-muted">{s.isAdmin ? "Total value" : "Their value"}</dt>
+          <dd className="mt-0.5 text-lg font-semibold text-pnc-ink">
+            <Money value={s.total} compact />
+          </dd>
+        </div>
+      </dl>
+
+      <div className="flex items-center justify-between gap-3 px-5 py-3.5 text-sm">
+        <span className="min-w-0 truncate text-pnc-muted">
+          {note ??
+            (s.isAdmin
+              ? `${plural(s.yours, "account")} of yours shared`
+              : `You're ${withArticle(s.role?.name ?? "member")}`)}
+        </span>
+        <span className="inline-flex shrink-0 items-center gap-1 font-semibold text-pnc-link group-hover:underline">
+          Open <ArrowRight className="size-3.5" aria-hidden="true" />
+        </span>
+      </div>
+    </a>
   );
 }
 

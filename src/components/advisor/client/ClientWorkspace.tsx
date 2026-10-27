@@ -5,19 +5,18 @@ import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 
 import { ArrowLeft } from "lucide-react";
 import { tabButton } from "@/components/advisor/assistant/parts";
 import {
+  agentSteps,
   FindoePanel,
   type ChatItem,
   type FindoeMode,
 } from "@/components/advisor/client/FindoePanel";
 import { NextStepsView } from "@/components/advisor/client/NextStepsView";
 import { ClientPanel } from "@/components/advisor/client/panels";
-import { SimulationView } from "@/components/advisor/settlement/SimulationView";
 import { useAdvisorBook } from "@/components/advisor/useAdvisorBook";
 import { MockBadge } from "@/components/mock/Mock";
 import { useHashTab } from "@/components/shared/useHashTab";
 import { profileFor } from "@/data/clients";
 import { MOCK_AS_OF } from "@/data/mock";
-import { DISCLAIMER } from "@/data/settlement";
 import { agentReply, answerEffect } from "@/lib/agent";
 import { factsFor } from "@/lib/assistant";
 import { askFindoe, findoeIsLive, type FindoeTurn } from "@/lib/findoe/client";
@@ -27,22 +26,23 @@ import { caseworkActions, useCasework } from "@/lib/settlement/casework";
 import type { AskOption, OpenQuestion } from "@/lib/settlement/engine";
 import { useReviews } from "@/lib/settlement/reviews";
 import { routes } from "@/lib/routes";
+import { useFitToViewport } from "@/components/shared/useFitToViewport";
 
 const allTabs = [
   { id: "next", label: "Next steps" },
   { id: "client", label: "Client" },
-  { id: "whatif", label: "What if" },
 ] as const;
 type TabId = (typeof allTabs)[number]["id"];
 const tabIds = allTabs.map((t) => t.id);
+/** How long each working stage shows before the next one starts. */
+const STAGE_MS = 420;
 
 /**
  * One client, from the advisor's point of view. Next steps reads top to
  * bottom — where things stand, what to do, detail on demand — and every step
  * comes from the settlement rulebook. The assistant sits alongside: it says
  * what it worked out, asks for the facts the rulebook can't know, and explains
- * any step. Client is reference; What if runs the rulebook for anyone in the
- * household. Client-side so deaths the bank records show up immediately.
+ * any step. Client is reference. Client-side so deaths the bank records show up immediately.
  */
 export function ClientWorkspace({ customerId }: { customerId: string }) {
   const { customers } = useAdvisorBook();
@@ -69,6 +69,8 @@ export function ClientWorkspace({ customerId }: { customerId: string }) {
   const [focusKey, setFocusKey] = useState<string>();
   const [skipped, setSkipped] = useState<string[]>([]);
   const findoeRef = useRef<HTMLElement>(null);
+  const dockRef = useRef<HTMLDivElement>(null);
+  useFitToViewport(dockRef);
   const abortRef = useRef<AbortController>(undefined);
   const nextId = useRef(1);
   const baseId = useId();
@@ -108,8 +110,12 @@ export function ClientWorkspace({ customerId }: { customerId: string }) {
 
   /**
    * Sends a question to Findoe and streams the reply in. `prompt` is what the
-   * model sees when it differs from what the advisor sees (e.g. "Ask AI" on a
-   * step); `fallback` is the simulated reply's question when Findoe is offline.
+   * model sees when it differs from what the advisor sees (e.g. "Ask Findoe"
+   * on a step); `fallback` is the simulated reply's question when offline.
+   *
+   * Each reply shows its working: read the client's file, walk the rulebook,
+   * look up the rules that apply, write. The model request starts at once;
+   * its first words are held until the earlier stages have been shown.
    */
   async function ask(text: string, opts: { prompt?: string; fallback?: string } = {}) {
     if (busy) return;
@@ -123,41 +129,108 @@ export function ClientWorkspace({ customerId }: { customerId: string }) {
           ? [{ role: "assistant", content: i.text }]
           : [],
     );
-    setItems((xs) => [...xs, user, { id: replyId, kind: "assistant", text: "", streaming: true }]);
+    // The rulebook's own answer: its rules are the "look up" stage, and it's the offline reply.
+    const simulated = agentReply(facts!, guidance!, opts.fallback ?? text, casework.answers);
+    setItems((xs) => [
+      ...xs,
+      user,
+      {
+        id: replyId,
+        kind: "assistant",
+        text: "",
+        streaming: true,
+        related: simulated.rules,
+        progress: 0,
+        startedAt: Date.now(),
+        by: mode === "offline" ? "offline" : "live",
+      },
+    ]);
     setBusy(true);
     showFindoe();
     const update = (fn: (i: Extract<ChatItem, { kind: "assistant" }>) => ChatItem) =>
       setItems((xs) => xs.map((i) => (i.id === replyId && i.kind === "assistant" ? fn(i) : i)));
-    const offline = () => {
-      const a = agentReply(facts!, guidance!, opts.fallback ?? text, casework.answers);
-      update((i) => ({ ...i, text: a.paragraphs.join("\n"), rules: a.rules, streaming: false }));
-    };
-    abortRef.current = new AbortController();
-    try {
-      if (mode === "offline") offline();
-      else {
-        const result = await askFindoe({
-          context,
-          messages: history,
-          signal: abortRef.current.signal,
-          onText: (chunk) => update((i) => ({ ...i, text: i.text + chunk })),
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const { signal } = controller;
+    const wait = (ms: number) =>
+      new Promise<void>((resolve, reject) => {
+        const t = setTimeout(resolve, ms);
+        signal.addEventListener("abort", () => {
+          clearTimeout(t);
+          reject(new DOMException("Stopped", "AbortError"));
         });
-        if (result === "offline") {
-          setMode("offline");
-          offline();
-        } else {
-          setMode("live");
-          update((i) => ({ ...i, streaming: false }));
-        }
+      });
+    /** Types the simulated reply out a few words at a time. */
+    const typeOut = async (reply: string) => {
+      const words = reply.split(/(\s+)/);
+      for (let n = 0; n < words.length; n += 6) {
+        const chunk = words.slice(n, n + 6).join("");
+        update((i) => ({ ...i, text: i.text + chunk }));
+        await wait(24);
+      }
+    };
+    const finish = (extra: Partial<Extract<ChatItem, { kind: "assistant" }>> = {}) =>
+      update((i) => ({
+        ...i,
+        ...extra,
+        streaming: false,
+        progress: agentSteps.length,
+        finishedAt: Date.now(),
+      }));
+
+    let held = "";
+    let writing = false;
+    const request: Promise<"ok" | "offline"> =
+      mode === "offline"
+        ? Promise.resolve("offline")
+        : askFindoe({
+            context,
+            messages: history,
+            signal,
+            onText: (chunk) => {
+              if (writing) update((i) => ({ ...i, text: i.text + chunk }));
+              else held += chunk;
+            },
+          });
+    // Keep a failed request from surfacing before the stages have played.
+    request.catch(() => {});
+
+    try {
+      for (let step = 1; step < agentSteps.length; step++) {
+        await wait(STAGE_MS);
+        update((i) => ({ ...i, progress: step }));
+      }
+      writing = true;
+      if (held) update((i) => ({ ...i, text: i.text + held }));
+      let result: "ok" | "offline";
+      try {
+        result = await request;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") throw error;
+        result = "offline";
+      }
+      if (result === "offline") {
+        setMode("offline");
+        update((i) => ({ ...i, by: "offline", text: "" }));
+        await typeOut(simulated.paragraphs.join("\n"));
+        finish({ rules: simulated.rules });
+      } else {
+        setMode("live");
+        finish();
       }
     } catch (error) {
-      if (!(error instanceof DOMException && error.name === "AbortError")) offline();
+      if (error instanceof DOMException && error.name === "AbortError") finish({ stopped: true });
+      else finish({ rules: simulated.rules, text: simulated.paragraphs.join("\n"), by: "offline" });
     } finally {
       setBusy(false);
     }
   }
 
-  /** "Ask AI" on a next step: personalized help with that step. */
+  function stop() {
+    abortRef.current?.abort();
+  }
+
+  /** "Ask Findoe" on a next step: personalized help with that step. */
   function askAboutStep(s: NextStep) {
     ask(`Help me with “${s.title}”`, {
       prompt: `Help me with this next step: "${s.title}". Using what you know about ${facts!.first} and the family, tell me how to approach it, what to say, and anything to watch for.`,
@@ -271,36 +344,21 @@ export function ClientWorkspace({ customerId }: { customerId: string }) {
                   setFocusKey(q.key);
                   showFindoe();
                 }}
-                onOpenWhatIf={() => setTab("whatif")}
                 onAsk={(q) => ask(q)}
               />
             )}
             {tab === "client" && <ClientPanel facts={facts} />}
-            {tab === "whatif" && (
-              <div className="space-y-6">
-                <header className="space-y-1.5">
-                  <h3 className="font-display text-2xl font-medium text-pnc-ink">What if</h3>
-                  <p className="max-w-3xl text-sm leading-relaxed text-pnc-muted">
-                    The same rulebook, run before a death: pick anyone in the household to see what
-                    would happen to their accounts today, and what to fix while they can still sign
-                    the forms. {DISCLAIMER}
-                  </p>
-                </header>
-                <SimulationView
-                  customer={facts.c}
-                  profile={facts.p}
-                  defaultPerson={facts.self}
-                  today={facts.today}
-                  answers={casework.answers}
-                  onAsk={(q) => ask(q)}
-                />
-              </div>
-            )}
           </div>
         </section>
 
-        {/* Its own card, no clipping: it stays in view with `sticky` on wide screens. */}
-        <div className="rounded-lg bg-white shadow-card @5xl:sticky @5xl:top-4">
+        {/*
+          Its own card. On wide screens it sticks beside the content and is sized to
+          what's left of the viewport, so the message box is always on screen.
+        */}
+        <div
+          ref={dockRef}
+          className="h-[40rem] overflow-hidden rounded-lg bg-white shadow-card @5xl:sticky @5xl:top-4"
+        >
           <FindoePanel
             ref={findoeRef}
             facts={facts}
@@ -311,6 +369,7 @@ export function ClientWorkspace({ customerId }: { customerId: string }) {
             focusKey={focusKey}
             skipped={skipped}
             onAsk={(q) => ask(q)}
+            onStop={stop}
             onAnswer={answer}
             onSkip={(q) => {
               setSkipped((s) => [...s, q.key]);

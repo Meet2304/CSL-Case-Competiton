@@ -9,6 +9,7 @@ import {
   Menu,
   ScrollText,
   Users,
+  Wallet,
   type LucideIcon,
 } from "lucide-react";
 import { useCustomerNav } from "@/components/customer/useCustomerNav";
@@ -30,7 +31,8 @@ export function BottomTabBar({ variant = "customer" }: { variant?: Role }) {
     variant === "advisor"
       ? advisorTabs
       : [
-          { label: "Accounts", href: routes.accounts, icon: House },
+          { label: "Home", href: routes.home, icon: House },
+          { label: "My Assets", href: routes.assets, icon: Wallet },
           ...(nav.nextSteps
             ? [{ label: "Next steps", href: routes.nextSteps, icon: HeartHandshake }]
             : []),

@@ -24,12 +24,13 @@ const advisorNav: NavItem[] = [
 
 export function WebHeader({ variant = "customer" }: { variant?: Role }) {
   const nav = useCustomerNav();
-  // Customers: everyday banking lives under Accounts; the rest is about people and plans.
+  // Customers: Home, then their assets; the rest is about people and plans.
   const navItems: NavItem[] =
     variant === "advisor"
       ? advisorNav
       : [
-          { label: "Accounts", href: routes.accounts },
+          { label: "Home", href: routes.home },
+          { label: "My Assets", href: routes.assets },
           ...(nav.nextSteps ? [{ label: "Next steps", href: routes.nextSteps }] : []),
           { label: "Family", href: routes.family },
           { label: "Planning", href: routes.plan, badge: nav.reminders },
