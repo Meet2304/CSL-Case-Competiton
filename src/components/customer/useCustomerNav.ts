@@ -9,6 +9,7 @@ export function useCustomerNav() {
   const due = useNudges().filter((n) => n.tone !== "info");
   return {
     personId: person.id,
+    avatar: person.avatar,
     first,
     /** Beneficiaries to name or update, fixed from My Assets. */
     assetReminders: due.filter((n) => n.kind === "beneficiary").length,

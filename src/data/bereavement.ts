@@ -7,6 +7,7 @@
 import type { BankAccount } from "./types";
 import { advisor } from "./advisor";
 import { people } from "./household";
+import { firstName } from "@/lib/format";
 
 // ---------------------------------------------------------------------------
 // Transfer flows
@@ -104,8 +105,8 @@ export const supportPeople = [
 // Advisor outreach
 
 export function outreachGuide(customerName: string, deceasedName: string) {
-  const first = customerName.split(" ")[0];
-  const deceasedFirst = deceasedName.split(" ")[0];
+  const first = firstName(customerName);
+  const deceasedFirst = firstName(deceasedName);
   return {
     title: `Reach out to ${first} personally`,
     tips: [

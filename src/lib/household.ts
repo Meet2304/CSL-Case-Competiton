@@ -17,6 +17,7 @@ import type {
   SuccessionMethod,
 } from "@/data/types";
 import { effectiveAccess, isAdminMember, roleById } from "@/lib/family";
+import { firstName } from "@/lib/format";
 
 export type HouseholdState = {
   families: StoredFamily[];
@@ -28,7 +29,7 @@ export const personById = (id: string): HouseholdPerson | undefined =>
   people.find((p) => p.id === id);
 export const personByName = (name: string): HouseholdPerson | undefined =>
   people.find((p) => p.name === name);
-export const firstName = (name: string) => name.split(" ")[0];
+export { firstName };
 export const accountLabel = (a: BankAccount) => `${a.name}${a.last4 ? ` x${a.last4}` : ""}`;
 
 /** Whole years between a birthdate and `todayIso`. */
@@ -164,7 +165,7 @@ export function sharedWith(
   return out;
 }
 
-/** What `other` is to `viewer` (the seed records relationships to Jordan). */
+/** What `other` is to `viewer` (the seed records relationships to Father). */
 export function relationshipTo(
   viewer: HouseholdPerson,
   other: HouseholdPerson,
@@ -354,4 +355,16 @@ export function canManage(item: PersonAsset, personId: string): boolean {
   if (item.relation === "managed") return true;
   if (item.relation === "shared") return item.access?.manage === true;
   return !a.custodian || a.custodian === personId;
+}
+
+/**
+ * Whether a person can pay bills from an account: a PNC checking or savings
+ * account they run themselves (theirs, or one they're custodian of), or one
+ * shared with them whose role allows paying and transferring.
+ */
+export function canPayFrom(item: PersonAsset, personId: string): boolean {
+  const a = item.account;
+  if (a.external || (a.kind !== "checking" && a.kind !== "savings")) return false;
+  if (item.relation === "shared") return item.access?.transact === true;
+  return canManage(item, personId);
 }

@@ -10,8 +10,8 @@ import { answerQuestion, type Answer, type ClientFacts } from "@/lib/assistant";
 import type { Answers, OpenQuestion } from "@/lib/settlement/engine";
 import { label } from "@/lib/settlement/facts";
 import { decisionPath, type Guidance, type NextStep } from "@/lib/nextSteps";
+import { firstName } from "@/lib/format";
 
-const firstName = (name: string) => name.split(" ")[0];
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
 export type Briefing = {

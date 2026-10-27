@@ -1,13 +1,27 @@
 import {
   ArrowLeftRight,
+  BadgeDollarSign,
   Banknote,
+  Car,
+  CreditCard,
+  Droplet,
+  Flame,
   Globe,
+  GraduationCap,
   HandCoins,
+  House,
   Landmark,
+  Lightbulb,
   MapPin,
+  PiggyBank,
+  ReceiptText,
+  ShieldPlus,
+  Smartphone,
+  Tv,
   Zap,
   type LucideIcon,
 } from "lucide-react";
+import type { BillCategory } from "@/data/types";
 
 // Feature lists shared by the web and mobile views so both stay in sync.
 
@@ -85,4 +99,21 @@ export const payTransferGroups: { id: string; items: CatalogItem[] }[] = [
       },
     ],
   },
+];
+
+/** Everyday payments on the family dashboard, in the order the grid shows them. */
+export const billCategories: { id: BillCategory; label: string; icon: LucideIcon }[] = [
+  { id: "electricity", label: "Electricity", icon: Lightbulb },
+  { id: "mobile-prepaid", label: "Mobile prepaid", icon: Smartphone },
+  { id: "phone", label: "Phone bill", icon: ReceiptText },
+  { id: "investments", label: "Investments", icon: PiggyBank },
+  { id: "tolls", label: "Tolls", icon: Car },
+  { id: "insurance", label: "Insurance", icon: ShieldPlus },
+  { id: "rent", label: "Rent", icon: House },
+  { id: "credit-card", label: "Credit card", icon: CreditCard },
+  { id: "gas", label: "Gas", icon: Flame },
+  { id: "water", label: "Water", icon: Droplet },
+  { id: "cable", label: "Cable & TV", icon: Tv },
+  { id: "tuition", label: "Tuition", icon: GraduationCap },
+  { id: "foreign-currency", label: "Foreign currency", icon: BadgeDollarSign },
 ];

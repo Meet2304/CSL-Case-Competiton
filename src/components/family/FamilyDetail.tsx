@@ -19,6 +19,7 @@ import { accountLabel, accountsOf, familySummary, firstName } from "@/lib/househ
 import { useFamily } from "./FamilyProvider";
 import { ManageFamily, type ManageTab } from "./ManageFamily";
 import { MemberFamilyView } from "./MemberFamilyView";
+import { PayBills } from "./PayBills";
 import {
   Avatar,
   AvatarStack,
@@ -44,7 +45,8 @@ function accessLabel(a: AssetAccess): string {
  * One family, in the viewer's role. Everyone sees the accounts shared with
  * them; admins also see who can see each account, can share their own, and
  * open "Manage family" for members, roles and visibility. Non-admins get no
- * hint of what is hidden from them.
+ * hint of what is hidden from them. Under People, everyday bills can be paid
+ * from any account the viewer may pay from.
  */
 export function FamilyDetail({ onBack }: { onBack: () => void }) {
   const { state, family } = useFamily();
@@ -153,41 +155,44 @@ export function FamilyDetail({ onBack }: { onBack: () => void }) {
           </div>
         </section>
 
-        <aside aria-labelledby="family-people-title" className="rounded-lg bg-white shadow-card">
-          <header className="flex items-center justify-between gap-3 border-b border-pnc-line px-5 py-4">
-            <h3 id="family-people-title" className="font-semibold text-pnc-ink">
-              People
-            </h3>
-            {s.isAdmin && (
-              <button
-                type="button"
-                onClick={() => setManage("members")}
-                className="text-sm font-semibold text-pnc-link hover:underline"
-              >
-                Edit
-              </button>
-            )}
-          </header>
-          <ul className="divide-y divide-pnc-line">
-            {state.members.map((m) => (
-              <li key={m.id} className="flex items-center gap-3 px-5 py-3">
-                <Avatar member={m} index={indexOf(m)} />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-pnc-ink">
-                    {m.id === person.id ? `${m.name} (you)` : m.name}
-                  </p>
-                  {/* Other members' roles are confidential to admins. */}
-                  {(s.isAdmin || m.id === person.id) && (
-                    <p className="truncate text-xs text-pnc-muted">
-                      {roleById(state, m.roleId)?.name}
+        <div className="space-y-5">
+          <aside aria-labelledby="family-people-title" className="rounded-lg bg-white shadow-card">
+            <header className="flex items-center justify-between gap-3 border-b border-pnc-line px-5 py-4">
+              <h3 id="family-people-title" className="font-semibold text-pnc-ink">
+                People
+              </h3>
+              {s.isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => setManage("members")}
+                  className="text-sm font-semibold text-pnc-link hover:underline"
+                >
+                  Edit
+                </button>
+              )}
+            </header>
+            <ul className="divide-y divide-pnc-line">
+              {state.members.map((m) => (
+                <li key={m.id} className="flex items-center gap-3 px-5 py-3">
+                  <Avatar member={m} index={indexOf(m)} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-pnc-ink">
+                      {m.id === person.id ? `${m.name} (you)` : m.name}
                     </p>
-                  )}
-                </div>
-                {m.status !== "Active" && <StatusBadge status={m.status} />}
-              </li>
-            ))}
-          </ul>
-        </aside>
+                    {/* Other members' roles are confidential to admins. */}
+                    {(s.isAdmin || m.id === person.id) && (
+                      <p className="truncate text-xs text-pnc-muted">
+                        {roleById(state, m.roleId)?.name}
+                      </p>
+                    )}
+                  </div>
+                  {m.status !== "Active" && <StatusBadge status={m.status} />}
+                </li>
+              ))}
+            </ul>
+          </aside>
+          <PayBills />
+        </div>
       </div>
 
       {s.isAdmin && (

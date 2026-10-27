@@ -13,7 +13,7 @@ import { Money } from "@/components/ui/Money";
 import { people } from "@/data/household";
 import { MOCK_AS_OF } from "@/data/mock";
 import type { BankAccount } from "@/data/types";
-import { cn, formatDate } from "@/lib/format";
+import { cn, firstName, formatDate } from "@/lib/format";
 import {
   accountLabel,
   designationTerm,
@@ -320,7 +320,7 @@ function BeneficiaryEditor({ account: a }: { account: BankAccount }) {
       {minors.length > 0 && (
         <p className="flex gap-2 rounded-md bg-pnc-blue-50 px-3 py-2 text-sm leading-relaxed text-pnc-ink">
           <Info className="mt-0.5 size-4 shrink-0 text-pnc-blue-700" aria-hidden="true" />
-          {minors.map((m) => m.name.split(" ")[0]).join(" and ")} {minors.length > 1 ? "are" : "is"}{" "}
+          {minors.map((m) => firstName(m.name)).join(" and ")} {minors.length > 1 ? "are" : "is"}{" "}
           under 18 and can&apos;t take an account directly. A custodian holds it for them until they
           turn 18 — your advisor can help set that up.
         </p>

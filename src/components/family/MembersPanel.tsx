@@ -121,8 +121,10 @@ function AddMemberForm({ onDone }: { onDone: () => void }) {
   const { state, dispatch } = useFamily();
   const { person } = useViewer();
   const id = useId();
-  // People PNC already knows in the household, who aren't in this family yet.
-  const known = people.filter((p) => !state.members.some((m) => m.id === p.id));
+  // Family PNC already knows in the household who aren't in this family yet (not outside professionals).
+  const known = people.filter(
+    (p) => p.relationship !== "Other" && !state.members.some((m) => m.id === p.id),
+  );
   const firstCustomRole = state.roles.find((r) => !r.isAdmin) ?? state.roles[0];
   const [form, setForm] = useState({
     name: "",
@@ -151,8 +153,12 @@ function AddMemberForm({ onDone }: { onDone: () => void }) {
     e.preventDefault();
     setSubmitted(true);
     if (errors.name || errors.email) return;
-    // Someone who already banks with us is linked to their own login.
-    const match = people.find((p) => p.email.toLowerCase() === form.email.trim().toLowerCase());
+    // Family who already bank with us are linked to their own login. Outside professionals aren't
+    // household family, so inviting one by email is an ordinary invite.
+    const match = people.find(
+      (p) =>
+        p.relationship !== "Other" && p.email.toLowerCase() === form.email.trim().toLowerCase(),
+    );
     dispatch({
       type: "addMember",
       member: {

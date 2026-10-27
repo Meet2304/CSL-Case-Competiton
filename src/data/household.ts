@@ -2,10 +2,10 @@
  * MOCK DATA — the Sample household, the one family every customer login and
  * the advisor read from. Every name and figure is invented.
  *
- * Jordan (52) and Casey (49) are married; Avery is 17 and turns 18 on
- * Nov 30, 2026; Riley is 14. Dana is the family's estate attorney (no login).
+ * Father (52) and Mother (49) are married; Child 1 is 17 and turns 18 on
+ * Nov 30, 2026; Child 2 is 14. Dana is the family's estate attorney (no login).
  * A few gaps are deliberate so the planning reminders have something to say:
- * Jordan's savings has no payable-on-death beneficiary, the brokerage account
+ * Father's savings has no payable-on-death beneficiary, the brokerage account
  * has no transfer-on-death beneficiary, and nobody has a will yet.
  */
 import { NO_ACCESS } from "./family";
@@ -17,35 +17,39 @@ export const HOUSEHOLD_ID = "c-sample";
 export const people: HouseholdPerson[] = [
   {
     id: "p-jordan",
-    name: "Jordan Sample",
+    name: "Father",
     relationship: "Self",
     birthdate: "1974-05-14",
-    email: "jordan@example.com",
-    login: "jordan",
+    email: "father@example.com",
+    login: "father",
+    avatar: "father",
   },
   {
     id: "p-casey",
-    name: "Casey Sample",
+    name: "Mother",
     relationship: "Spouse",
     birthdate: "1977-03-02",
-    email: "casey@example.com",
-    login: "casey",
+    email: "mother@example.com",
+    login: "mother",
+    avatar: "mother",
   },
   {
     id: "p-avery",
-    name: "Avery Sample",
+    name: "Child 1",
     relationship: "Child",
     birthdate: "2008-11-30",
-    email: "avery@example.com",
-    login: "avery",
+    email: "child1@example.com",
+    login: "child1",
+    avatar: "teen",
   },
   {
     id: "p-riley",
-    name: "Riley Sample",
+    name: "Child 2",
     relationship: "Child",
     birthdate: "2012-06-18",
-    email: "riley@example.com",
-    login: "riley",
+    email: "child2@example.com",
+    login: "child2",
+    avatar: "child",
   },
   {
     id: "p-dana",
@@ -56,6 +60,20 @@ export const people: HouseholdPerson[] = [
     note: "Estate attorney",
   },
 ];
+
+/**
+ * Names the household had before it was renamed by role. Saved browser data
+ * (recorded deaths) may still use them; the stores map them to today's names.
+ */
+/** Roles the seed no longer has (the outside "Trusted advisor"); saved families drop them once unused. */
+export const retiredRoleIds = ["r-trusted"];
+
+export const previousNames: Record<string, string> = {
+  "Jordan Sample": "Father",
+  "Casey Sample": "Mother",
+  "Avery Sample": "Child 1",
+  "Riley Sample": "Child 2",
+};
 
 export const accounts: BankAccount[] = [
   {
@@ -227,7 +245,7 @@ export const accounts: BankAccount[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// The family Jordan has set up: who's in it, their roles, and what's shared.
+// The family Father has set up: who's in it, their roles, and what's shared.
 
 const view: AssetAccess = { ...NO_ACCESS, view: true };
 const viewActivity: AssetAccess = { ...view, activity: true };
@@ -263,24 +281,24 @@ export const seedFamilies: StoredFamily[] = [
     members: [
       {
         id: "p-jordan",
-        name: "Jordan Sample",
-        email: "jordan@example.com",
+        name: "Father",
+        email: "father@example.com",
         relationship: "Self",
         roleId: "r-admin",
         status: "Active",
       },
       {
         id: "p-casey",
-        name: "Casey Sample",
-        email: "casey@example.com",
+        name: "Mother",
+        email: "mother@example.com",
         relationship: "Spouse",
         roleId: "r-admin",
         status: "Active",
       },
       {
         id: "p-avery",
-        name: "Avery Sample",
-        email: "avery@example.com",
+        name: "Child 1",
+        email: "child1@example.com",
         relationship: "Child",
         note: "Turns 18 on Nov 30",
         roleId: "r-older-child",
@@ -288,21 +306,12 @@ export const seedFamilies: StoredFamily[] = [
       },
       {
         id: "p-riley",
-        name: "Riley Sample",
-        email: "riley@example.com",
+        name: "Child 2",
+        email: "child2@example.com",
         relationship: "Child",
         note: "Age 14",
         roleId: "r-younger-child",
         status: "Active",
-      },
-      {
-        id: "p-dana",
-        name: "Dana Example",
-        email: "dana@example-law.com",
-        relationship: "Other",
-        note: "Estate attorney",
-        roleId: "r-trusted",
-        status: "Invited",
       },
     ],
     roles: [
@@ -322,20 +331,6 @@ export const seedFamilies: StoredFamily[] = [
         isAdmin: false,
         builtIn: false,
         access: {},
-      },
-      {
-        id: "r-trusted",
-        name: "Trusted advisor",
-        description:
-          "An outside professional, such as the estate attorney. Read-only access to investments and retirement for planning.",
-        isAdmin: false,
-        builtIn: false,
-        access: {
-          "acct-jordan-ira": viewActivity,
-          "acct-jordan-brokerage": viewActivity,
-          "acct-jordan-life": view,
-          "acct-casey-roth": viewActivity,
-        },
       },
     ],
     accountIds: [

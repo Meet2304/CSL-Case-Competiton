@@ -21,7 +21,7 @@ import type {
   SettlementRoute,
   StateCode,
 } from "@/data/types";
-import { daysBetween } from "@/lib/format";
+import { daysBetween, firstName } from "@/lib/format";
 import { holds, plainValues } from "./conditions";
 import { resolveDeadline } from "./dates";
 import {
@@ -174,7 +174,6 @@ export const routeLabels: Record<SettlementRoute, string> = {
 
 export const routeLabel = (route: SettlementRoute) => routeLabels[route];
 
-const firstName = (name: string) => name.split(" ")[0];
 const uniq = <T>(xs: T[]) => xs.filter((x, i) => xs.indexOf(x) === i);
 const orderReview = (levels: ReviewLevel[]) => REVIEW_ORDER.filter((l) => levels.includes(l));
 

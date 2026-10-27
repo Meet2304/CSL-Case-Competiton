@@ -43,17 +43,21 @@ it). A pinned mobile view on a wide screen is shown inside an iPhone frame.
 Sign-on decides the experience. Demo User IDs (any password; defined in
 `src/data/users.ts`):
 
-| User ID   | Who                                                       | Lands on    |
-| --------- | --------------------------------------------------------- | ----------- |
-| `jordan`  | Jordan Sample, 52                                         | `/accounts` |
-| `casey`   | Casey Sample, 49 — Jordan's spouse                        | `/accounts` |
-| `avery`   | Avery Sample, 17 — turns 18 on Nov 30, 2026               | `/accounts` |
-| `riley`   | Riley Sample, 14                                          | `/accounts` |
-| `advisor` | Bank representative (Alex Example, Senior Wealth Advisor) | `/advisor`  |
+| User ID   | Who                                                       | Lands on   |
+| --------- | --------------------------------------------------------- | ---------- |
+| `father`  | Father, 52                                                | `/home`    |
+| `mother`  | Mother, 49 — Father's spouse                              | `/home`    |
+| `child1`  | Child 1, 17 — turns 18 on Nov 30, 2026                    | `/home`    |
+| `child2`  | Child 2, 14                                               | `/home`    |
+| `advisor` | Bank representative (Alex Example, Senior Wealth Advisor) | `/advisor` |
+
+The earlier IDs `jordan`, `casey`, `avery` and `riley` still sign in as the
+same people. Each person's profile picture is an illustration that matches
+their role (`PersonAvatar`, set by `avatar` in `src/data/household.ts`).
 
 All four customers read one shared household (`src/data/household.ts`): ten
 simple accounts (joint checking, savings, an IRA, a brokerage account, a credit
-card, a life policy held outside PNC, Casey's savings and Roth IRA, and the
+card, a life policy held outside PNC, Mother's savings and Roth IRA, and the
 kids' custodial accounts). The session keeps the role (`pnc-session`) and the
 person (`pnc-person`); `src/proxy.ts` keeps each role on its own pages.
 
@@ -70,7 +74,7 @@ family (with what they're allowed to do).
 
 **Reminders** (`src/lib/nudges.ts`) come from what's on file: write or finish
 a will, add a beneficiary to each account that can take one, and update a
-beneficiary who has died. Avery gets a heads-up about turning 18; Riley gets
+beneficiary who has died. Child 1 gets a heads-up about turning 18; Child 2 gets
 none. Beneficiary reminders show as a count on **My Assets** and the will
 reminder on **Will** in the navigation, where each is resolved.
 
@@ -78,9 +82,9 @@ reminder on **Will** in the navigation, where each is resolved.
 
 A family is a group of people you trust with access to your finances. Anyone
 18 or over can **create a family** and becomes its admin; a person can belong
-to several families and switch between them. Jordan's _Sample Family_ is
-seeded: Jordan and Casey are admins, Avery can see the joint checking account,
-Riley sees nothing, and Dana (the estate attorney) is invited.
+to several families and switch between them. Father's _Sample Family_ is
+seeded: Father and Mother are admins, Child 1 can see the joint checking account,
+and Child 2 sees nothing. Families are just family: no outside advisors.
 
 - **Share an account** you own with a family, or stop sharing it. Nobody sees
   a shared account until their role is given access.
@@ -91,6 +95,10 @@ Riley sees nothing, and Dana (the estate attorney) is invited.
 - **Access limits are confidential to admins.** Members only see what they
   can use; admins check it with **Preview as**.
 - Families keep working after a death: the person shows as deceased.
+- **Pay bills** (under People): electricity, phone, rent, insurance, tuition
+  and more, paid from your own cash accounts or a shared one your role lets you
+  pay from (`canPayFrom`). Anyone with no such account doesn't see the section.
+  Billers are mock data in `src/data/mock.ts`.
 
 ## Wills and beneficiaries
 
@@ -110,21 +118,21 @@ There's no separate Planning page; the old `/plan` URL redirects to the Will pag
 
 Nothing happens automatically. A death only exists once the bank records it.
 
-1. **Advisor** (`advisor`): _Record a death notice_ (defaults to Jordan).
-2. **Jordan's login** shows that the accounts are being settled.
-3. **Casey** sees a soft condolence strip and a **Next steps** page
-   (`src/lib/survivor.ts`), built from Jordan's accounts as they stand:
-   - _Coming to you_: a guided flow for each account that passes to Casey (the
-     joint account, the IRA, Riley's account as new custodian, and any
-     account where Jordan had named Casey as beneficiary). The life policy is
+1. **Advisor** (`advisor`): _Record a death notice_ (defaults to Father).
+2. **Father's login** shows that the accounts are being settled.
+3. **Mother** sees a soft condolence strip and a **Next steps** page
+   (`src/lib/survivor.ts`), built from Father's accounts as they stand:
+   - _Coming to you_: a guided flow for each account that passes to Mother (the
+     joint account, the IRA, Child 2's account as new custodian, and any
+     account where Father had named Mother as beneficiary). The life policy is
      claimed with the insurer.
    - _Handled through the estate_: accounts with no beneficiary, and the
      credit card.
    - The death certificate is uploaded once and reused. _Send to PNC_ leaves a
      flow **In review**; nothing approves itself.
-   - If Jordan's will is on file and names Casey, the executor can begin
+   - If Father's will is on file and names Mother, the executor can begin
      executing it from this page.
-4. **Avery and Riley** get a gentle message and nothing to do.
+4. **Child 1 and Child 2** get a gentle message and nothing to do.
 
 State lives in the browser (`localStorage`). _Reset demo_ on the advisor home
 clears the recorded deaths, flows, families, beneficiary changes and wills.

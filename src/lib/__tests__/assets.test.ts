@@ -6,6 +6,7 @@ import {
   assetsFor,
   assetSummary,
   canManage,
+  canPayFrom,
   currentAccounts,
   familySummary,
   personById,
@@ -41,11 +42,11 @@ describe("my assets", () => {
       assetsFor(seed, personId, all, [])
         .filter((i) => canManage(i, personId))
         .map((i) => i.account.id);
-    // Jordan: everything they own, Riley's account (custodian), and Casey's accounts (admin).
+    // Father: everything they own, Child 2's account (custodian), and Mother's accounts (admin).
     expect(manageable("p-jordan")).toEqual(
       expect.arrayContaining(["acct-jordan-savings", "acct-riley-savings", "acct-casey-roth"]),
     );
-    // Avery: their account is run by a custodian; the shared checking is view-only for the role.
+    // Child 1: their account is run by a custodian; the shared checking is view-only for the role.
     expect(manageable("p-avery")).toEqual([]);
   });
 
@@ -57,11 +58,27 @@ describe("my assets", () => {
     expect(s.holdings.map((g) => g.id)).toEqual(["cash", "retirement", "investments"]);
   });
 
+  it("pays bills only from cash accounts the person runs or may transact on", () => {
+    const payable = (personId: string) =>
+      assetsFor(seed, personId, all, [])
+        .filter((i) => canPayFrom(i, personId))
+        .map((i) => i.account.id);
+    // Father: his own cash accounts and Child 2's account he's custodian of; never the IRA or card.
+    expect(payable("p-jordan")).toEqual(
+      expect.arrayContaining(["acct-joint-checking", "acct-jordan-savings", "acct-riley-savings"]),
+    );
+    expect(payable("p-jordan")).not.toContain("acct-jordan-ira");
+    expect(payable("p-jordan")).not.toContain("acct-jordan-card");
+    // Child 1 only sees the joint checking (no pay permission); Child 2's account is run by a custodian.
+    expect(payable("p-avery")).toEqual([]);
+    expect(payable("p-riley")).toEqual([]);
+  });
+
   it("searches by name, number, owner and family", () => {
     const items = assetsFor(seed, "p-jordan", all, []);
     const find = (q: string) => items.filter((i) => assetMatches(i, q)).map((i) => i.account.id);
     expect(find("x0011")).toEqual(["acct-jordan-ira"]);
-    expect(find("casey roth")).toEqual(["acct-casey-roth"]);
+    expect(find("mother roth")).toEqual(["acct-casey-roth"]);
     expect(find("sample family")).toEqual(["acct-casey-savings", "acct-casey-roth"]);
     expect(find("")).toHaveLength(items.length);
   });
@@ -74,7 +91,7 @@ describe("family at a glance", () => {
     const s = familySummary(family, "p-jordan", all, []);
     expect(s.isAdmin).toBe(true);
     expect(s.visible).toHaveLength(family.accountIds.length);
-    expect(s.invited.map((m) => m.id)).toEqual(["p-dana"]);
+    expect(s.invited).toEqual([]);
   });
 
   it("gives members only what they can see, never a count of the rest", () => {
@@ -85,13 +102,27 @@ describe("family at a glance", () => {
   });
 
   it("tells admins about pending invites and a child turning 18", () => {
+    const withInvite = {
+      ...family,
+      members: [
+        ...family.members,
+        {
+          id: "m-guest",
+          name: "Pat Example",
+          email: "pat@example.com",
+          relationship: "Other" as const,
+          roleId: "r-younger-child",
+          status: "Invited" as const,
+        },
+      ],
+    };
     const ids = familyNudges({
       person: personById("p-jordan")!,
-      families: seedFamilies,
+      families: [withInvite],
       deceasedIds: [],
       today: TODAY,
     }).map((n) => n.id);
-    expect(ids).toEqual(["adult-fam-sample-p-avery", "invite-fam-sample-p-dana"].sort());
+    expect(ids.sort()).toEqual(["adult-fam-sample-p-avery", "invite-fam-sample-m-guest"].sort());
   });
 
   it("says nothing to members about other people's access", () => {
