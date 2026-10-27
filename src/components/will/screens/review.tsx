@@ -393,9 +393,9 @@ function reviewSections(d: WillDraft, accountHolder: string): { title: string; r
 }
 
 export function ReviewScreen() {
-  const { draft, goTo, previous, accountHolder, exit } = usePlanner();
+  const { draft, goTo, previous, accountHolder, owner, exit } = usePlanner();
   const [wills, setWills] = useState<{ title: string; text: string }[] | null>(null);
-  const [onFile, setOnFile] = useState(() => readWillStatus() === "on-file");
+  const [onFile, setOnFile] = useState(() => readWillStatus(owner) === "on-file");
   const incomplete = incompleteScreens(draft).filter((id) => id !== "review.summary");
   const edit = (screen: string) => goTo(screen, { returnToReview: true });
 
@@ -515,7 +515,7 @@ export function ReviewScreen() {
                 <button
                   type="button"
                   onClick={() => {
-                    setWillStatus("on-file");
+                    setWillStatus(owner, "on-file");
                     setOnFile(true);
                   }}
                   className={buttonClass.primary}

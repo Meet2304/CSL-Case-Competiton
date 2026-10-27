@@ -1,5 +1,15 @@
 import type { Metadata } from "next";
-import { Bell, CircleHelp, CreditCard, FileText, Settings, Shield, Users } from "lucide-react";
+import {
+  Bell,
+  CircleDollarSign,
+  CircleHelp,
+  CreditCard,
+  FileText,
+  Medal,
+  ReceiptText,
+  Settings,
+  Shield,
+} from "lucide-react";
 import { MobileCard, MobileIconRow, MobileSignOffRow } from "@/components/mobile/MobileCard";
 import { MobileHeader } from "@/components/mobile/MobileHeader";
 import { creditCardAccounts } from "@/data/mock";
@@ -10,9 +20,16 @@ export const metadata: Metadata = { title: "More" };
 export default function MobileMorePage() {
   return (
     <>
-      <MobileHeader title="More">
+      <MobileHeader title="More" />
+
+      <div className="space-y-4 px-3 pt-4">
         <MobileCard>
           <ul>
+            <MobileIconRow
+              icon={CircleDollarSign}
+              label="Pay & Transfer"
+              href={routes.payTransfer}
+            />
             {creditCardAccounts.map((c) => (
               <MobileIconRow
                 key={c.id}
@@ -21,14 +38,8 @@ export default function MobileMorePage() {
                 href={routes.card(c.id)}
               />
             ))}
-          </ul>
-        </MobileCard>
-      </MobileHeader>
-
-      <div className="space-y-4 px-3 pt-4">
-        <MobileCard>
-          <ul>
-            <MobileIconRow icon={Users} label="Family Dashboard" href={routes.family} />
+            <MobileIconRow icon={Medal} label="Rewards" href={routes.rewards} />
+            <MobileIconRow icon={ReceiptText} label="Deposit a check" href={routes.deposit} />
           </ul>
         </MobileCard>
         <MobileCard>

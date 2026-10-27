@@ -89,6 +89,52 @@ export type DemoUser = {
   userId: string;
   role: Role;
   displayName: string;
+  /** For customers: who they are in the household (see src/data/household.ts). */
+  personId?: string;
+  /** Shown on the demo sign-on buttons, e.g. "Husband, 52". */
+  hint?: string;
+};
+
+// ---------------------------------------------------------------------------
+// The demo household: one source of truth for people and their accounts,
+// read by every customer login and by the advisor.
+
+export type HouseholdPerson = {
+  id: string;
+  name: string;
+  /** Relationship to the household's primary customer (Jordan). */
+  relationship: FamilyMemberRelationship;
+  birthdate: string; // ISO
+  email: string;
+  /** Free text under the name, e.g. "Estate attorney". */
+  note?: string;
+  /** Has an online banking login. */
+  login?: string;
+};
+
+export type AccountKind =
+  "checking" | "savings" | "ira" | "roth" | "brokerage" | "credit-card" | "life-insurance";
+
+/** One account (or policy) belonging to someone in the household. */
+export type BankAccount = {
+  id: string;
+  name: string;
+  last4?: string;
+  kind: AccountKind;
+  /** Negative for a balance owed. */
+  balance: number;
+  /** Person ids of the legal owners. */
+  owners: string[];
+  /** Adult who manages a minor's account until they turn 18. */
+  custodian?: string;
+  /**
+   * Payable- or transfer-on-death / retirement beneficiaries, as person ids.
+   * Undefined where the account type has no designation.
+   */
+  beneficiaries?: string[];
+  /** Held outside PNC (e.g. a life insurance policy); tracked for planning. */
+  external?: boolean;
+  transactions?: Transaction[];
 };
 
 export type Advisor = {
@@ -189,8 +235,15 @@ export type Holding = {
   ownership: Ownership;
   /** Names of the legal owners (trustees for a trust). */
   owners: string[];
-  /** Named beneficiaries (POD/TOD or retirement designations), primary first. */
+  /**
+   * Named co-primary beneficiaries (POD/TOD or retirement designations), equal shares.
+   * For 529 plans these are the students, not who inherits the account.
+   */
   beneficiaries?: string[];
+  /** Named contingent beneficiaries (paid only if every primary beneficiary has died). */
+  contingentBeneficiaries?: string[];
+  /** 529 plans: who becomes account owner if the owner dies. Absent = not on file. */
+  successorOwner?: string;
   /** Held outside PNC; tracked for planning, not counted in the relationship. */
   external?: boolean;
 };
@@ -278,7 +331,7 @@ export type FamilyRole = {
 };
 
 export const assetCategories = [
-  "Joint checking/savings",
+  "Checking & savings",
   "Real Estate",
   "Brokerage account",
   "401(k) / IRA",
@@ -362,4 +415,265 @@ export type PlaceholderCharity = {
   cause: CharityCause;
   blurb: string;
   featured: boolean;
+};
+
+// ---------------------------------------------------------------------------
+// Settlement rules engine: what legally happens to each account when someone
+// dies, with the rule and source behind every step. Data in src/data/settlement,
+// engine in src/lib/settlement. General guidance, not legal or tax advice.
+
+export type Jurisdiction = "US" | "PA";
+
+export type SourceAuthority =
+  | "IRS"
+  | "US Treasury"
+  | "FDIC"
+  | "SSA"
+  | "CFPB"
+  | "PA General Assembly"
+  | "PA Department of Revenue"
+  | "PNC"
+  | "Plan documents";
+
+export type SourceKind =
+  | "statute"
+  | "regulation"
+  | "agency-guidance"
+  | "form-instructions"
+  | "bank-policy"
+  | "plan-document";
+
+export type RuleSource = {
+  id: string;
+  /** Short display title, e.g. "Right of survivorship". */
+  title: string;
+  /** Formal cite, e.g. "20 Pa.C.S. § 6304". */
+  citation: string;
+  authority: SourceAuthority;
+  jurisdiction: Jurisdiction;
+  kind: SourceKind;
+  url: string;
+  /** One or two sentences in our own words: what the source says that the rule relies on. */
+  summary: string;
+  /** ISO date someone on the team checked the source; absent = not yet verified. */
+  verifiedOn?: string;
+};
+
+export type AccountClass =
+  | "deposit" // checking, savings, money market
+  | "cd"
+  | "brokerage"
+  | "ira-traditional" // incl. 401(k) rollover IRA
+  | "ira-roth"
+  | "ira-inherited"
+  | "trust"
+  | "education-529"
+  | "life-insurance"
+  | "credit-card"
+  | "real-estate"
+  | "vehicle"
+  | "other";
+
+/** What the person who died was to this account. */
+export type DecedentRole =
+  | "sole-owner"
+  | "joint-owner"
+  | "co-trustee"
+  | "sole-trustee"
+  | "plan-owner" // 529 account owner
+  | "named-beneficiary" // someone else's account names them
+  | "not-involved";
+
+export type BeneficiaryStatus = "living" | "none-on-file" | "all-deceased" | "not-applicable";
+
+export type PrimaryBeneficiaryCategory =
+  | "spouse"
+  | "minor-child-of-decedent"
+  | "within-10-years-of-age" // not more than 10 years younger than the decedent
+  | "other-individual"
+  | "not-applicable";
+
+export type TriState = "yes" | "no" | "unknown";
+
+export type StateCode = "PA" | "other";
+
+/** Discrete facts about one account, relative to one death. */
+export type AccountFactValues = {
+  accountClass: AccountClass;
+  decedentRole: DecedentRole;
+  beneficiaryStatus: BeneficiaryStatus;
+  primaryBeneficiaryCategory: PrimaryBeneficiaryCategory;
+  beneficiaryCount: number;
+  anyBeneficiaryMinor: TriState;
+  decedentPastRequiredBeginningDate: TriState;
+  successorOwnerNamed: TriState; // 529 plans
+  /** Never in our records; only the advisor can confirm it. */
+  beneficiaryDisabledOrIll: TriState;
+  heldOutsidePnc: boolean;
+  value: number;
+  state: StateCode;
+};
+
+export type AccountFactKey = keyof AccountFactValues;
+
+/** One fact with the plain-English evidence it was derived from. */
+export type Fact<V> = { value: V; evidence: string };
+export type AccountFacts = { [K in AccountFactKey]: Fact<AccountFactValues[K]> };
+
+/** Household-level facts for one death. */
+export type HouseholdFactValues = {
+  state: StateCode;
+  survivorIsSpouse: boolean;
+  executorKnown: boolean;
+  hasProbateAssets: boolean;
+  probateValueAtPnc: number;
+  /** Rough decedent gross estate (see facts.ts for the formula); always paired with an assumption. */
+  estimatedGrossEstate: number;
+  receivedFederalBenefits: TriState;
+};
+
+export type HouseholdFactKey = keyof HouseholdFactValues;
+export type HouseholdFacts = { [K in HouseholdFactKey]: Fact<HouseholdFactValues[K]> };
+
+/** A test on one fact. All clauses in a list must hold (AND). */
+export type Clause<K extends string = string> = {
+  fact: K;
+  eq?: string | number | boolean;
+  in?: (string | number | boolean)[];
+  gt?: number;
+  lte?: number;
+};
+
+export type SettlementRoute =
+  | "survivorship"
+  | "beneficiary-claim"
+  | "spousal-retirement-options"
+  | "inherited-retirement"
+  | "successor-trustee"
+  | "successor-owner"
+  | "probate"
+  | "closes-estate-pays"
+  | "insurer-claim"
+  | "designation-update"
+  | "not-affected"
+  | "needs-review";
+
+export type ReviewLevel = "advisor" | "operations" | "trust-officer" | "attorney" | "tax-advisor";
+
+export type ActionOwner =
+  | "advisor"
+  | "client"
+  | "executor"
+  | "bank-operations"
+  | "trust-officer"
+  | "attorney"
+  | "tax-advisor"
+  | "insurer";
+
+export type DeadlineAnchor =
+  | { from: "date-of-death"; months: number }
+  | { from: "dec-31"; yearsAfterDeath: number } // 0 = Dec 31 of the year of death
+  | { from: "apr-15"; yearsAfterDeath: number };
+
+export type DeadlineKind = "statutory" | "recommended" | "opportunity";
+
+export type RuleAction = {
+  id: string;
+  label: string;
+  /** Advisor-facing detail; may contain {decedent}, {survivor}, {account} placeholders. */
+  detail: string;
+  owner: ActionOwner;
+  deadline?: { anchor: DeadlineAnchor; kind: DeadlineKind; label: string };
+  sources: string[];
+};
+
+export type DecisionNode = {
+  id: string;
+  kind: "decision";
+  question: string;
+  fact: AccountFactKey;
+  /** One branch per possible value of `fact` (enforced by a test). */
+  branches: { when: string; label: string; next: string }[];
+  sources: string[];
+};
+
+export type OutcomeNode = {
+  id: string;
+  kind: "outcome";
+  route: SettlementRoute;
+  title: string;
+  /** Advisor-facing explanation. Placeholders allowed. */
+  summary: string;
+  /** Client-facing explanation: gentle, no jargon, no urgency. Placeholders allowed. */
+  plain: string;
+  passesTo:
+    | "surviving-owners"
+    | "beneficiaries"
+    | "estate"
+    | "successor-trustee"
+    | "successor-owner"
+    | "nobody"
+    | "unchanged";
+  probate: boolean;
+  survivorAccess: "uninterrupted" | "after-claim" | "after-letters" | "not-applicable";
+  typicalTimeline: string;
+  actions: string[];
+  review: ReviewLevel[];
+  sources: string[];
+};
+
+export type RuleNode = DecisionNode | OutcomeNode;
+
+/** One answer the advisor can pick; `value` is the fact value it sets. */
+export type AskOption = { value: string; label: string };
+
+/**
+ * A fact the rulebook needs but our records don't have. Raised while the fact
+ * is "unknown"; the advisor's answer becomes the fact and the tree is re-walked.
+ */
+export type RuleAsk<K extends string> = {
+  fact: K;
+  question: string;
+  /** Defaults to Yes / No for yes-no-unknown facts. */
+  options?: AskOption[];
+};
+
+export type Overlay = {
+  id: string;
+  title: string;
+  /** Extra condition on the outcome's route; omitted = any route. */
+  routes?: SettlementRoute[];
+  when: Clause<AccountFactKey>[];
+  detail: string;
+  actions: string[];
+  review?: ReviewLevel[];
+  /** Show as a warning chip on the account row. */
+  attention?: boolean;
+  /** Questions to raise when a fact used here is "unknown". */
+  asks?: RuleAsk<AccountFactKey>[];
+  sources: string[];
+};
+
+export type HouseholdRule = {
+  id: string;
+  jurisdiction: Jurisdiction;
+  title: string;
+  when: Clause<HouseholdFactKey>[];
+  detail: string;
+  actions: string[];
+  review?: ReviewLevel[];
+  asks?: RuleAsk<HouseholdFactKey>[];
+  sources: string[];
+};
+
+export type Rulebook = {
+  version: string;
+  /** ISO date the rule content was last reviewed. */
+  asOf: string;
+  rootNodeId: string;
+  nodes: Record<string, RuleNode>;
+  actions: Record<string, RuleAction>;
+  overlays: Overlay[];
+  household: HouseholdRule[];
+  sources: Record<string, RuleSource>;
 };

@@ -122,7 +122,11 @@ export function assetsAffectedBy(s: FamilyState, memberId: string): FamilyAsset[
 export type FamilyAction =
   | { type: "hydrate"; state: FamilyState }
   | { type: "reset"; state: FamilyState }
-  | { type: "addMember"; member: Omit<FamilyMember, "id" | "status"> }
+  | {
+      type: "addMember";
+      /** An id/status when adding someone the bank already knows (e.g. a household member). */
+      member: Omit<FamilyMember, "id" | "status"> & Partial<Pick<FamilyMember, "id" | "status">>;
+    }
   | { type: "setMemberRole"; memberId: string; roleId: string }
   | { type: "removeMember"; memberId: string }
   | { type: "reportPassing"; memberId: string; date: string }
@@ -139,11 +143,17 @@ export function familyReducer(s: FamilyState, action: FamilyAction): FamilyState
     case "reset":
       return action.state;
 
-    case "addMember":
+    case "addMember": {
+      const id = action.member.id ?? newId("m");
+      if (s.members.some((m) => m.id === id)) return s;
       return {
         ...s,
-        members: [...s.members, { ...action.member, id: newId("m"), status: "Invited" }],
+        members: [
+          ...s.members,
+          { ...action.member, id, status: action.member.status ?? "Invited" },
+        ],
       };
+    }
 
     case "setMemberRole": {
       const member = memberById(s, action.memberId);

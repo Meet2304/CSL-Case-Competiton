@@ -2,8 +2,11 @@
 
 import { useId, useState } from "react";
 import { ArrowLeft, Info, Trash2, UserPlus } from "lucide-react";
-import type { FamilyMember, FamilyMemberRelationship } from "@/data/types";
+import { useViewer } from "@/components/customer/Viewer";
+import { people } from "@/data/household";
+import type { FamilyMemberRelationship } from "@/data/types";
 import { isAdminMember, livingAdmins, relationships, roleById } from "@/lib/family";
+import { relationshipTo } from "@/lib/household";
 import { cn } from "@/lib/format";
 import { useFamily } from "./FamilyProvider";
 import {
@@ -110,7 +113,10 @@ export function MembersPanel() {
 
 function AddMemberForm({ onDone }: { onDone: () => void }) {
   const { state, dispatch } = useFamily();
+  const { person } = useViewer();
   const id = useId();
+  // People PNC already knows in the household, who aren't in this family yet.
+  const known = people.filter((p) => !state.members.some((m) => m.id === p.id));
   const firstCustomRole = state.roles.find((r) => !r.isAdmin) ?? state.roles[0];
   const [form, setForm] = useState({
     name: "",
@@ -139,14 +145,36 @@ function AddMemberForm({ onDone }: { onDone: () => void }) {
     e.preventDefault();
     setSubmitted(true);
     if (errors.name || errors.email) return;
-    const member: Omit<FamilyMember, "id" | "status"> = {
-      name: form.name.trim(),
-      email: form.email.trim(),
-      relationship: form.relationship,
-      note: form.note.trim() || undefined,
-      roleId: form.roleId,
-    };
-    dispatch({ type: "addMember", member });
+    // Someone who already banks with us is linked to their own login.
+    const match = people.find((p) => p.email.toLowerCase() === form.email.trim().toLowerCase());
+    dispatch({
+      type: "addMember",
+      member: {
+        id: match?.id,
+        status: match?.login ? "Active" : undefined,
+        name: form.name.trim(),
+        email: form.email.trim(),
+        relationship: form.relationship,
+        note: form.note.trim() || undefined,
+        roleId: form.roleId,
+      },
+    });
+    onDone();
+  }
+
+  function addKnown(p: (typeof people)[number]) {
+    dispatch({
+      type: "addMember",
+      member: {
+        id: p.id,
+        status: p.login ? "Active" : undefined,
+        name: p.name,
+        email: p.email,
+        relationship: relationshipTo(person, p) === "Self" ? "Other" : relationshipTo(person, p),
+        note: p.note,
+        roleId: form.roleId,
+      },
+    });
     onDone();
   }
 
@@ -163,6 +191,56 @@ function AddMemberForm({ onDone }: { onDone: () => void }) {
         <ArrowLeft className="size-4" aria-hidden="true" /> All members
       </button>
       <h3 className="mt-3 text-xl font-semibold text-pnc-ink">Add family member</h3>
+
+      <div className="mt-4 max-w-2xl">
+        <label htmlFor={`${id}-role`} className={fieldLabel}>
+          Their role
+        </label>
+        <select
+          id={`${id}-role`}
+          value={form.roleId}
+          onChange={(e) => set("roleId", e.target.value)}
+          className={fieldInput}
+        >
+          {state.roles.map((r) => (
+            <option key={r.id} value={r.id}>
+              {r.name}
+            </option>
+          ))}
+        </select>
+        {role && (
+          <p className="mt-2 flex gap-2 rounded-md bg-pnc-surface px-3 py-2 text-xs text-pnc-muted">
+            <Info className="mt-px size-3.5 shrink-0" aria-hidden="true" />
+            {role.description || "No description for this role."} Change what each role can see and
+            do in Roles &amp; access.
+          </p>
+        )}
+      </div>
+
+      {known.length > 0 && (
+        <section aria-labelledby={`${id}-known`} className="mt-5 max-w-2xl">
+          <h4 id={`${id}-known`} className="text-sm font-semibold text-pnc-ink">
+            From your household
+          </h4>
+          <ul className="mt-2 flex flex-wrap gap-2">
+            {known.map((p) => (
+              <li key={p.id}>
+                <button
+                  type="button"
+                  onClick={() => addKnown(p)}
+                  className="inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-sm ring-1 ring-pnc-line hover:ring-pnc-link focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pnc-link"
+                >
+                  <UserPlus className="size-4 text-pnc-blue-700" aria-hidden="true" />
+                  {p.name}
+                  <span className="text-pnc-muted">{relationshipTo(person, p)}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <h4 className="mt-6 text-sm font-semibold text-pnc-ink">Or invite someone else</h4>
       <p className="mt-1 text-sm text-pnc-muted">
         They&apos;ll get an email invitation to set up their own sign-on.
       </p>
@@ -226,30 +304,6 @@ function AddMemberForm({ onDone }: { onDone: () => void }) {
             maxLength={40}
             className={fieldInput}
           />
-        </div>
-        <div className="@xl:col-span-2">
-          <label htmlFor={`${id}-role`} className={fieldLabel}>
-            Role
-          </label>
-          <select
-            id={`${id}-role`}
-            value={form.roleId}
-            onChange={(e) => set("roleId", e.target.value)}
-            className={fieldInput}
-          >
-            {state.roles.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name}
-              </option>
-            ))}
-          </select>
-          {role && (
-            <p className="mt-2 flex gap-2 rounded-md bg-pnc-surface px-3 py-2 text-xs text-pnc-muted">
-              <Info className="mt-px size-3.5 shrink-0" aria-hidden="true" />
-              {role.description || "No description for this role."} Change what each role can see
-              and control in the Roles &amp; access tab.
-            </p>
-          )}
         </div>
       </div>
 

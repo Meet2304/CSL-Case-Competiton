@@ -22,7 +22,11 @@ const seeds: Seed[] = [
   {
     id: "c-sample",
     name: "Jordan Sample",
-    household: [{ name: "Casey Sample", relationship: "Spouse" }],
+    household: [
+      { name: "Casey Sample", relationship: "Spouse" },
+      { name: "Avery Sample", relationship: "Child" },
+      { name: "Riley Sample", relationship: "Child" },
+    ],
     segment: "Preferred Banking",
     relationshipValue: 49_092.3,
     accountCount: 5,

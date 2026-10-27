@@ -17,6 +17,8 @@ export type Planner = {
   errors: Errors;
   /** Account holder's full name (the testator). */
   accountHolder: string;
+  /** Person id of the testator. */
+  owner: string;
   people: FamilyPerson[];
   /** Go back one screen, if there is one. */
   previous?: () => void;

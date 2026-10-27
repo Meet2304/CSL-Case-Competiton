@@ -7,6 +7,10 @@ import { MOCK_AS_OF } from "@/data/mock";
 import type { LossEvent } from "@/data/types";
 import { customerDirectory } from "@/lib/advisor";
 import { bereavementActions, type RecordedLoss } from "@/lib/bereavement";
+import { householdActions } from "@/lib/householdStore";
+import { caseworkActions, useHasCasework } from "@/lib/settlement/casework";
+import { reviewActions, useReviews } from "@/lib/settlement/reviews";
+import { resetAllWills } from "@/lib/will/storage";
 import { useAdvisorBook } from "./useAdvisorBook";
 
 const reportedOptions: LossEvent["reportedVia"][] = [
@@ -16,7 +20,8 @@ const reportedOptions: LossEvent["reportedVia"][] = [
   "Mobile app",
 ];
 const people = customerDirectory(advisorCustomers);
-const DEFAULT_PERSON = "Casey Sample";
+// In the demo story Jordan is the one who dies; Casey, Avery and Riley survive.
+const DEFAULT_PERSON = "Jordan Sample";
 
 const input =
   "mt-1 w-full rounded-md border border-pnc-line bg-white px-3 py-2 text-sm outline-none focus:border-pnc-link";
@@ -29,6 +34,8 @@ const label = "block text-xs font-semibold text-pnc-ink";
  */
 export function RecordPassingPanel({ className }: { className?: string }) {
   const { recorded } = useAdvisorBook();
+  const reviews = useReviews();
+  const hasCasework = useHasCasework();
   const id = useId();
   const [open, setOpen] = useState(false);
   const [personName, setPersonName] = useState(
@@ -64,10 +71,16 @@ export function RecordPassingPanel({ className }: { className?: string }) {
         >
           <FilePlus2 className="size-4" aria-hidden="true" /> Record a death notice
         </button>
-        {recorded.length > 0 && (
+        {(recorded.length > 0 || Object.keys(reviews).length > 0 || hasCasework) && (
           <button
             type="button"
-            onClick={bereavementActions.reset}
+            onClick={() => {
+              bereavementActions.reset();
+              reviewActions.reset();
+              caseworkActions.reset();
+              householdActions.reset();
+              resetAllWills();
+            }}
             className="inline-flex items-center gap-1 text-xs font-semibold text-pnc-muted hover:text-pnc-link"
           >
             <RotateCcw className="size-3.5" aria-hidden="true" /> Reset demo

@@ -1,18 +1,18 @@
 "use client";
 
-import { useState } from "react";
 import { CircleCheck, Gavel, ScrollText } from "lucide-react";
-import { useFamily } from "@/components/family/FamilyProvider";
+import { useViewer } from "@/components/customer/Viewer";
 import { Checkbox } from "@/components/family/parts";
 import { MockBadge } from "@/components/mock/Mock";
 import { IconChip } from "@/components/ui/IconChip";
 import { Money } from "@/components/ui/Money";
-import { buttonClass, DateInput, Field, Modal } from "@/components/will/ui";
+import { buttonClass } from "@/components/will/ui";
 import { methodLabels } from "@/data/family";
 import { MOCK_AS_OF } from "@/data/mock";
 import type { FamilyMember, FamilyState } from "@/data/types";
 import { firstName, memberById } from "@/lib/family";
 import { cn, formatDate } from "@/lib/format";
+import { householdAsFamily } from "@/lib/household";
 import { contingentLines, giftTitle, lastResortSummary, primarySummary } from "@/lib/will/describe";
 import { named } from "@/lib/will/flow";
 import { assetsByRoute, estateSteps, isExecutor, mayExecute, rolesFor } from "@/lib/will/roles";
@@ -20,123 +20,89 @@ import {
   setWillExecution,
   useSavedWill,
   useWillExecution,
-  useMyWillStatus,
+  useWillStatus,
   type WillExecution,
 } from "@/lib/will/storage";
 import type { WillDraft } from "@/lib/will/types";
 
 /**
- * Executing a will that is on file. A family member the will names (executor
- * or beneficiary) sees an invitation to begin execution once the testator has
- * passed; after that, everyone named follows the same tracker and the executor
- * ticks off the steps. Rendered in a member's Family view, so per the family
- * rules it shows only what this member can act on, never what they can't.
+ * Executing a will after the bank has recorded the testator's death. Anyone
+ * the will names sees it; the executor begins execution and ticks off the
+ * steps, and everyone else follows along. Before a death it shows nothing:
+ * a will is only executed once the bank knows.
  */
-export function WillExecutionCard({ viewer }: { viewer: FamilyMember }) {
-  const { state } = useFamily();
-  const saved = useSavedWill();
-  const status = useMyWillStatus();
-  const execution = useWillExecution();
-  const [beginning, setBeginning] = useState(false);
-  const testator = memberById(state, state.selfId);
+export function WillExecutionCard({ testatorId }: { testatorId: string }) {
+  const { person: viewer, accounts, deceasedIds, loss } = useViewer();
+  const saved = useSavedWill(testatorId);
+  const status = useWillStatus(testatorId);
+  const execution = useWillExecution(testatorId);
+  const family = householdAsFamily(testatorId, accounts, deceasedIds);
+  const testator = memberById(family, testatorId);
+  const me = memberById(family, viewer.id);
 
-  if (!saved || status !== "on-file" || !testator || viewer.id === testator.id) return null;
+  const died = deceasedIds.includes(testatorId);
+  if (!saved || status !== "on-file" || !testator || !me || !died) return null;
   const roles = rolesFor(saved.draft, viewer.name);
   if (!mayExecute(roles)) return null;
+  const executor = isExecutor(saved.draft, me);
 
   if (execution) {
     return (
       <ExecutionTracker
         draft={saved.draft}
-        family={state}
+        family={family}
         execution={execution}
         testator={testator}
-        canComplete={isExecutor(saved.draft, viewer)}
-        showAccounts={isExecutor(saved.draft, viewer)}
+        canComplete={executor}
+        showAccounts={executor}
       />
     );
   }
 
   return (
-    <section className="flex flex-wrap items-start gap-4 rounded-md bg-pnc-blue-50 p-4 @3xl:p-5">
+    <section className="flex flex-wrap items-start gap-4 rounded-lg border border-pnc-line bg-white p-4 @3xl:p-5">
       <IconChip icon={ScrollText} />
       <div className="min-w-0 flex-1 basis-64">
         <h3 className="font-display text-lg font-medium text-pnc-ink">
-          {testator.name} named you in their will
+          {testator.name}&apos;s will names you
         </h3>
         <p className="mt-1 flex flex-wrap gap-1.5">
           {roles.map((r) => (
             <span
               key={r}
-              className="rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-pnc-blue-800 ring-1 ring-pnc-blue-600/20"
+              className="rounded-full bg-pnc-blue-50 px-2 py-0.5 text-xs font-semibold text-pnc-blue-800"
             >
               {r}
             </span>
           ))}
         </p>
         <p className="mt-2 max-w-xl text-sm leading-relaxed text-pnc-ink">
-          When {firstName(testator.name)} passes away, start here. PNC holds the accounts the will
-          covers and walks the executor through settling the estate, one step at a time.
+          {executor
+            ? `When you're ready, begin executing the will. PNC holds the accounts it covers and walks you through settling the estate, one step at a time.`
+            : `${
+                named(saved.draft.provisions.executors)
+                  .map((p) => firstName(p.name))
+                  .join(" or ") || "The executor"
+              } will begin executing the will. You'll be able to follow each step here.`}
         </p>
       </div>
-      <button type="button" onClick={() => setBeginning(true)} className={buttonClass.primary}>
-        <Gavel className="size-4" aria-hidden="true" /> Begin will execution
-      </button>
-      {beginning && (
-        <BeginExecutionDialog
-          testator={testator}
-          onClose={() => setBeginning(false)}
-          onBegin={(dateOfPassing) => {
-            setWillExecution({
+      {executor && (
+        <button
+          type="button"
+          onClick={() =>
+            setWillExecution(testatorId, {
               startedBy: viewer.id,
               startedOn: MOCK_AS_OF,
-              dateOfPassing,
+              dateOfPassing: loss?.personName === testator.name ? loss.date : MOCK_AS_OF,
               completed: ["notify"],
-            });
-            setBeginning(false);
-          }}
-        />
+            })
+          }
+          className={buttonClass.primary}
+        >
+          <Gavel className="size-4" aria-hidden="true" /> Begin executing the will
+        </button>
       )}
     </section>
-  );
-}
-
-function BeginExecutionDialog({
-  testator,
-  onClose,
-  onBegin,
-}: {
-  testator: FamilyMember;
-  onClose: () => void;
-  onBegin: (dateOfPassing: string) => void;
-}) {
-  const [date, setDate] = useState("");
-  const [confirmed, setConfirmed] = useState(false);
-  return (
-    <Modal
-      title={`Begin executing ${testator.name}'s will`}
-      submitLabel="Begin execution"
-      onClose={onClose}
-      onSubmit={() => onBegin(date)}
-    >
-      <p className="text-sm leading-relaxed">
-        We&apos;re sorry for your loss. Starting execution tells PNC that {firstName(testator.name)}{" "}
-        has passed away. We&apos;ll hold the accounts the will covers so nothing moves until the
-        executor is authorized, and give everyone named in the will the same checklist.
-      </p>
-      <Field label="Date of passing" required>
-        <DateInput aria-label="Date of passing" value={date} required onChange={setDate} />
-      </Field>
-      <label className="flex items-start gap-3 text-sm leading-relaxed">
-        <Checkbox
-          required
-          checked={confirmed}
-          onChange={(e) => setConfirmed(e.target.checked)}
-          className="mt-0.5"
-        />
-        I confirm {testator.name} has passed away, and I can provide a certified death certificate.
-      </label>
-    </Modal>
   );
 }
 
@@ -148,7 +114,6 @@ export function ExecutionTracker({
   testator,
   canComplete,
   showAccounts,
-  onCancel,
 }: {
   draft: WillDraft;
   family: FamilyState;
@@ -156,13 +121,8 @@ export function ExecutionTracker({
   testator: FamilyMember;
   /** Only the executor ticks off steps; everyone else follows along. */
   canComplete: boolean;
-  /**
-   * The executor (and the admin) see the testator's accounts; other members
-   * only see what the family already shares with them, so the list is hidden.
-   */
+  /** The executor sees the testator's accounts; other people named in the will don't. */
   showAccounts: boolean;
-  /** Demo control to undo a started execution. */
-  onCancel?: () => void;
 }) {
   const steps = estateSteps(draft);
   const done = steps.filter((s) => execution.completed.includes(s.id)).length;
@@ -172,7 +132,7 @@ export function ExecutionTracker({
   const { underWill, outsideWill } = assetsByRoute(family, testator.id);
 
   const toggle = (id: string) =>
-    setWillExecution({
+    setWillExecution(testator.id, {
       ...execution,
       completed: execution.completed.includes(id)
         ? execution.completed.filter((x) => x !== id)
@@ -310,16 +270,6 @@ export function ExecutionTracker({
                 note={(a) => (a.method ? methodLabels[a.method] : "Shared ownership")}
               />
             </div>
-          )}
-
-          {onCancel && (
-            <button
-              type="button"
-              onClick={onCancel}
-              className="text-xs font-semibold text-pnc-muted hover:text-pnc-link"
-            >
-              Undo execution (demo)
-            </button>
           )}
         </aside>
       </div>

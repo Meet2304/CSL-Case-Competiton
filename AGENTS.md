@@ -49,10 +49,12 @@ and mobile views stay in one design language.
   `WebHeader.tsx` and `BottomTabBar.tsx`.
 - **Sign off with `SignOffButton`** (a Server Action form), never a `<Link>` —
   link prefetching must never be able to end a session.
-- **Advisor assistant is simulated.** Recommendations, the loss guide, Q&A and
-  engagement plans come from rules in `src/lib/assistant.ts` over the profiles in
-  `src/data/clients.ts` (keep each profile's PNC holdings summing to the
-  customer's `relationshipValue`). Label assistant output with `AssistantMark` /
+- **Advisor assistant is simulated.** The client page's _Next steps_ come from
+  `src/lib/nextSteps.ts` over the settlement plan; the docked assistant is
+  `src/lib/agent.ts`, falling back to Q&A in `src/lib/assistant.ts` over the
+  profiles in `src/data/clients.ts` (keep each profile's PNC holdings summing to
+  the customer's `relationshipValue`). Add a step by adding a rule, not by
+  hard-coding it in a component. Label assistant output with `AssistantMark` /
   `AssistantPanel` so it's never mistaken for account data.
 - **Advisor attention logic** lives in `src/lib/advisor.ts`; drive UI from
   `openLoss` / `needsAttention` / `sortByAttention` / `buildNotifications` rather
@@ -74,5 +76,11 @@ and mobile views stay in one design language.
   loss must stay gentle: condolence first, no pressure, nothing urgent today.
 - **Formatting:** Prettier (`.prettierrc.json`, print width 100). Run `npm run format`
   before committing.
-- Before finishing: `npm run format:check`, `npm run typecheck`, `npm run lint` and `npm run build` must pass
+- **Settlement rules** live in `src/data/settlement` (rulebook data, every rule cites a source
+  in `sources.ts`) and `src/lib/settlement` (pure engine). Never hard-code legal rules, dates or
+  thresholds in components or in `assistant.ts` — add a node, overlay or household rule with a
+  source and a test. Label engine output with `AssistantMark` and show `SourceChip`s. New
+  sources without `verifiedOn` must be added to the pinned unverified list in
+  `rulebook.test.ts` on purpose. `npm test` must pass.
+- Before finishing: `npm run format:check`, `npm run typecheck`, `npm run lint`, `npm test` and `npm run build` must pass
   (the same checks run in GitHub Actions CI on every PR — `.github/workflows/ci.yml`).

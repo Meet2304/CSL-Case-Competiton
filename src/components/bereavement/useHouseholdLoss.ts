@@ -1,11 +1,11 @@
 "use client";
 
-import { selfHousehold } from "@/data/bereavement";
-import { lossFor, useBereavement } from "@/lib/bereavement";
+import { useViewer } from "@/components/customer/Viewer";
+import { useBereavement } from "@/lib/bereavement";
 
-/** A death the bank has recorded in the signed-in customer's household, if any. */
+/** A death the bank has recorded of someone else in the signed-in person's household. */
 export function useHouseholdLoss() {
   const state = useBereavement();
-  const loss = lossFor(state, selfHousehold);
+  const { loss } = useViewer();
   return { state, loss, firstName: loss?.personName.split(" ")[0] };
 }

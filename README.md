@@ -10,6 +10,7 @@ Experience + Advisor Workbench). **Every figure on screen is mock data.**
 npm install
 npm run dev        # http://localhost:3000
 npm run typecheck  # next typegen + tsc
+npm test           # Vitest: settlement rulebook integrity + golden tests
 npm run build      # production build
 npm run lint
 npm run format       # Prettier --write
@@ -42,111 +43,180 @@ it). A pinned mobile view on a wide screen is shown inside an iPhone frame.
 Sign-on decides the experience. Demo User IDs (any password; defined in
 `src/data/users.ts`):
 
-| User ID    | Role                                                      | Lands on                                              | Navigation                                                             |
-| ---------- | --------------------------------------------------------- | ----------------------------------------------------- | ---------------------------------------------------------------------- |
-| `customer` | Customer (Jordan Sample; spouse Casey)                    | `/accounts` — the banking dashboard                   | Accounts, Pay & Transfer, Cards, Rewards, Help (web) / 5 tabs (mobile) |
-| `advisor`  | Bank representative (Alex Example, Senior Wealth Advisor) | `/advisor` — Notifications + paginated Your Customers | Home only (for now)                                                    |
+| User ID   | Who                                                       | Lands on    |
+| --------- | --------------------------------------------------------- | ----------- |
+| `jordan`  | Jordan Sample, 52                                         | `/accounts` |
+| `casey`   | Casey Sample, 49 — Jordan's spouse                        | `/accounts` |
+| `avery`   | Avery Sample, 17 — turns 18 on Nov 30, 2026               | `/accounts` |
+| `riley`   | Riley Sample, 14                                          | `/accounts` |
+| `advisor` | Bank representative (Alex Example, Senior Wealth Advisor) | `/advisor`  |
 
-The role is stored in a demo session cookie by the `signIn` Server Action
-(`src/lib/auth.ts`). `src/proxy.ts` then keeps each role on its own pages:
-signed-out visitors only see sign-on, advisors only see `/advisor`, customers
-never see `/advisor`. Sign off via the profile icon (web), the header button
-(mobile advisor) or More → Sign Off (mobile customer).
+All four customers read one shared household (`src/data/household.ts`): ten
+simple accounts (joint checking, savings, an IRA, a brokerage account, a credit
+card, a life policy held outside PNC, Casey's savings and Roth IRA, and the
+kids' custodial accounts). The session keeps the role (`pnc-session`) and the
+person (`pnc-person`); `src/proxy.ts` keeps each role on its own pages.
 
-**Loss of a family member.** Customers in `src/data/advisor.ts` carry
-`lossEvents`. Any event with `followUpComplete: false` automatically creates
-an urgent "Loss of a family member" notification with next steps and moves
-that customer to the top of the advisor's table with a needs-attention icon
-(`src/lib/advisor.ts`). Add a loss event to any customer to see it surface.
+Customer navigation: **Accounts · Family · Planning · Help** on laptops, and
+**Accounts · Family · Planning · More** on phones (Pay & Transfer, Cards,
+Rewards and Deposit live under More). **Next steps** appears for adults once
+the bank records a death in the household.
 
-## Family dashboard (customer) — `/family`
+## Accounts — `/accounts`
 
-Laptop: **Family** in the top nav. Phone: **More → Family Dashboard**. The
-signed-in customer (Jordan) is an admin of the _Sample Family_.
+Each person sees their own dashboard: reminders, the accounts they own, the
+accounts they manage for a child, and accounts shared with them through a
+family (with what they're allowed to do).
 
-- **Role-based access.** The built-in **Admin** role (more than one allowed)
-  can add members, add assets and manage access. Admins create member roles
-  (e.g. Adult child, Teen, Trusted advisor) in a segmented access editor:
-  per asset, **Visibility** (view balance, view activity) and **Control**
-  (transact, manage), plus a Full column. Any permission implies view balance.
-  The last living admin can't be demoted or removed, and you can't remove your
-  own admin access.
-- **Access limits are confidential to admins.** A non-admin member only sees
-  the assets shared with them and the actions they can take — nothing tells
-  them an asset or action is hidden. Admins check this with **Preview as**
-  (Overview tab), which renders that exact member view.
-- **Assets** are grouped into 13 categories (Joint checking/savings, Real
-  Estate, Brokerage account, 401(k) / IRA, Life insurance, Social Security,
-  Pension, Employer benefits, Vehicles, Digital assets, Business interests,
-  Debts, IP). _Add asset_ asks only for name, category, value, optional last 4
-  and owners.
-- The legal-process model (how each asset passes on death and its steps) is
-  kept in `src/data/family.ts` / `src/lib/family.ts` but is not shown in the UI.
-- Changes are saved in the browser (`localStorage`); **Reset demo** restores
-  the seed data in `src/data/family.ts`.
+**Reminders** (`src/lib/nudges.ts`) come from what's on file: write or finish
+a will, add a beneficiary to each account that can take one, and update a
+beneficiary who has died. Avery gets a heads-up about turning 18; Riley gets
+none. The count also shows on **Planning** in the navigation.
 
-### Will tab — `/family#will`
+## Family — `/family`
 
-Every customer should have a will. The **Will** tab (deep link `/family#will`)
-shows the will taking shape as a document, then opens an 8-step planner
-(Basics → Nominees → Assets → Residuary → Gifts → Funeral → Provisions →
-Review) that starts from the family on file and renders a draft will.
-Until a will is on file, the Accounts dashboard shows a reminder.
+A family is a group of people you trust with access to your finances. Anyone
+18 or over can **create a family** and becomes its admin; a person can belong
+to several families and switch between them. Jordan's _Sample Family_ is
+seeded: Jordan and Casey are admins, Avery can see the joint checking account,
+Riley sees nothing, and Dana (the estate attorney) is invited.
 
-- **Executing a will.** Once a will is on file, any family member it names as
-  executor or beneficiary sees _"Jordan Sample named you in their will"_ with
-  **Begin will execution** (try **Preview as → Casey Sample** on the Overview
-  tab). That starts an estate checklist: the executor ticks off each step and
-  everyone named follows along. Only the executor sees the testator's accounts.
-- **Advisors** see each household's will status in the customer table.
-- No backend: the will, its status and any execution live in `localStorage`,
-  so a will finished as `customer` shows as on file when you sign in as
-  `advisor` in the same browser. **Start over** at the bottom of the planner
-  clears it.
+- **Share an account** you own with a family, or stop sharing it. Nobody sees
+  a shared account until their role is given access.
+- **Members**: add people from your household in one tap, or invite someone
+  by email.
+- **Roles & access**: per account, **Visibility** (balance, activity) and
+  **Control** (transact, manage). The last admin can't be removed.
+- **Access limits are confidential to admins.** Members only see what they
+  can use; admins check it with **Preview as**.
+- Families keep working after a death: the person shows as deceased.
 
-## Loss in the family — bank, advisor and surviving spouse
+## Planning — `/plan`
 
-1. **Bank / advisor** (`advisor`): _Record a death notice_ on the advisor home
-   (defaults to Casey Sample, Jordan's spouse). The household moves to the top
-   with the attention icon, an urgent notification appears, and an outreach
-   banner recommends a personal call with suggested first words.
-2. **Customer** (`customer`, Jordan): a soft red strip appears under the
-   navigation (above the tab bar on phones), Reminders shows _Action needed_,
-   and a **Next steps** page (`/next-steps`) opens: a Today → Event timeline,
-   _Key assets_ (joint account, life insurance, IRA) and _Secondary assets_,
-   plus support resources and people.
-3. **Transfer flows:** _Joint checking/savings_ and _401(k)/IRA_ are fully
-   guided — each document is tagged _Upload_, _Filled in for you_ or _You fill
-   in_; the death certificate is uploaded once and reused. Other assets have a
-   placeholder flow. _Send to PNC_ → _In review_ → (demo) _simulate approval_.
+- **Your will** (`/plan#will`): an 8-step planner, pre-filled with your
+  household, saved per person as you go.
+- **Beneficiaries** (`/plan#beneficiaries`): name who inherits each account
+  that can take a beneficiary. Changes feed the reminders and, after a death,
+  decide whether an account passes directly or through the estate.
+- Under 18: a short note on what changes at 18.
 
-State is kept in the browser (`src/lib/bereavement.ts`) so the demo works by
-signing out of the advisor view and into the customer view in the same browser.
-_Reset demo_ (advisor) clears it; _Reset demo progress_ (Next steps) keeps the
-recorded death but clears the flows.
+## Loss in the family
+
+Nothing happens automatically. A death only exists once the bank records it.
+
+1. **Advisor** (`advisor`): _Record a death notice_ (defaults to Jordan).
+2. **Jordan's login** shows that the accounts are being settled.
+3. **Casey** sees a soft condolence strip and a **Next steps** page
+   (`src/lib/survivor.ts`), built from Jordan's accounts as they stand:
+   - _Coming to you_: a guided flow for each account that passes to Casey (the
+     joint account, the IRA, Riley's account as new custodian, and any
+     account where Jordan had named Casey as beneficiary). The life policy is
+     claimed with the insurer.
+   - _Handled through the estate_: accounts with no beneficiary, and the
+     credit card.
+   - The death certificate is uploaded once and reused. _Send to PNC_ leaves a
+     flow **In review**; nothing approves itself.
+   - If Jordan's will is on file and names Casey, the executor can begin
+     executing it from this page.
+4. **Avery and Riley** get a gentle message and nothing to do.
+
+State lives in the browser (`localStorage`). _Reset demo_ on the advisor home
+clears the recorded deaths, flows, families, beneficiary changes and wills.
 
 ## Advisor assistant (simulated) — `/advisor/clients/[id]`
 
 The advisor dashboard opens with **search** (clients or family members; press
 `/`) and a **daily briefing** of who needs attention and why. Every client name,
-search result and notification opens that client's **summary**, with tabs:
+search result and notification opens that client's page. It reads top to bottom,
+with the **assistant docked on the right** (below the content on phones):
 
-- **Overview** — profile, goals, recent contact, and what matters now.
-- **Assets & advice** — holdings with owners and beneficiaries, plus
-  recommendations for each (retitling, beneficiary updates, inherited IRAs,
-  probate, idle cash...), each with its steps and the facts it's based on.
-- **Family** — everyone tied to the accounts, with roles (executor, trustee, heir).
-- **Loss guide** (only while a loss is open) — who died and what they held, how
-  to approach the bereaved client and each heir, a 12-month plan, and advice
-  personalized from the client's notes and accounts.
-- **Ask** — questions about the client, answered with what was checked and sources.
-- **Engagement** — next best action, contact cadence, talking points and a draft.
+- **Next steps** (default) — _Where things stand_ (one headline, one paragraph,
+  three figures), then _Do next_: a short ranked list decided by the settlement
+  rulebook — people first, then what the rulebook needs you to confirm, then one
+  step per account outcome, dated deadlines, hand-offs to the attorney or tax
+  advisor, and sign-off. Each step has **Why?** (the agent explains the
+  decisions and the law behind it) and **Done**. Everything else — how to talk to
+  the client, each account's route, key dates, the household checklist, sign-off,
+  the outreach draft, your answers and our assumptions — sits under _Details_,
+  closed until you need it.
+- **Client** — reference: profile, goals, notes, contact history, family and
+  accounts. No advice here.
+- **What if** — run the rulebook as if anyone in the household died today.
+- **Findoe** (the assistant, docked on the right) — opens with what it worked
+  out ("I walked 10 accounts through the rulebook…", with _Show how I decided_),
+  then asks for the facts the rulebook can't know, with answer buttons (who owns
+  the 529 now, whether a beneficiary is disabled, whether federal benefits were
+  paid). Each answer is fed back into the decision tree, and Findoe says what
+  changed. **Ask AI** on any next step asks Findoe for personalized help with
+  it; free-text questions work too.
+
+### Findoe and Claude Haiku 5.5
+
+Findoe's replies come from **Claude Haiku 5.5** (`src/app/api/findoe/route.ts`),
+grounded in the rulebook: the browser sends a client context built by
+`src/lib/findoe/context.ts` (the plan, ranked steps, decision paths, dates,
+citations, open questions, the client's notes and family), and the system prompt
+forbids inventing any route, date, amount or citation. The model writes the
+advice; the rulebook still makes every decision. Only signed-in advisors can call
+the route, and the context is prompt-cached per client.
+
+To switch it on, add your key to `.env.local` (git-ignored) and restart `npm run dev`:
+
+```bash
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+Without a key Findoe shows _Offline · answers from the rulebook only_ and falls
+back to the simulated rules-based answers, so the demo still works.
 
 The assistant is **simulated**: `src/lib/assistant.ts` is a rules engine over the
 mock profiles in `src/data/clients.ts` (hand-written for Morgan Placeholder and
 Avery Example; generated for everyone else so totals match the table). Every
 assistant panel is labeled "Simulated". It handles deaths recorded at runtime,
 including when the customer themself died (it then works with the next of kin).
+
+## Settlement rules engine — Next steps, the assistant and `/advisor/rules`
+
+A deterministic, cited rules engine answers, for any household and any person in
+it: _when this person dies, what legally happens to each account, who gets it,
+what has to be done by when, under which federal or Pennsylvania rule, and which
+steps need a professional to sign off?_ It runs in two modes from the same
+rulebook — **same protocols, run before the death instead of after**:
+
+1. **After a death** — the plan behind _Next steps_: a route per account (each
+   expands to the decision path, evidence and citations, and a plain-language
+   line for the client), key dates counted from the date of death, a federal +
+   Pennsylvania household checklist, questions the engine won't guess, a
+   sign-off queue and the assumptions it made.
+2. **What if** (tab) — pick a household member; the same engine runs on today's
+   data and turns every bad outcome (probate, a designation naming someone who
+   has died, no beneficiary, a minor named directly) into a finding with a fix.
+   With no open loss, these fixes are the client's _Next steps_. The daily brief
+   surfaces exposed households.
+
+- **Decisions:** `src/lib/nextSteps.ts` turns the plan into ranked steps;
+  `src/lib/agent.ts` is the assistant over it (briefing, _Why?_, what an answer
+  changed). Answers and done steps live in `src/lib/settlement/casework.ts` (in
+  the browser) and are fed back into `settlementPlan` as `answers`.
+
+- **Rulebook data** lives in `src/data/settlement` (sources, actions, decision
+  tree, overlays, household rules, Pennsylvania pack). Every rule cites a source;
+  sources nobody has verified yet are marked and pinned by a test.
+- **Engine** lives in `src/lib/settlement` — pure functions, no clock, no model.
+  `src/lib/assistant.ts` writes the words; the engine supplies routes, dates and
+  citations.
+- **Rulebook page** `/advisor/rules` (nav: _Rulebook_) renders the whole tree,
+  every rule and the source list with verification status.
+- **Add a rule:** add a node / overlay / household rule with a source in
+  `src/data/settlement`, then a test in `src/lib/settlement/__tests__`. `npm test`
+  checks every branch is covered, every source exists, and the golden plans for
+  Morgan, Avery and the Sample family.
+- The only stored state is what the advisor tells us: sign-offs
+  (`src/lib/settlement/reviews.ts`), answers and done steps
+  (`src/lib/settlement/casework.ts`), all in the browser. _Reset demo_ on the
+  advisor home clears them.
+
+General guidance under federal and Pennsylvania rules as reviewed on Oct 26, 2026. Not legal or tax advice. The plan is in `docs/plans/settlement-rules-engine.md`.
 
 ## Structure
 

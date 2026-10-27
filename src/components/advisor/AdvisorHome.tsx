@@ -43,15 +43,10 @@ export function WebAdvisorHome() {
 
         <ClientSearch customers={customers} className="max-w-2xl" />
         <OutreachBanner />
-        <DailyBrief customers={customers} />
-        <AdvisorStats stats={stats} />
 
-        <div className="grid items-start gap-6 lg:grid-cols-[1fr_22rem]">
-          <WebCard title="Assigned Customers" subtitle={`(${customers.length} customers)`}>
-            <CustomerTable customers={customers} />
-          </WebCard>
-
-          {/* Stays in view while scrolling the table on large screens. */}
+        {/* What needs the advisor today, side by side; both panels share one height. */}
+        <div className="grid items-stretch gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+          <DailyBrief customers={customers} className="h-full" />
           <WebCard
             title="Notifications"
             subtitle={`(${notifications.length})`}
@@ -62,11 +57,18 @@ export function WebAdvisorHome() {
                 </span>
               )
             }
-            className="overflow-hidden lg:sticky lg:top-6"
+            className="h-full overflow-hidden"
           >
             <NotificationList notifications={notifications} />
           </WebCard>
         </div>
+
+        <AdvisorStats stats={stats} />
+
+        {/* Full width, so every column of the table fits without scrolling. */}
+        <WebCard title="Assigned Customers" subtitle={`(${customers.length} customers)`}>
+          <CustomerTable customers={customers} />
+        </WebCard>
       </div>
     </>
   );

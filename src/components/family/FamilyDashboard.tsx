@@ -1,9 +1,7 @@
 "use client";
 
 import { useId, useSyncExternalStore, type KeyboardEvent } from "react";
-import { Landmark, MailOpen, RotateCcw, ShieldCheck, Users, type LucideIcon } from "lucide-react";
-import { MockBadge } from "@/components/mock/Mock";
-import { WillTab } from "@/components/will/WillTab";
+import { Landmark, MailOpen, ShieldCheck, Users, type LucideIcon } from "lucide-react";
 import { Money } from "@/components/ui/Money";
 import { isAdminMember, memberById } from "@/lib/family";
 import { cn } from "@/lib/format";
@@ -17,7 +15,6 @@ const tabs = [
   { id: "overview", label: "Overview" },
   { id: "members", label: "Members" },
   { id: "roles", label: "Roles & access" },
-  { id: "will", label: "Will" },
 ] as const;
 type TabId = (typeof tabs)[number]["id"];
 
@@ -52,7 +49,7 @@ function useHashTab(): [TabId, (id: TabId) => void] {
  * with container queries.
  */
 export function FamilyDashboard() {
-  const { state, reset } = useFamily();
+  const { state } = useFamily();
   const [tab, setTab] = useHashTab();
   const baseId = useId();
 
@@ -62,11 +59,7 @@ export function FamilyDashboard() {
   if (self && !isAdminMember(state, self)) {
     return (
       <div className="@container">
-        <div className="flex items-center gap-3">
-          <h2 className="font-display text-2xl font-medium text-pnc-ink">{state.familyName}</h2>
-          <MockBadge />
-        </div>
-        <section className="mt-4 rounded-md bg-white p-4 shadow-card @3xl:p-5">
+        <section className="rounded-lg bg-white p-4 shadow-card @3xl:p-5">
           <MemberFamilyView member={self} />
         </section>
       </div>
@@ -96,22 +89,7 @@ export function FamilyDashboard() {
 
   return (
     <div className="@container">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <h2 className="font-display text-2xl font-medium text-pnc-ink">{state.familyName}</h2>
-          <MockBadge />
-        </div>
-        <button
-          type="button"
-          onClick={reset}
-          title="Restore the original demo family"
-          className="inline-flex items-center gap-1.5 text-sm font-semibold text-pnc-muted hover:text-pnc-link"
-        >
-          <RotateCcw className="size-4" aria-hidden="true" /> Reset demo
-        </button>
-      </div>
-
-      <dl className="mt-4 grid grid-cols-2 gap-3 @3xl:grid-cols-4">
+      <dl className="grid grid-cols-2 gap-3 @3xl:grid-cols-4">
         {stats.map(({ label, value, icon: Icon }) => (
           <div
             key={label}
@@ -168,7 +146,6 @@ export function FamilyDashboard() {
           {tab === "overview" && <OverviewPanel />}
           {tab === "members" && <MembersPanel />}
           {tab === "roles" && <RolesPanel />}
-          {tab === "will" && <WillTab />}
         </div>
       </section>
     </div>

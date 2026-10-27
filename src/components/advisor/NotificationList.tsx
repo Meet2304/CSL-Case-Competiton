@@ -128,7 +128,7 @@ export function NotificationList({
                 </>
               )}
               <a
-                href={`${routes.advisorClient(n.customerId)}${n.kind === "loss" ? "#loss" : ""}`}
+                href={routes.advisorClient(n.customerId)}
                 className="mt-3 inline-flex items-center gap-1 font-semibold text-pnc-link hover:underline"
               >
                 {n.kind === "loss" ? "Open loss guide" : "View client"}{" "}

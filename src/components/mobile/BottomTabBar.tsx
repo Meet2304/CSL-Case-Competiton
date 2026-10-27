@@ -2,33 +2,58 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CircleDollarSign, House, Medal, Menu, ReceiptText, type LucideIcon } from "lucide-react";
+import {
+  BookOpenCheck,
+  HeartHandshake,
+  House,
+  Menu,
+  ScrollText,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
+import { useCustomerNav } from "@/components/customer/useCustomerNav";
 import type { Role } from "@/data/types";
 import { cn } from "@/lib/format";
 import { routes, toPublicPath } from "@/lib/routes";
 
-type Tab = { label: string; href: string; icon: LucideIcon; also?: string[] };
+type Tab = { label: string; href: string; icon: LucideIcon; badge?: number; also?: string[] };
 
-const tabsByRole: Record<Role, Tab[]> = {
-  customer: [
-    { label: "Accounts", href: routes.accounts, icon: House },
-    { label: "Pay & Transfer", href: routes.payTransfer, icon: CircleDollarSign },
-    { label: "Rewards", href: routes.rewards, icon: Medal },
-    { label: "Deposit", href: routes.deposit, icon: ReceiptText },
-    // Card Details and the Family dashboard live under More.
-    { label: "More", href: routes.more, icon: Menu, also: [routes.cards, routes.family] },
-  ],
-  // Advisors only have the home dashboard for now; add tabs here.
-  advisor: [{ label: "Home", href: routes.advisor, icon: House }],
-};
+const advisorTabs: Tab[] = [
+  { label: "Home", href: routes.advisor, icon: House },
+  { label: "Rulebook", href: routes.advisorRules, icon: BookOpenCheck },
+];
 
 export function BottomTabBar({ variant = "customer" }: { variant?: Role }) {
   const pathname = toPublicPath(usePathname());
+  const nav = useCustomerNav();
+  const tabs: Tab[] =
+    variant === "advisor"
+      ? advisorTabs
+      : [
+          { label: "Accounts", href: routes.accounts, icon: House },
+          ...(nav.nextSteps
+            ? [{ label: "Next steps", href: routes.nextSteps, icon: HeartHandshake }]
+            : []),
+          { label: "Family", href: routes.family, icon: Users },
+          { label: "Planning", href: routes.plan, icon: ScrollText, badge: nav.reminders },
+          // Everyday banking (pay, cards, rewards, deposit) lives under More.
+          {
+            label: "More",
+            href: routes.more,
+            icon: Menu,
+            also: [routes.payTransfer, routes.cards, routes.rewards, routes.deposit, routes.help],
+          },
+        ];
+  const matches = (p: string) => pathname === p || pathname.startsWith(`${p}/`);
+  // The tab with the longest matching path wins, so /advisor/rules lights up Rulebook, not Home.
+  const activeHref = tabs
+    .flatMap(({ href, also = [] }) => [href, ...also].filter(matches).map((p) => ({ href, p })))
+    .sort((a, b) => b.p.length - a.p.length)[0]?.href;
   return (
     <nav className="relative z-20 shrink-0 bg-pnc-blue-800 pb-[max(env(safe-area-inset-bottom),0.5rem)] md:pb-6">
       <ul className="flex justify-around">
-        {tabsByRole[variant].map(({ label, href, icon: Icon, also = [] }) => {
-          const active = [href, ...also].some((p) => pathname.startsWith(p));
+        {tabs.map(({ label, href, icon: Icon, badge }) => {
+          const active = href === activeHref;
           return (
             <li key={href} className="flex-1">
               <Link
@@ -39,13 +64,26 @@ export function BottomTabBar({ variant = "customer" }: { variant?: Role }) {
                   active && "font-bold text-white",
                 )}
               >
-                <Icon
-                  className="size-6"
-                  strokeWidth={active ? 2.25 : 1.5}
-                  fill={active ? "currentColor" : "none"}
-                  fillOpacity={active ? 0.25 : 0}
-                />
+                <span className="relative">
+                  <Icon
+                    className="size-6"
+                    strokeWidth={active ? 2.25 : 1.5}
+                    fill={active ? "currentColor" : "none"}
+                    fillOpacity={active ? 0.25 : 0}
+                    aria-hidden="true"
+                  />
+                  {badge ? (
+                    <span className="absolute -top-1 -right-2.5 grid h-4 min-w-4 place-items-center rounded-full bg-pnc-orange px-1 text-[10px] font-bold text-white">
+                      {badge}
+                    </span>
+                  ) : null}
+                </span>
                 {label}
+                {badge ? (
+                  <span className="sr-only">
+                    , {badge === 1 ? "1 reminder" : `${badge} reminders`}
+                  </span>
+                ) : null}
               </Link>
             </li>
           );

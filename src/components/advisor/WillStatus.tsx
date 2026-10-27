@@ -1,10 +1,12 @@
 "use client";
 
 import { FileCheck2, FilePen, FileX } from "lucide-react";
-import { customer as demoCustomer } from "@/data/mock";
+import { HOUSEHOLD_ID } from "@/data/household";
 import type { AdvisorCustomer, WillStatus as Status } from "@/data/types";
 import { cn, formatDate } from "@/lib/format";
 import { readWillUpdated, useWillStatus } from "@/lib/will/storage";
+
+const JORDAN = "p-jordan";
 
 const statusStyle: Record<Status, { label: string; icon: typeof FileCheck2; className: string }> = {
   "on-file": { label: "Will on file", icon: FileCheck2, className: "text-pnc-positive" },
@@ -15,7 +17,7 @@ const statusStyle: Record<Status, { label: string; icon: typeof FileCheck2; clas
 /**
  * A customer's will status. The demo
  * customer's status is live: it reflects a will saved in this browser by the
- * `customer` login (see `lib/will/storage.ts`).
+ * `jordan` login (see `lib/will/storage.ts`).
  */
 export function WillStatus({
   customer,
@@ -24,11 +26,12 @@ export function WillStatus({
   customer: AdvisorCustomer;
   compact?: boolean;
 }) {
-  const live = useWillStatus(customer.will.status);
-  const isDemo = customer.id === demoCustomer.id;
+  // The Sample household is live: its will is the one Jordan saves in this browser.
+  const live = useWillStatus(JORDAN, customer.will.status);
+  const isDemo = customer.id === HOUSEHOLD_ID;
   const status = isDemo ? live : customer.will.status;
   const updated =
-    isDemo && live !== customer.will.status ? readWillUpdated() : customer.will.updated;
+    isDemo && live !== customer.will.status ? readWillUpdated(JORDAN) : customer.will.updated;
   const { label, icon: Icon, className } = statusStyle[status];
 
   return (

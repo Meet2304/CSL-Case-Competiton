@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { Check, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { buttonClass } from "@/components/will/ui";
 import { cn } from "@/lib/format";
 import { sections } from "@/lib/will/flow";
@@ -175,7 +175,7 @@ const titleCase = (upper: string) =>
   upper.replace(/\b(\w)(\w*)/g, (_, a: string, r: string) => a + r.toLowerCase());
 
 /** What each planner section becomes in the finished will. */
-const willParts: Record<(typeof sections)[number], string> = {
+export const willParts: Record<(typeof sections)[number], string> = {
   Basics: "Who you are and where you live",
   Nominees: "Your children and their guardian",
   Assets: "What you own",
@@ -185,81 +185,3 @@ const willParts: Record<(typeof sections)[number], string> = {
   Provisions: "Your executor and final instructions",
   Review: "Signatures and witnesses",
 };
-
-/** Placeholder lines widths, so each section looks like a different paragraph. */
-const lineSets = [
-  ["w-11/12", "w-9/12"],
-  ["w-full", "w-10/12", "w-7/12"],
-  ["w-10/12", "w-8/12"],
-  ["w-full", "w-11/12", "w-9/12", "w-6/12"],
-  ["w-9/12", "w-5/12"],
-  ["w-10/12", "w-7/12"],
-  ["w-full", "w-10/12", "w-8/12"],
-  ["w-6/12", "w-6/12"],
-];
-
-/**
- * The sheet before the will exists: one paragraph per section, written in
- * once the section is done and ghosted until then.
- */
-export function WillTakingShape({ name, done }: { name: string; done: number }) {
-  return (
-    <div className="@container">
-      <Sheet>
-        <header className="mb-7 text-center">
-          <p className="font-display text-sm font-medium text-pnc-muted">
-            Last Will and Testament of
-          </p>
-          <h3 className="mt-1 font-display text-2xl font-semibold tracking-tight">{name}</h3>
-        </header>
-        <ol className="space-y-5">
-          {sections.map((section, i) => {
-            const written = i < done;
-            const current = i === done;
-            return (
-              <li key={section}>
-                <p
-                  className={cn(
-                    "mb-2 flex items-center gap-2 text-sm font-semibold",
-                    written ? "text-pnc-ink" : current ? "text-pnc-ink" : "text-pnc-muted/70",
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "grid size-5 shrink-0 place-items-center rounded-full text-[10px]",
-                      written
-                        ? "bg-pnc-blue-700 text-white"
-                        : current
-                          ? "ring-2 ring-pnc-orange text-pnc-orange-600"
-                          : "ring-1 ring-pnc-line",
-                    )}
-                  >
-                    {written ? (
-                      <Check className="size-3" strokeWidth={3} aria-hidden="true" />
-                    ) : (
-                      i + 1
-                    )}
-                  </span>
-                  {willParts[section]}
-                  <span className="sr-only">{written ? "(done)" : "(not yet written)"}</span>
-                </p>
-                <div className="space-y-1.5 pl-7" aria-hidden="true">
-                  {lineSets[i].map((w, j) => (
-                    <span
-                      key={j}
-                      className={cn(
-                        "block h-2 rounded-full",
-                        w,
-                        written ? "bg-pnc-blue-700/25" : "bg-pnc-chip",
-                      )}
-                    />
-                  ))}
-                </div>
-              </li>
-            );
-          })}
-        </ol>
-      </Sheet>
-    </div>
-  );
-}
