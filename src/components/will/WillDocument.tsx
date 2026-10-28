@@ -133,7 +133,7 @@ export function WillDocument({
               );
             case "item":
               return (
-                <p key={i} className="mb-1 pl-5 text-[15px] leading-7">
+                <p key={i} className="mb-1 pl-5 text-[0.9375rem] leading-7">
                   {b.text}
                 </p>
               );
@@ -152,7 +152,7 @@ export function WillDocument({
               );
             default:
               return (
-                <p key={i} className="mb-3 text-[15px] leading-7">
+                <p key={i} className="mb-3 text-[0.9375rem] leading-7">
                   {withRules(b.text)}
                 </p>
               );

@@ -18,7 +18,7 @@ export function Message({
   if (from === "user")
     return (
       <div className={cn("flex justify-end", className)}>
-        <div className="max-w-[85%] whitespace-pre-line rounded-2xl rounded-br-md bg-pnc-navy px-4 py-2.5 text-[15px] leading-relaxed text-white">
+        <div className="max-w-[85%] whitespace-pre-line rounded-2xl rounded-br-md bg-pnc-navy px-4 py-2.5 text-[0.9375rem] leading-relaxed text-white">
           <span className="sr-only">You: </span>
           {children}
         </div>
@@ -27,7 +27,7 @@ export function Message({
   return (
     <div className={cn("flex gap-3", className)}>
       <FindoeLogo className="mt-0.5 size-6" thinking={thinking} />
-      <div className="min-w-0 flex-1 space-y-3 text-[15px] leading-relaxed text-pnc-ink">
+      <div className="min-w-0 flex-1 space-y-3 text-[0.9375rem] leading-relaxed text-pnc-ink">
         <span className="sr-only">Findoe: </span>
         {children}
       </div>

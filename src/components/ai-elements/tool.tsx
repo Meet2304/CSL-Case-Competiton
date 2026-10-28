@@ -58,7 +58,7 @@ export function Tool({
       >
         <div>
           <p className="font-semibold uppercase tracking-wide text-pnc-muted">Input</p>
-          <pre className="mt-1 overflow-x-auto rounded bg-pnc-surface px-2 py-1.5 font-mono text-[11px] leading-relaxed text-pnc-ink">
+          <pre className="mt-1 overflow-x-auto rounded bg-pnc-surface px-2 py-1.5 font-mono text-[0.6875rem] leading-relaxed text-pnc-ink">
             {JSON.stringify(input, null, 2)}
           </pre>
         </div>

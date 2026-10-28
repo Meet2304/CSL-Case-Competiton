@@ -156,14 +156,14 @@ function StepCard({
             {step.title}
             <span
               className={cn(
-                "rounded-full px-2 py-0.5 text-[11px] font-semibold",
+                "rounded-full px-2 py-0.5 text-[0.6875rem] font-semibold",
                 kindStyles[step.kind],
               )}
             >
               {docKindLabels[step.kind]}
             </span>
             {step.optional && (
-              <span className="rounded-full bg-pnc-chip px-2 py-0.5 text-[11px] font-semibold text-pnc-muted">
+              <span className="rounded-full bg-pnc-chip px-2 py-0.5 text-[0.6875rem] font-semibold text-pnc-muted">
                 Only if asked
               </span>
             )}

@@ -42,16 +42,16 @@ export function CardArt({
       {compact ? (
         <div className="relative flex h-full flex-col justify-between">
           <PncMark size={8} className="self-end" />
-          <span className="self-end text-[8px] font-black italic">VISA</span>
+          <span className="self-end text-[0.5rem] font-black italic">VISA</span>
         </div>
       ) : (
         <div className="relative flex h-full flex-col justify-between">
-          <span className="flex items-center gap-1 self-end text-[9px] font-semibold tracking-wide">
+          <span className="flex items-center gap-1 self-end text-[0.5625rem] font-semibold tracking-wide">
             <PncMark size={10} /> PNC BANK
           </span>
-          <span className="font-serif text-[10px] tracking-wide text-white/90">{s.label}</span>
+          <span className="font-serif text-[0.625rem] tracking-wide text-white/90">{s.label}</span>
           <span className="flex items-end justify-between">
-            <span className="text-[10px] tabular-nums text-white/80">•••• {last4}</span>
+            <span className="text-[0.625rem] tabular-nums text-white/80">•••• {last4}</span>
             <span className="font-sans text-sm font-black italic tracking-tight">VISA</span>
           </span>
         </div>

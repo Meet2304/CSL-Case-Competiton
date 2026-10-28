@@ -12,7 +12,7 @@ export default async function MobileHomePage() {
     <>
       <MobileHeader
         title={
-          <h1 className="truncate text-[28px] font-bold leading-tight">
+          <h1 className="truncate text-[1.75rem] font-bold leading-tight">
             Hello, {firstName(person.name)}
           </h1>
         }

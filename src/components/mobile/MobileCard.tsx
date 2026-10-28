@@ -39,7 +39,7 @@ export function MobileLinkRow({
       {trailing ? (
         <div className="py-4">{trailing}</div>
       ) : (
-        <Link href={href} className="flex items-center justify-between py-4 text-[15px]">
+        <Link href={href} className="flex items-center justify-between py-4 text-[0.9375rem]">
           {label}
           <ChevronRight className="size-5 text-pnc-link" />
         </Link>
@@ -65,7 +65,7 @@ export function MobileIconRow({
       <IconChip icon={icon} tint={tint} />
       <Link
         href={href}
-        className="flex flex-1 items-center border-b border-pnc-line py-5 text-[17px] group-last:border-b-0"
+        className="flex flex-1 items-center border-b border-pnc-line py-5 text-[1.0625rem] group-last:border-b-0"
       >
         {label}
       </Link>
@@ -81,7 +81,7 @@ export function MobileSignOffRow() {
   return (
     <li className="group flex items-center gap-4 pl-4 pr-2">
       <IconChip icon={LogOut} />
-      <SignOffButton className="flex flex-1 items-center border-b border-pnc-line py-5 text-left text-[17px] group-last:border-b-0">
+      <SignOffButton className="flex flex-1 items-center border-b border-pnc-line py-5 text-left text-[1.0625rem] group-last:border-b-0">
         Sign Off
       </SignOffButton>
     </li>

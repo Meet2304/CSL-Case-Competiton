@@ -87,3 +87,11 @@ body {
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+/* Larger interface for presentation screenshots; see src/lib/uiScale.ts. */
+html[data-scale="lg"] {
+  font-size: 125%;
+}
+html[data-scale="xl"] {
+  font-size: 150%;
+}

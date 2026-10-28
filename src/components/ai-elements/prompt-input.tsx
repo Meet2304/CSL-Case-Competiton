@@ -87,7 +87,7 @@ export function PromptInput({
           }
         }}
         placeholder={placeholder}
-        className="block max-h-40 min-h-11 w-full resize-none bg-transparent px-4 pb-1 pt-3 text-[15px] outline-none placeholder:text-pnc-muted"
+        className="block max-h-40 min-h-11 w-full resize-none bg-transparent px-4 pb-1 pt-3 text-[0.9375rem] outline-none placeholder:text-pnc-muted"
       />
       <div className="flex items-center justify-between gap-2 px-2 pb-2">
         <div className="min-w-0 flex-1">{tools}</div>

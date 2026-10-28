@@ -55,7 +55,7 @@ export function BottomTabBar() {
                 href={href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex flex-col items-center gap-1 whitespace-nowrap pb-1 pt-2.5 text-[11px] tracking-tight text-white/80",
+                  "flex flex-col items-center gap-1 whitespace-nowrap pb-1 pt-2.5 text-[0.6875rem] tracking-tight text-white/80",
                   active && "font-bold text-white",
                 )}
               >
@@ -68,7 +68,7 @@ export function BottomTabBar() {
                     aria-hidden="true"
                   />
                   {badge ? (
-                    <span className="absolute -top-1 -right-2.5 grid h-4 min-w-4 place-items-center rounded-full bg-pnc-orange px-1 text-[10px] font-bold text-white">
+                    <span className="absolute -top-1 -right-2.5 grid h-4 min-w-4 place-items-center rounded-full bg-pnc-orange px-1 text-[0.625rem] font-bold text-white">
                       {badge}
                     </span>
                   ) : null}

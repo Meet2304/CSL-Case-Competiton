@@ -32,7 +32,7 @@ export function WalletCard({ title, accounts }: { title: string; accounts: Walle
   return (
     <section className="overflow-hidden rounded-2xl bg-white shadow-card">
       <header className="flex items-center justify-between gap-2 bg-pnc-chip px-4 py-3">
-        <h2 className="text-[15px]">{title}</h2>
+        <h2 className="text-[0.9375rem]">{title}</h2>
         <span className="flex items-center gap-2">
           <button
             type="button"
@@ -58,7 +58,7 @@ export function WalletCard({ title, accounts }: { title: string; accounts: Walle
               className="flex w-full items-center gap-4 py-4 text-left"
             >
               <ReceiptText className="size-6 text-pnc-blue-700" strokeWidth={1.75} />
-              <span className="flex-1 text-[17px] font-medium">Low Cash Mode</span>
+              <span className="flex-1 text-[1.0625rem] font-medium">Low Cash Mode</span>
               <ChevronDown
                 className={cn("size-5 text-pnc-link transition", lowCashOpen && "rotate-180")}
               />
@@ -101,7 +101,7 @@ function SubAccountRow({ account }: { account: WalletSubAccount }) {
   const negative = account.balance < 0;
   return (
     <div className="mx-4 flex items-start gap-2 border-b border-pnc-line py-4">
-      <a href="#" className="flex-1 pt-1 text-[17px] text-pnc-link">
+      <a href="#" className="flex-1 pt-1 text-[1.0625rem] text-pnc-link">
         {account.label} x{account.last4}
       </a>
       <div className="text-right">

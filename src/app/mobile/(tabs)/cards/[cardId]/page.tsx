@@ -28,7 +28,7 @@ export default async function MobileCardDetailsPage({
       <MobileHeader title="Card Details" backHref={routes.more}>
         <MobileCard className="flex gap-4 p-3">
           <CardArt style={card.cardStyle} last4={card.last4} className="w-36 shrink-0" />
-          <div className="min-w-0 text-[17px] leading-snug">
+          <div className="min-w-0 text-[1.0625rem] leading-snug">
             {card.name} x{card.last4}
             <p className="mt-2 text-xs text-pnc-muted">
               Balance <Money value={card.balance} className="font-semibold text-pnc-ink" />
