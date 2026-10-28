@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
+import { FamilyMobileHeader } from "@/components/family/FamilyHeader";
 import { FamilyHub } from "@/components/family/FamilyHub";
-import { MobileHeader } from "@/components/mobile/MobileHeader";
 
 export const metadata: Metadata = { title: "Family" };
 
 export default function MobileFamilyPage() {
   return (
     <>
-      <MobileHeader title="Family" />
+      <FamilyMobileHeader />
       <div className="px-3 pt-4 pb-6">
         <FamilyHub />
       </div>

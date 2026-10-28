@@ -1,8 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
-import { ArrowLeft, ChevronDown, Settings2, Share2, ShieldCheck } from "lucide-react";
-import { FacetBackdrop } from "@/components/brand/FacetBackdrop";
+import { ArrowLeft, ChevronDown, Settings2, Share2 } from "lucide-react";
 import { useViewer } from "@/components/customer/Viewer";
 import { MockBadge } from "@/components/mock/Mock";
 import { Dialog } from "@/components/ui/Dialog";
@@ -20,17 +19,7 @@ import { useFamily } from "./FamilyProvider";
 import { ManageFamily, type ManageTab } from "./ManageFamily";
 import { MemberFamilyView } from "./MemberFamilyView";
 import { PayBills } from "./PayBills";
-import {
-  Avatar,
-  AvatarStack,
-  FamilyEmblem,
-  Pill,
-  secondaryButton,
-  StatusBadge,
-  withArticle,
-} from "./parts";
-
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
+import { Avatar, AvatarStack, Pill, secondaryButton, StatusBadge } from "./parts";
 
 /** What a member can do with an asset, in a few words (admin view only). */
 function accessLabel(a: AssetAccess): string {
@@ -58,7 +47,8 @@ export function FamilyDetail({ onBack }: { onBack: () => void }) {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between gap-3">
+      {/* The family's name and the viewer's role are in the page header above. */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <button
           type="button"
           onClick={onBack}
@@ -66,43 +56,25 @@ export function FamilyDetail({ onBack }: { onBack: () => void }) {
         >
           <ArrowLeft className="size-4" aria-hidden="true" /> All families
         </button>
-        <MockBadge />
-      </div>
-
-      <section className="relative isolate overflow-hidden rounded-xl text-white shadow-card">
-        <FacetBackdrop className="-z-10" />
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-4 px-5 py-5 @2xl:px-6">
-          <div className="flex min-w-0 flex-1 basis-72 items-center gap-4">
-            <FamilyEmblem name={family.familyName} size="lg" />
-            <div className="min-w-0">
-              <h2 className="font-display text-2xl font-medium">{family.familyName}</h2>
-              <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-sm text-white/85">
-                {s.role && (
-                  <span className="inline-flex items-center gap-1">
-                    {s.isAdmin && <ShieldCheck className="size-3.5" aria-hidden="true" />}
-                    You&apos;re {withArticle(s.role.name)}
-                  </span>
-                )}
-                <span aria-hidden="true">·</span>
-                {plural(s.living.length, "member")}
-              </p>
-            </div>
-          </div>
+        <div className="flex items-center gap-3">
           {/* Only admins can manage; everyone else never sees the control. */}
           {s.isAdmin && (
-            <button
-              type="button"
-              onClick={() => setManage("members")}
-              className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-semibold text-pnc-blue-800 hover:bg-pnc-blue-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-            >
+            <button type="button" onClick={() => setManage("members")} className={secondaryButton}>
               <Settings2 className="size-4" aria-hidden="true" /> Manage family
             </button>
           )}
+          <MockBadge />
         </div>
+      </div>
+
+      <section
+        aria-label={`${family.familyName} at a glance`}
+        className="rounded-lg bg-white shadow-card"
+      >
         <dl
           className={cn(
-            "grid border-t border-white/15 bg-pnc-navy/30",
-            s.isAdmin ? "grid-cols-2 @2xl:grid-cols-4" : "grid-cols-3",
+            "grid divide-pnc-line",
+            s.isAdmin ? "grid-cols-2 @2xl:grid-cols-4 @2xl:divide-x" : "grid-cols-3 divide-x",
           )}
         >
           {(s.isAdmin
@@ -118,9 +90,9 @@ export function FamilyDetail({ onBack }: { onBack: () => void }) {
                 { label: "Members", value: s.living.length },
               ]
           ).map(({ label, value }) => (
-            <div key={label} className="px-5 py-3 @2xl:px-6">
-              <dt className="text-xs text-white/75">{label}</dt>
-              <dd className="text-lg font-semibold tabular-nums">{value}</dd>
+            <div key={label} className="px-5 py-4 @2xl:px-6">
+              <dt className="text-xs text-pnc-muted">{label}</dt>
+              <dd className="text-xl font-semibold tabular-nums text-pnc-ink">{value}</dd>
             </div>
           ))}
         </dl>
