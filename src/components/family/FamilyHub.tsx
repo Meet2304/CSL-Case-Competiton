@@ -5,13 +5,13 @@ import { ArrowRight, Plus, ShieldCheck, Users } from "lucide-react";
 import { FacetBackdrop } from "@/components/brand/FacetBackdrop";
 import { useViewer } from "@/components/customer/Viewer";
 import { MockBadge } from "@/components/mock/Mock";
-import { useHash } from "@/components/shared/useHashTab";
 import { Money } from "@/components/ui/Money";
 import type { StoredFamily } from "@/data/household";
 import { cn, formatDate } from "@/lib/format";
-import { familiesOf, familySummary, firstName, personById } from "@/lib/household";
+import { familySummary, firstName, personById } from "@/lib/household";
 import { householdActions } from "@/lib/householdStore";
 import { FamilyDetail } from "./FamilyDetail";
+import { useOpenFamily } from "./FamilyHeader";
 import { FamilyProvider } from "./FamilyProvider";
 import {
   AvatarStack,
@@ -29,11 +29,9 @@ import {
  * which, e.g. /family#fam-sample, so Back returns to the cards).
  */
 export function FamilyHub() {
-  const { person, isMinor, household } = useViewer();
-  const families = familiesOf(household, person.id);
-  const [hash, setHash] = useHash();
+  const { person, isMinor } = useViewer();
+  const { families, current, setHash } = useOpenFamily();
   const [creating, setCreating] = useState(false);
-  const current = families.find((f) => f.id === hash);
 
   if (current)
     return (
