@@ -46,8 +46,8 @@ export function Home() {
             kind: "loss" as const,
             tone: "important" as const,
             title: `Looking after ${firstName(loss.personName)}'s accounts`,
-            body: "The few steps that remain, in the order we suggest. Nothing is urgent today.",
-            action: { label: "See next steps", href: routes.nextSteps },
+            body: "Their accounts that pass to you are on My Assets, each with a short guided claim. Nothing is urgent today.",
+            action: { label: "See what passes to you", href: routes.unclaimedAssets },
           },
         ]
       : []),

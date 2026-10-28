@@ -29,7 +29,6 @@ export function WebHeader({ variant = "customer" }: { variant?: Role }) {
           { label: "Home", href: routes.home },
           { label: "My Assets", href: routes.assets, badge: nav.assetReminders },
           ...(nav.showWill ? [{ label: "Will", href: routes.will, badge: nav.willReminders }] : []),
-          ...(nav.nextSteps ? [{ label: "Next steps", href: routes.nextSteps }] : []),
           { label: "Family", href: routes.family },
           { label: "Help", href: routes.help },
         ];
@@ -43,7 +42,7 @@ export function WebHeader({ variant = "customer" }: { variant?: Role }) {
 
   return (
     <header className="bg-pnc-navy text-white">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 px-4 sm:px-6 md:h-16 md:flex-nowrap">
+      <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 px-4 sm:px-6 md:h-16 md:flex-nowrap">
         <Link href={home} className="flex h-14 shrink-0 items-center md:h-auto">
           <PncLogo tone="light" size="sm" />
         </Link>
@@ -65,7 +64,7 @@ export function WebHeader({ variant = "customer" }: { variant?: Role }) {
               >
                 {item.label}
                 {item.badge ? (
-                  <span className="grid h-5 min-w-5 place-items-center rounded-full bg-pnc-orange px-1.5 text-[0.6875rem] font-bold text-white">
+                  <span className="grid h-5 min-w-5 place-items-center rounded-full bg-pnc-orange px-1.5 text-2xs font-bold text-white">
                     {item.badge}
                     <span className="sr-only"> {item.badge === 1 ? "reminder" : "reminders"}</span>
                   </span>

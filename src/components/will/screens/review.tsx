@@ -132,7 +132,7 @@ export function MirrorWillsScreen() {
                 onChange={(spouseBirthdate) => setReview({ spouseBirthdate })}
               />
             </Question>
-            <label className="flex items-start gap-3 text-[0.9375rem]">
+            <label className="flex items-start gap-3 text-md">
               <input
                 type="checkbox"
                 required

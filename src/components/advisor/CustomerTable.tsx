@@ -107,14 +107,14 @@ export function CustomerTable({ customers }: { customers: AdvisorCustomer[] }) {
       </div>
       <div className="overflow-x-auto">
         {/* Fixed layout keeps columns from shifting between pages. */}
-        <table className="w-full min-w-[44rem] table-fixed text-left text-sm">
+        <table className="w-full min-w-[48rem] table-fixed text-left text-sm">
           <colgroup>
             <col className="w-12" />
             <col />
             <col className="w-28" />
             <col className="w-28" />
-            <col className="w-28" />
             <col className="w-32" />
+            <col className="w-44" />
             <col className="w-10" />
           </colgroup>
           <thead className="border-b border-pnc-line bg-pnc-surface/70">

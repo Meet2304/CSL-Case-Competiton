@@ -16,7 +16,7 @@ export default function WebPayTransferPage() {
     <>
       <WebHero title="Pay & Transfer" />
 
-      <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[1fr_24rem]">
+      <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[1fr_24rem]">
         <div className="space-y-4">
           {payTransferGroups.map((group) => (
             <section

@@ -3,9 +3,9 @@
 import { useViewer } from "./Viewer";
 import { useNudges } from "./useNudges";
 
-/** What the customer navigation adapts to: who's signed in, reminders, and a recent loss. */
+/** What the customer navigation adapts to: who's signed in and their reminders. */
 export function useCustomerNav() {
-  const { person, first, isMinor, loss } = useViewer();
+  const { person, first, isMinor } = useViewer();
   const due = useNudges().filter((n) => n.tone !== "info");
   return {
     personId: person.id,
@@ -17,7 +17,5 @@ export function useCustomerNav() {
     willReminders: due.filter((n) => n.kind === "will").length,
     /** Wills start at 18, so minors get no Will page. */
     showWill: !isMinor,
-    /** Adults get a Next steps page while a death in the household is being settled. */
-    nextSteps: Boolean(loss) && !isMinor,
   };
 }

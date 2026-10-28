@@ -32,7 +32,7 @@ export function WalletCard({ title, accounts }: { title: string; accounts: Walle
   return (
     <section className="overflow-hidden rounded-2xl bg-white shadow-card">
       <header className="flex items-center justify-between gap-2 bg-pnc-chip px-4 py-3">
-        <h2 className="text-[0.9375rem]">{title}</h2>
+        <h2 className="text-md">{title}</h2>
         <span className="flex items-center gap-2">
           <button
             type="button"

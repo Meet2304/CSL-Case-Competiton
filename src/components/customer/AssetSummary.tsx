@@ -84,9 +84,12 @@ export function AssetSummary({
                 />
               ))}
             </div>
-            <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 @xl:grid-cols-4">
+            <dl className="mt-4 grid gap-x-6 gap-y-2 @[22rem]:grid-cols-2 @[22rem]:gap-y-3 @xl:grid-cols-4">
               {holdings.map((g) => (
-                <div key={g.id} className="min-w-0">
+                <div
+                  key={g.id}
+                  className="flex min-w-0 items-baseline justify-between gap-3 @[22rem]:block"
+                >
                   <dt className="flex items-center gap-1.5 text-xs text-pnc-muted">
                     <span
                       className={cn("size-2 shrink-0 rounded-full", groupTone[g.id])}
@@ -97,13 +100,13 @@ export function AssetSummary({
                       · {Math.round((g.total / positive) * 100)}%
                     </span>
                   </dt>
-                  <dd className="mt-0.5 font-semibold text-pnc-ink">
+                  <dd className="font-semibold @[22rem]:mt-0.5 text-pnc-ink">
                     <Money value={g.total} />
                   </dd>
                 </div>
               ))}
               {owed < 0 && (
-                <div className="min-w-0">
+                <div className="flex min-w-0 items-baseline justify-between gap-3 @[22rem]:block">
                   <dt className="flex items-center gap-1.5 text-xs text-pnc-muted">
                     <span
                       className="size-2 shrink-0 rounded-full ring-2 ring-inset ring-pnc-negative"
@@ -111,7 +114,7 @@ export function AssetSummary({
                     />
                     Owed on cards
                   </dt>
-                  <dd className="mt-0.5 font-semibold">
+                  <dd className="font-semibold @[22rem]:mt-0.5">
                     <Money value={owed} />
                   </dd>
                 </div>

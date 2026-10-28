@@ -10,7 +10,15 @@ import type { SurvivorItem } from "@/lib/survivor";
  * An account without a guided flow for this survivor: what happens to it,
  * what's usually needed, and who to talk to.
  */
-export function PlaceholderFlowView({ item, onBack }: { item: SurvivorItem; onBack: () => void }) {
+export function PlaceholderFlowView({
+  item,
+  onBack,
+  backLabel = "All unclaimed assets",
+}: {
+  item: SurvivorItem;
+  onBack: () => void;
+  backLabel?: string;
+}) {
   const advisorContact = supportPeople[0];
 
   return (
@@ -20,7 +28,7 @@ export function PlaceholderFlowView({ item, onBack }: { item: SurvivorItem; onBa
         onClick={onBack}
         className="inline-flex items-center gap-1 text-sm font-semibold text-pnc-link hover:underline"
       >
-        <ArrowLeft className="size-4" aria-hidden="true" /> All next steps
+        <ArrowLeft className="size-4" aria-hidden="true" /> {backLabel}
       </button>
       <h2 className="mt-3 font-display text-2xl font-medium text-pnc-ink">{item.title}</h2>
       <p className="mt-1 max-w-2xl text-sm leading-relaxed text-pnc-muted">{item.summary}</p>

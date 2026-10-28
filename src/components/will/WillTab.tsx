@@ -220,7 +220,7 @@ function WillStart({
           <h2 className="mt-4 font-display text-3xl font-medium tracking-tight text-pnc-ink">
             {started ? "Finish your will" : "Write your will"}
           </h2>
-          <p className="mt-2 text-[0.9375rem] leading-relaxed text-pnc-muted">
+          <p className="mt-2 text-md leading-relaxed text-pnc-muted">
             {started
               ? `${done} of ${sections.length} sections done. Everything you've entered is saved, so pick up right where you left off.`
               : "Decide who inherits what you own, who would raise your children and who carries out your wishes."}
@@ -394,8 +394,8 @@ function WillOnFile({
             <IconChip icon={ScrollText} size="sm" />
             <p>
               When the time comes, {executor ? firstName(executor.member.name) : "your executor"}{" "}
-              will see your will on their Next steps page and can begin settling your estate with
-              PNC.
+              will see your will on My Assets, under Unclaimed assets, and can begin settling your
+              estate with PNC.
             </p>
           </section>
         </aside>

@@ -63,7 +63,7 @@ export function FuneralScreen() {
         </Question>
 
         <Question label="Choose any charities that you would like your loved ones to support in your memory">
-          <p className="text-[0.9375rem] font-semibold">Charity name</p>
+          <p className="text-md font-semibold">Charity name</p>
           <datalist id={listId}>
             {placeholderCharities.map((c) => (
               <option key={c.id} value={c.name} />

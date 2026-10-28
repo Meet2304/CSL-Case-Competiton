@@ -108,7 +108,7 @@ export function NotificationList({
                   <ol className="mt-1.5 space-y-1.5">
                     {n.steps.map((s, i) => (
                       <li key={s} className="flex gap-2 leading-snug">
-                        <span className="grid size-5 shrink-0 place-items-center rounded-full bg-white text-[0.6875rem] font-bold text-attention ring-1 ring-attention-line">
+                        <span className="grid size-5 shrink-0 place-items-center rounded-full bg-white text-2xs font-bold text-attention ring-1 ring-attention-line">
                           {i + 1}
                         </span>
                         {s}

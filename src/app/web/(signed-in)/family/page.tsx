@@ -8,7 +8,7 @@ export default function WebFamilyPage() {
   return (
     <>
       <FamilyWebHero />
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
         <FamilyHub />
       </div>
     </>

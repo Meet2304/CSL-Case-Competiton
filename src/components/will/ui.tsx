@@ -44,9 +44,7 @@ export function PageHeading({
         {aside}
       </div>
       {children && (
-        <div className="max-w-3xl space-y-3 text-[0.9375rem] leading-relaxed text-pnc-ink">
-          {children}
-        </div>
+        <div className="max-w-3xl space-y-3 text-md leading-relaxed text-pnc-ink">{children}</div>
       )}
     </div>
   );

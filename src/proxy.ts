@@ -22,6 +22,8 @@ const legacy: Record<string, string> = {
   "/accounts": routes.assets,
   "/plan": routes.will,
   "/advisor/rules": routes.advisor,
+  // Next steps after a loss now lives on My Assets.
+  "/next-steps": routes.unclaimedAssets,
 };
 
 // Customer pages that only exist in one view are sent to the closest equivalent.
@@ -79,7 +81,10 @@ export function proxy(request: NextRequest) {
     ? undefined
     : (roleRedirect(request, publicPath) ?? fallbacks[view](publicPath));
   if (redirectTo) {
-    url.pathname = redirectTo;
+    // A target may carry a hash (e.g. /assets#unclaimed); keep it out of the path.
+    const [pathname, hash] = redirectTo.split("#");
+    url.pathname = pathname;
+    url.hash = hash ?? "";
     return NextResponse.redirect(url);
   }
 

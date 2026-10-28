@@ -60,6 +60,12 @@ and mobile views stay in one design language.
   `AssistantPanel` so it's never mistaken for account data. Findoe's chat is built from the
   AI-Elements-style blocks in `src/components/ai-elements` (Conversation, Message,
   ChainOfThought, Tool, Sources, PromptInput); its logo is `FindoeLogo`.
+- **Findoe on every page (simulated)**: the layouts mount `CustomerFindoe` / `AdvisorFindoe`
+  (`src/components/findoe`), a launcher plus side panel (web) or sheet (phone). Answers come from
+  `src/lib/findoe/customer.ts` and `advisor.ts`; every claim cites a bank record or a legal-library
+  entry (`rulebook.sources`) through `Citations`, and ends with actions. Build the customer context
+  from the same permission-filtered data the pages use, never the raw household. Add a question by
+  adding an intent there with a test in `src/lib/findoe/__tests__`.
 - **Advisor attention logic** lives in `src/lib/advisor.ts`; drive UI from
   `openLoss` / `needsAttention` / `sortByAttention` / `buildNotifications` rather
   than re-implementing the rules in components.
@@ -70,6 +76,13 @@ and mobile views stay in one design language.
   There is no Planning page: adults write their will on the Will page (`routes.will`, its own nav
   entry), and beneficiaries are named in each account's Manage panel on My Assets
   (`routes.manageAsset(id)`). My Assets filters by All / Personal (owned or custodial) / Shared.
+  While a death in the household is being settled it gains an **Unclaimed assets** tab
+  (`routes.unclaimedAssets`, `UnclaimedAssets.tsx`): the deceased's accounts that pass to the
+  viewer (from `survivorPlan`), each with a guided claim (`TransferFlowView`,
+  `routes.claimAsset(id)`), a "Today" prompt and the executor's will tracker. This replaced the
+  survivor's Next steps page (`/next-steps` redirects here). The condolence `LossStrip` links here
+  and hides for that person once opened (`bereavementActions.acknowledgeLoss`). Minors see a
+  gentle empty state, never the deceased's accounts. "Ask Findoe" buttons use `askFindoe()`.
 - **Family dashboard rules live in `src/lib/family.ts`** (`effectiveAccess`,
   `isLocked`, `successorsFor`, `familyReducer`). Components read state through
   `useFamily()` and change it only via `dispatch` actions; add a reducer action

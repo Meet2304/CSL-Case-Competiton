@@ -37,7 +37,7 @@ export function useAssetDetail(): (item: PersonAsset) => ReactNode {
       return (
         <span className="text-pnc-ink">
           {names(a.owners)}&apos;s · shared through {family?.familyName}
-          {access && <span className="block text-pnc-muted">{accessText(access)}</span>}
+          {access && <span className="text-pnc-muted"> · {accessText(access)}</span>}
         </span>
       );
     const others = a.owners.filter((o) => o !== person.id);
@@ -70,7 +70,7 @@ export const relationLabels: Record<PersonAsset["relation"], string> = {
 export function RelationBadge({ relation }: { relation: PersonAsset["relation"] }) {
   if (relation === "owned") return null;
   return (
-    <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-pnc-blue-50 px-2 py-0.5 align-middle text-[0.6875rem] font-semibold text-pnc-blue-800">
+    <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-pnc-blue-50 px-2 py-0.5 align-middle text-2xs font-semibold text-pnc-blue-800">
       {relation === "shared" && <Users className="size-3" aria-hidden="true" />}
       {relationLabels[relation]}
     </span>

@@ -40,7 +40,7 @@ export function Avatar({
       title={member.name}
       className={cn(
         "grid shrink-0 place-items-center rounded-full font-semibold",
-        size === "sm" ? "size-7 text-[0.6875rem] ring-2 ring-white" : "size-10 text-sm",
+        size === "sm" ? "size-7 text-2xs ring-2 ring-white" : "size-10 text-sm",
         member.status === "Deceased"
           ? "bg-pnc-chip text-pnc-muted"
           : avatarTones[index % avatarTones.length],
