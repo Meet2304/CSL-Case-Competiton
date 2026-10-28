@@ -21,15 +21,15 @@ type Notice = {
 export function NoticeCarousel({ notices: base }: { notices: Notice[] }) {
   const [index, setIndex] = useState(0);
   const { loss, firstName } = useHouseholdLoss();
-  // After a loss in the family, the gentle "next steps" notice comes first.
+  // After a loss in the family, the gentle notice about what passes to you comes first.
   const notices: Notice[] = loss
     ? [
         {
           id: "bereavement",
           title: "A few steps need your attention",
           body: `We're so sorry about ${firstName}. We've gathered what's needed in one place.`,
-          href: routes.nextSteps,
-          cta: "See next steps",
+          href: routes.unclaimedAssets,
+          cta: "See what passes to you",
           urgent: true,
         },
         ...base,

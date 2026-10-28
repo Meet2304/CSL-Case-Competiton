@@ -433,7 +433,7 @@ export function ResiduarySummaryCard({
       <h3 className="border-b border-pnc-line bg-pnc-surface/60 px-5 py-3 font-semibold text-pnc-ink">
         Residuary
       </h3>
-      <div className="grid gap-8 px-6 py-6 text-[0.9375rem] @2xl:grid-cols-2">
+      <div className="grid gap-8 px-6 py-6 text-md @2xl:grid-cols-2">
         <div>
           <p className={label}>Primary beneficiaries</p>
           <p>{primary}</p>
@@ -547,7 +547,7 @@ function AllocationEditor({
         <span />
         <span />
       </div>
-      <div className="grid grid-cols-[1fr_5rem_2.5rem] gap-x-3 border-t border-pnc-line pt-3 text-[0.9375rem] @lg:grid-cols-[1fr_6rem_3rem]">
+      <div className="grid grid-cols-[1fr_5rem_2.5rem] gap-x-3 border-t border-pnc-line pt-3 text-md @lg:grid-cols-[1fr_6rem_3rem]">
         <span>{spouseRest ? "Total to charity" : "Your total distribution must equal 100%"}</span>
         <span
           className={cn(

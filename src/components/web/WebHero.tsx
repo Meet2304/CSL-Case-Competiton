@@ -21,13 +21,14 @@ export function WebHero({
       <FacetBackdrop className="-z-10" />
       <div
         className={cn(
-          "mx-auto flex max-w-6xl flex-wrap items-end justify-between gap-x-8 gap-y-4 px-4 pb-8 pt-6 sm:px-6",
+          // Slim, so the page's own content starts high on the screen.
+          "mx-auto flex max-w-7xl flex-wrap items-end justify-between gap-x-8 gap-y-3 px-4 pb-5 pt-4 sm:px-6",
           className,
         )}
       >
         <div className="min-w-0">
-          <h1 className="font-display text-3xl font-medium sm:text-4xl">{title}</h1>
-          {subtitle && <p className="mt-1 text-sm text-white/85">{subtitle}</p>}
+          <h1 className="font-display text-3xl font-medium">{title}</h1>
+          {subtitle && <p className="mt-0.5 text-sm text-white/85">{subtitle}</p>}
         </div>
         {aside}
       </div>

@@ -42,7 +42,7 @@ export function MobileSignOn() {
           className="mt-8 border-b border-white/70 bg-transparent py-2 text-lg outline-none placeholder:text-white/90 focus:border-white"
         />
 
-        <div className="mt-7 flex items-center justify-between text-[0.9375rem]">
+        <div className="mt-7 flex items-center justify-between text-md">
           <span className="flex items-center gap-3">
             Save user ID <Toggle checked={saveId} onChange={setSaveId} label="Save user ID" />
           </span>
@@ -64,7 +64,7 @@ export function MobileSignOn() {
         >
           {pending ? "Signing In…" : "Sign In"}
         </button>
-        <a href="#" className="mt-5 text-center text-[0.9375rem]">
+        <a href="#" className="mt-5 text-center text-md">
           Forgot User ID or Password?
         </a>
       </form>

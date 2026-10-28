@@ -17,7 +17,15 @@ const kindStyles: Record<DocKind, string> = {
 };
 
 /** A fully modelled transfer flow: document steps, review and outcome. */
-export function TransferFlowView({ flow, onBack }: { flow: TransferFlow; onBack: () => void }) {
+export function TransferFlowView({
+  flow,
+  onBack,
+  backLabel = "All unclaimed assets",
+}: {
+  flow: TransferFlow;
+  onBack: () => void;
+  backLabel?: string;
+}) {
   const state = useBereavement();
   const { progress, steps, required, doneCount, ready, status } = flowSummary(flow, state);
   const locked = status === "submitted" || status === "complete";
@@ -35,7 +43,7 @@ export function TransferFlowView({ flow, onBack }: { flow: TransferFlow; onBack:
         onClick={onBack}
         className="inline-flex items-center gap-1 text-sm font-semibold text-pnc-link hover:underline"
       >
-        <ArrowLeft className="size-4" aria-hidden="true" /> All next steps
+        <ArrowLeft className="size-4" aria-hidden="true" /> {backLabel}
       </button>
 
       <h2 className="mt-3 font-display text-2xl font-medium text-pnc-ink">{flow.title}</h2>
@@ -156,14 +164,14 @@ function StepCard({
             {step.title}
             <span
               className={cn(
-                "rounded-full px-2 py-0.5 text-[0.6875rem] font-semibold",
+                "rounded-full px-2 py-0.5 text-2xs font-semibold",
                 kindStyles[step.kind],
               )}
             >
               {docKindLabels[step.kind]}
             </span>
             {step.optional && (
-              <span className="rounded-full bg-pnc-chip px-2 py-0.5 text-[0.6875rem] font-semibold text-pnc-muted">
+              <span className="rounded-full bg-pnc-chip px-2 py-0.5 text-2xs font-semibold text-pnc-muted">
                 Only if asked
               </span>
             )}

@@ -348,7 +348,7 @@ function AssetModal({
   );
   const ownedBy = (
     <div className="space-y-1.5">
-      <p className="text-[0.9375rem] font-semibold">
+      <p className="text-md font-semibold">
         Owned by<sup className="ml-0.5">*</sup>
       </p>
       <Segmented
@@ -365,13 +365,13 @@ function AssetModal({
   );
   const payableOnDeath = (
     <div className="space-y-1.5">
-      <p className="text-[0.9375rem] font-semibold">Payable on death designation</p>
+      <p className="text-md font-semibold">Payable on death designation</p>
       <LearnMore label="What does this mean?">
         Some accounts let you name beneficiaries directly with the bank (a &ldquo;payable on
         death&rdquo; or &ldquo;transfer on death&rdquo; designation). Those accounts pass straight
         to the people you named and are not distributed by your will.
       </LearnMore>
-      <label className="flex items-center gap-3 pt-1 text-[0.9375rem]">
+      <label className="flex items-center gap-3 pt-1 text-md">
         <input
           type="checkbox"
           checked={asset.payableOnDeath}

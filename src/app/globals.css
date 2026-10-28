@@ -30,6 +30,10 @@
   --color-attention: #b42318; /* advisor: customer needs attention (e.g. a loss) */
   --color-attention-bg: #fef3f2;
   --color-attention-line: #fecdca;
+  /* Findoe's two kinds of source: the bank's own records (PNC blue) and the legal library. */
+  --color-law: #5b3a9e;
+  --color-law-bg: #f2eefa;
+  --color-law-line: #ddd3f1;
   --color-mock: #8a5a00; /* mock-data labelling */
   --color-mock-bg: #fff4d6;
   --color-mock-line: #f0c75e;
@@ -43,6 +47,11 @@
   --color-avatar-hair-3: #c8963e;
   --color-avatar-hair-4: #4a4f57;
 
+  /* Small sizes beyond Tailwind's scale; presentation zoom raises them (see html[data-scale]). */
+  --text-3xs: 0.625rem; /* 10px: counts on badges */
+  --text-2xs: 0.6875rem; /* 11px: pills, eyebrows, fine print */
+  --text-md: 0.9375rem; /* 15px: chat and mobile body text */
+
   --font-sans: var(--font-open-sans), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-montserrat), var(--font-open-sans), sans-serif;
 
@@ -53,6 +62,40 @@
   --animate-reveal: reveal 0.35s ease-out both;
   /* A light sweeping across text while Findoe works. */
   --animate-shimmer: shimmer 2.2s linear infinite;
+  /* Findoe's panel sliding in from the right (web) or up from the bottom (phone). */
+  --animate-panel-in: panel-in 0.24s ease-out both;
+  --animate-sheet-in: sheet-in 0.28s ease-out both;
+  /* A source card being pointed at from a citation in the answer. */
+  --animate-flash: flash 1.2s ease-out;
+
+  @keyframes panel-in {
+    from {
+      opacity: 0;
+      transform: translateX(1.5rem);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes sheet-in {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: none;
+    }
+  }
+
+  @keyframes flash {
+    from {
+      box-shadow: 0 0 0 3px var(--color-pnc-orange);
+    }
+    to {
+      box-shadow: 0 0 0 3px transparent;
+    }
+  }
 
   @keyframes shimmer {
     from {
@@ -78,6 +121,25 @@
 body {
   background: var(--color-pnc-surface);
   color: var(--color-pnc-ink);
+  transition: padding-right 0.24s ease-out;
+}
+
+/*
+ * Findoe's side panel (web). On wide screens it takes its own column and the
+ * page narrows beside it instead of being covered; narrower screens overlay it.
+ */
+:root {
+  --findoe-w: min(24rem, 36vw);
+}
+@media (min-width: 64rem) {
+  html[data-findoe-open] body {
+    padding-right: var(--findoe-w);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  body {
+    transition: none;
+  }
 }
 
 /* Hide scrollbars inside the simulated phone and horizontal carousels. */
@@ -94,4 +156,32 @@ html[data-scale="lg"] {
 }
 html[data-scale="xl"] {
   font-size: 150%;
+}
+/*
+ * In a slide the screenshot is shrunk, so small text is raised more than the
+ * rest: captions, labels and details stay legible while headings and big
+ * figures keep their size and the hierarchy holds.
+ */
+html[data-scale] {
+  --text-3xs: 0.75rem;
+  --text-2xs: 0.8125rem;
+  --text-xs: 0.875rem;
+  --text-xs--line-height: 1.4;
+  --text-sm: 1rem;
+  --text-sm--line-height: 1.45;
+  --text-md: 1.0625rem;
+}
+
+/*
+ * Findoe's panel reads a step smaller than the page (at every zoom), so its
+ * working and the start of its answer fit on screen together.
+ */
+.findoe-panel {
+  --text-3xs: 0.625rem;
+  --text-2xs: 0.6875rem;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.35;
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: 1.4;
+  --text-md: 0.875rem;
 }

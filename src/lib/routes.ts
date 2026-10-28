@@ -21,12 +21,14 @@ export const routes = {
   family: "/family",
   /** One family's assets, and (for admins) the way to manage it. */
   familyDetail: (id: string) => `/family#${id}`,
-  /** Surviving spouse's guided next steps after a loss in the family. */
-  nextSteps: "/next-steps",
   /** Your will: write it, see it on file (adults only). */
   will: "/will",
   /** Manage one account on My Assets, e.g. to name its beneficiary. */
   manageAsset: (accountId: string) => `/assets#manage-${accountId}`,
+  /** After a death in the household: the deceased's accounts that can pass to the viewer. */
+  unclaimedAssets: "/assets#unclaimed",
+  /** One claim on My Assets › Unclaimed assets, by survivor-plan item id. */
+  claimAsset: (itemId: string) => `/assets#claim-${encodeURIComponent(itemId)}`,
   /** Advisor (bank representative) home dashboard. */
   advisor: "/advisor",
   /** Advisor: one client's summary, family, loss guide and assistant. */

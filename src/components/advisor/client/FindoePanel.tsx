@@ -300,7 +300,7 @@ export function FindoePanel({
             </span>
           }
         />
-        <p className="mt-2 text-center text-[0.6875rem] text-pnc-muted">
+        <p className="mt-2 text-center text-2xs text-pnc-muted">
           Findoe can make mistakes. Routes and dates come from the rulebook; mock data only.
         </p>
       </div>

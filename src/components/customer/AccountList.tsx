@@ -66,18 +66,19 @@ function AccountItem({
   const activity = a.transactions ?? [];
   return (
     <li>
-      <div className="flex items-start gap-3 px-4 py-3.5 @2xl:px-5">
+      <div className="flex items-start gap-3 px-4 py-3 @2xl:px-5">
         <div className="min-w-0 flex-1">
           <p className="font-semibold text-pnc-ink">
             {a.name}
             {a.last4 && <span className="ml-1 text-xs font-normal text-pnc-muted">x{a.last4}</span>}
             {badge}
           </p>
-          <p className="mt-0.5 text-sm text-pnc-muted">
+          {/* Type and detail share a line, so a list shows more accounts at once. */}
+          <div className="mt-0.5 text-sm text-pnc-muted">
             {kindLabels[a.kind]}
             {a.external && " · held outside PNC"}
-          </p>
-          <div className="mt-1 text-sm">{detail}</div>
+            {detail != null && <> · {detail}</>}
+          </div>
         </div>
         <div className="flex shrink-0 items-start gap-1">
           <Money value={a.balance} className="pt-0.5 text-base font-semibold @2xl:text-lg" />

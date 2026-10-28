@@ -23,7 +23,7 @@ export function PhoneFrame({ children }: { children: ReactNode }) {
 
 function StatusBar() {
   return (
-    <div className="absolute inset-x-0 top-0 z-30 hidden h-12 items-center justify-between bg-pnc-blue-700 px-8 text-[0.9375rem] font-semibold text-white md:flex">
+    <div className="absolute inset-x-0 top-0 z-30 hidden h-12 items-center justify-between bg-pnc-blue-700 px-8 text-md font-semibold text-white md:flex">
       <span>9:41</span>
       <span className="absolute left-1/2 top-2.5 h-[30px] w-[110px] -translate-x-1/2 rounded-full bg-black" />
       <span className="flex items-center gap-1.5">

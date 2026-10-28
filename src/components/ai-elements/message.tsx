@@ -18,7 +18,7 @@ export function Message({
   if (from === "user")
     return (
       <div className={cn("flex justify-end", className)}>
-        <div className="max-w-[85%] whitespace-pre-line rounded-2xl rounded-br-md bg-pnc-navy px-4 py-2.5 text-[0.9375rem] leading-relaxed text-white">
+        <div className="max-w-[85%] whitespace-pre-line rounded-2xl rounded-br-md bg-pnc-navy px-4 py-2.5 text-md leading-relaxed text-white">
           <span className="sr-only">You: </span>
           {children}
         </div>
@@ -27,7 +27,7 @@ export function Message({
   return (
     <div className={cn("flex gap-3", className)}>
       <FindoeLogo className="mt-0.5 size-6" thinking={thinking} />
-      <div className="min-w-0 flex-1 space-y-3 text-[0.9375rem] leading-relaxed text-pnc-ink">
+      <div className="min-w-0 flex-1 space-y-3 text-md leading-relaxed text-pnc-ink">
         <span className="sr-only">Findoe: </span>
         {children}
       </div>
@@ -37,17 +37,33 @@ export function Message({
 
 /**
  * Renders the assistant's plain-text replies: paragraphs, bullet and numbered
- * lists, and **bold**. A caret trails the text while it streams.
+ * lists, and **bold**. With `cite`, "[n]" markers become whatever it draws
+ * (Findoe's source markers). A caret trails the text while it streams.
  */
-export function Response({ text, streaming = false }: { text: string; streaming?: boolean }) {
+export function Response({
+  text,
+  streaming = false,
+  cite,
+}: {
+  text: string;
+  streaming?: boolean;
+  cite?: (n: number) => ReactNode;
+}) {
+  const cites = (s: string): ReactNode =>
+    cite
+      ? s.split(/(\[\d+\])/g).map((part, i) => {
+          const n = part.match(/^\[(\d+)\]$/);
+          return <Fragment key={i}>{n ? cite(Number(n[1])) : part}</Fragment>;
+        })
+      : s;
   const inline = (s: string): ReactNode[] =>
     s.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
       part.startsWith("**") && part.endsWith("**") ? (
         <strong key={i} className="font-semibold text-pnc-ink">
-          {part.slice(2, -2)}
+          {cites(part.slice(2, -2))}
         </strong>
       ) : (
-        <Fragment key={i}>{part}</Fragment>
+        <Fragment key={i}>{cites(part)}</Fragment>
       ),
     );
   const blocks: ReactNode[] = [];

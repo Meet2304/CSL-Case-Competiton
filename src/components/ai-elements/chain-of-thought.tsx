@@ -18,6 +18,7 @@ export function ChainOfThought({
   doneTitle,
   children,
   defaultOpen,
+  stayOpen = false,
 }: {
   running: boolean;
   /** Shown (shimmering) while running, e.g. "Working on it". */
@@ -26,15 +27,17 @@ export function ChainOfThought({
   doneTitle: string;
   children: ReactNode;
   defaultOpen?: boolean;
+  /** Keep the steps showing once work finishes instead of folding them away. */
+  stayOpen?: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen ?? running);
   const [wasRunning, setWasRunning] = useState(running);
   const id = useId();
 
-  // Adjusting state during render: fold away the moment work finishes.
+  // Adjusting state during render: fold away the moment work finishes (unless asked not to).
   if (wasRunning !== running) {
     setWasRunning(running);
-    setOpen(running);
+    if (running || !stayOpen) setOpen(running);
   }
 
   return (

@@ -57,7 +57,7 @@ export function ViewerGate({ children }: { children: ReactNode }) {
       <h1 className="mt-4 font-display text-2xl font-medium text-pnc-ink">
         {person.name}&apos;s accounts are being settled
       </h1>
-      <p className="mt-3 text-[0.9375rem] leading-relaxed text-pnc-muted">
+      <p className="mt-3 text-md leading-relaxed text-pnc-muted">
         PNC has been told that {firstName(person.name)} has passed away, so online banking for this
         login is closed while the family settles the estate. Family members can sign in with their
         own User ID to see what happens next.

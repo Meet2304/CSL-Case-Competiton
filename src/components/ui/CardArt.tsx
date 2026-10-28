@@ -49,9 +49,9 @@ export function CardArt({
           <span className="flex items-center gap-1 self-end text-[0.5625rem] font-semibold tracking-wide">
             <PncMark size={10} /> PNC BANK
           </span>
-          <span className="font-serif text-[0.625rem] tracking-wide text-white/90">{s.label}</span>
+          <span className="font-serif text-3xs tracking-wide text-white/90">{s.label}</span>
           <span className="flex items-end justify-between">
-            <span className="text-[0.625rem] tabular-nums text-white/80">•••• {last4}</span>
+            <span className="text-3xs tabular-nums text-white/80">•••• {last4}</span>
             <span className="font-sans text-sm font-black italic tracking-tight">VISA</span>
           </span>
         </div>

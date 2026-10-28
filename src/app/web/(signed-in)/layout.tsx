@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { LossStrip } from "@/components/bereavement/LossStrip";
 import { ViewerGate, ViewerProvider } from "@/components/customer/Viewer";
+import { CustomerFindoe } from "@/components/findoe/CustomerFindoe";
 import { WebFooter } from "@/components/web/WebFooter";
 import { WebHeader } from "@/components/web/WebHeader";
 import { viewerId } from "@/lib/viewer";
@@ -32,6 +33,8 @@ async function SignedIn({ children }: { children: React.ReactNode }) {
         <ViewerGate>{children}</ViewerGate>
       </main>
       <WebFooter />
+      {/* Findoe on every customer page; the conversation carries across pages. */}
+      <CustomerFindoe variant="web" />
     </ViewerProvider>
   );
 }

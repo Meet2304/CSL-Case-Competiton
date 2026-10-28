@@ -36,6 +36,8 @@ export type BereavementState = {
   /** Uploaded once and reused by every transfer flow. */
   deathCertificate?: { fileName: string; uploadedOn: string };
   flows: Record<string, FlowProgress>;
+  /** Who has opened the condolence banner, by person id: the loss they saw. It then stays hidden. */
+  seenBy?: Record<string, string>;
 };
 
 const STORAGE_KEY = "pnc-bereavement-demo-v2";
@@ -105,9 +107,13 @@ export const bereavementActions = {
   saveFlow(flowId: string, progress: FlowProgress) {
     update((s) => ({ ...s, flows: { ...s.flows, [flowId]: progress } }));
   },
+  /** The person opened the condolence banner, so it no longer shows for this loss. */
+  acknowledgeLoss(personId: string, lossId: string) {
+    update((s) => ({ ...s, seenBy: { ...s.seenBy, [personId]: lossId } }));
+  },
   /** Clears the survivor's progress but keeps the recorded loss, for the demo. */
   resetProgress() {
-    update((s) => ({ ...s, deathCertificate: undefined, flows: {} }));
+    update((s) => ({ ...s, deathCertificate: undefined, flows: {}, seenBy: {} }));
   },
   /** Clears everything, for the demo. */
   reset() {

@@ -39,7 +39,7 @@ export function WebAdvisorHome() {
         }
       />
 
-      <div className="@container mx-auto max-w-6xl space-y-6 px-4 pb-10 sm:px-6">
+      <div className="@container mx-auto max-w-7xl space-y-6 px-4 pb-10 sm:px-6">
         {/* Headline numbers first, lifted onto the hero band. */}
         <AdvisorStats stats={stats} className="relative -mt-10" />
 

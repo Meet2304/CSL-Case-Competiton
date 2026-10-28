@@ -26,7 +26,7 @@ export function RuleTrace({
   const { outcome } = plan;
   return (
     <div className="space-y-5 text-sm leading-relaxed">
-      <p className="text-[0.9375rem] text-pnc-ink">{plan.summary}</p>
+      <p className="text-md text-pnc-ink">{plan.summary}</p>
 
       <section aria-label="Decision path">
         <h5 className={h5}>How the rulebook decided</h5>

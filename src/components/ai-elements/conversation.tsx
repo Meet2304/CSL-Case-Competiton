@@ -27,14 +27,22 @@ export function Conversation({
   children,
   className,
   label,
+  anchorId,
 }: {
   children: ReactNode;
   className?: string;
   label: string;
+  /**
+   * The element (usually the latest question) to hold at the top while the
+   * reply grows under it, instead of following the reply to the bottom.
+   * Scrolling by hand lets go of it.
+   */
+  anchorId?: string;
 }) {
   const viewport = useRef<HTMLDivElement>(null);
   const content = useRef<HTMLDivElement>(null);
   const following = useRef(true);
+  const anchor = useRef<string | undefined>(undefined);
   const [atBottom, setAtBottom] = useState(true);
 
   const scrollToBottom = useCallback((smooth = true) => {
@@ -43,16 +51,39 @@ export function Conversation({
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     el.scrollTo({ top: el.scrollHeight, behavior: smooth && !reduce ? "smooth" : "auto" });
     following.current = true;
+    anchor.current = undefined;
   }, []);
 
-  // New content (a message, a streamed token, a step finishing) keeps the view pinned.
+  /** Puts the anchor at the top of the view, as far as the content below it allows. */
+  const holdAnchor = useCallback(() => {
+    const el = viewport.current;
+    const target = anchor.current && document.getElementById(anchor.current);
+    if (!el || !target) return;
+    el.scrollTop += target.getBoundingClientRect().top - el.getBoundingClientRect().top - 12;
+  }, []);
+
+  useEffect(() => {
+    if (!anchorId) return;
+    anchor.current = anchorId;
+    following.current = false;
+    holdAnchor();
+  }, [anchorId, holdAnchor]);
+
+  // New content (a message, a streamed token, a step finishing) keeps the view pinned:
+  // to the anchored question if there is one, otherwise to the bottom.
   useEffect(() => {
     const ro = new ResizeObserver(() => {
-      if (following.current) scrollToBottom(false);
+      if (anchor.current) holdAnchor();
+      else if (following.current) scrollToBottom(false);
     });
     if (content.current) ro.observe(content.current);
     return () => ro.disconnect();
-  }, [scrollToBottom]);
+  }, [scrollToBottom, holdAnchor]);
+
+  // The reader scrolling by hand takes over from the anchor.
+  const release = () => {
+    anchor.current = undefined;
+  };
 
   return (
     <Stick.Provider value={{ atBottom, scrollToBottom: () => scrollToBottom() }}>
@@ -62,6 +93,9 @@ export function Conversation({
           role="log"
           aria-label={label}
           tabIndex={0}
+          onWheel={release}
+          onTouchMove={release}
+          onKeyDown={release}
           onScroll={(e) => {
             const el = e.currentTarget;
             const bottom = el.scrollHeight - el.scrollTop - el.clientHeight < 24;

@@ -23,7 +23,7 @@ export default function WebHelpPage() {
     <>
       <WebHero title="Help" />
 
-      <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[1fr_20rem]">
+      <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[1fr_20rem]">
         <WebCard title="Frequently Asked Questions">
           <div className="px-5 pt-4">
             <label className="flex items-center gap-2 rounded-md border border-pnc-line px-3 py-2 text-sm text-pnc-muted">

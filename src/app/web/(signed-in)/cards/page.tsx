@@ -22,7 +22,7 @@ export default function WebCardsPage() {
     <>
       <WebHero title="Cards" />
 
-      <div className="mx-auto max-w-6xl space-y-6 px-4 py-8 sm:px-6">
+      <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6">
         <div className="flex items-center gap-3">
           <h2 className="font-display text-2xl font-medium">Your Cards</h2>
           <MockBadge />

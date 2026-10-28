@@ -108,7 +108,7 @@ export function ClientSearch({
           }}
           className="min-w-0 flex-1 bg-transparent text-sm text-pnc-ink outline-none placeholder:text-pnc-muted"
         />
-        <kbd className="hidden rounded border border-pnc-line px-1.5 text-[0.6875rem] text-pnc-muted @3xl:inline">
+        <kbd className="hidden rounded border border-pnc-line px-1.5 text-2xs text-pnc-muted @3xl:inline">
           /
         </kbd>
       </label>

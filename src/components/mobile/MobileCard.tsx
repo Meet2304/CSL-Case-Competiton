@@ -39,7 +39,7 @@ export function MobileLinkRow({
       {trailing ? (
         <div className="py-4">{trailing}</div>
       ) : (
-        <Link href={href} className="flex items-center justify-between py-4 text-[0.9375rem]">
+        <Link href={href} className="flex items-center justify-between py-4 text-md">
           {label}
           <ChevronRight className="size-5 text-pnc-link" />
         </Link>

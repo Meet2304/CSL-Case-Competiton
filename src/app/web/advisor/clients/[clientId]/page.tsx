@@ -32,7 +32,7 @@ export default async function WebAdvisorClientPage({
         title={customer.name}
         subtitle={`${customer.segment} client since ${profile.clientSince} · ${formatCompactMoney(customer.relationshipValue)} · ${profile.city}`}
       />
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
         <ClientWorkspace customerId={customer.id} />
       </div>
     </>
