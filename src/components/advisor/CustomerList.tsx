@@ -45,7 +45,7 @@ export function CustomerList({ customers }: { customers: AdvisorCustomer[] }) {
               <div className="min-w-0 flex-1">
                 <Link
                   href={routes.advisorClient(c.id)}
-                  className="block truncate text-[15px] font-semibold text-pnc-link"
+                  className="block truncate text-[0.9375rem] font-semibold text-pnc-link"
                 >
                   {c.name}
                 </Link>
@@ -65,7 +65,7 @@ export function CustomerList({ customers }: { customers: AdvisorCustomer[] }) {
                 <Money
                   value={c.relationshipValue}
                   compact
-                  className="block text-[15px] font-bold"
+                  className="block text-[0.9375rem] font-bold"
                 />
                 <span
                   className={cn(

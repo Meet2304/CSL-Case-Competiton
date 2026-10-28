@@ -31,7 +31,7 @@ export function AccountRow({
   return (
     <li className="border-b border-pnc-line last:border-b-0">
       <div className="grid grid-cols-[1fr_auto_auto] items-center gap-x-4 px-5 py-4 sm:grid-cols-[1fr_9rem_8rem_auto]">
-        <a href="#" className="text-[15px] font-semibold text-pnc-link hover:underline">
+        <a href="#" className="text-[0.9375rem] font-semibold text-pnc-link hover:underline">
           {name} <span className="text-xs font-normal">x{last4}</span>
         </a>
         <span className="hidden text-sm text-pnc-muted sm:block">

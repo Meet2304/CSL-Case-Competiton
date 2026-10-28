@@ -68,7 +68,7 @@ export function MobileHeader({
           <div className="mt-4 flex items-end justify-between gap-3">
             <div className="min-w-0">
               {typeof title === "string" ? (
-                <h1 className="text-[28px] font-bold leading-tight">{title}</h1>
+                <h1 className="text-[1.75rem] font-bold leading-tight">{title}</h1>
               ) : (
                 title
               )}

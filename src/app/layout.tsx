@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Montserrat, Open_Sans } from "next/font/google";
+import { UiScaleShortcut } from "@/components/shared/UiScaleShortcut";
+import { uiScaleScript } from "@/lib/uiScale";
 import "./globals.css";
 
 const openSans = Open_Sans({
@@ -27,8 +29,17 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${openSans.variable} ${montserrat.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+    // The scale script may set data-scale on <html> before React hydrates.
+    <html
+      lang="en"
+      className={`${openSans.variable} ${montserrat.variable} h-full antialiased`}
+      suppressHydrationWarning
+    >
+      <body className="min-h-full flex flex-col font-sans">
+        <script dangerouslySetInnerHTML={{ __html: uiScaleScript }} />
+        <UiScaleShortcut />
+        {children}
+      </body>
     </html>
   );
 }

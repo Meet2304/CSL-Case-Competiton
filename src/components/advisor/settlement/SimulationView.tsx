@@ -115,7 +115,7 @@ export function SimulationView({
             )}
             aria-hidden="true"
           />
-          <p className="text-[15px] leading-relaxed">
+          <p className="text-[0.9375rem] leading-relaxed">
             <span className="font-semibold">{status.label}.</span>{" "}
             {t.probate > 0
               ? `If ${p} died today, ${formatCompactMoney(t.probate)} would go through probate`

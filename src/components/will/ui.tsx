@@ -44,7 +44,7 @@ export function PageHeading({
         {aside}
       </div>
       {children && (
-        <div className="max-w-3xl space-y-3 text-[15px] leading-relaxed text-pnc-ink">
+        <div className="max-w-3xl space-y-3 text-[0.9375rem] leading-relaxed text-pnc-ink">
           {children}
         </div>
       )}
@@ -259,7 +259,7 @@ export function Field({
         {label}
         {required && <sup className="ml-0.5">*</sup>}
       </span>
-      {hint && <span className="block text-[13px] text-pnc-muted">{hint}</span>}
+      {hint && <span className="block text-[0.8125rem] text-pnc-muted">{hint}</span>}
       {children}
       {error && <span className="block text-sm text-attention">{error}</span>}
     </label>

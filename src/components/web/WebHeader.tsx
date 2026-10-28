@@ -58,14 +58,14 @@ export function WebHeader({ variant = "customer" }: { variant?: Role }) {
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "relative flex shrink-0 items-center gap-1.5 whitespace-nowrap px-2.5 text-[13px] font-semibold text-white/90 hover:text-white sm:px-4 sm:text-sm",
+                  "relative flex shrink-0 items-center gap-1.5 whitespace-nowrap px-2.5 text-[0.8125rem] font-semibold text-white/90 hover:text-white sm:px-4 sm:text-sm",
                   active &&
                     "text-white after:absolute after:inset-x-2.5 after:bottom-0 after:h-[3px] after:rounded-t after:bg-pnc-orange sm:after:inset-x-4",
                 )}
               >
                 {item.label}
                 {item.badge ? (
-                  <span className="grid h-5 min-w-5 place-items-center rounded-full bg-pnc-orange px-1.5 text-[11px] font-bold text-white">
+                  <span className="grid h-5 min-w-5 place-items-center rounded-full bg-pnc-orange px-1.5 text-[0.6875rem] font-bold text-white">
                     {item.badge}
                     <span className="sr-only"> {item.badge === 1 ? "reminder" : "reminders"}</span>
                   </span>

@@ -70,7 +70,7 @@ export const relationLabels: Record<PersonAsset["relation"], string> = {
 export function RelationBadge({ relation }: { relation: PersonAsset["relation"] }) {
   if (relation === "owned") return null;
   return (
-    <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-pnc-blue-50 px-2 py-0.5 align-middle text-[11px] font-semibold text-pnc-blue-800">
+    <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-pnc-blue-50 px-2 py-0.5 align-middle text-[0.6875rem] font-semibold text-pnc-blue-800">
       {relation === "shared" && <Users className="size-3" aria-hidden="true" />}
       {relationLabels[relation]}
     </span>

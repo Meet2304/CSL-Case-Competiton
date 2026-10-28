@@ -69,7 +69,7 @@ export function NextStepsDashboard() {
         <h2 className="mt-3 font-display text-2xl font-medium text-pnc-ink">
           We&apos;re so sorry about {first}
         </h2>
-        <p className="mt-2 text-[15px] leading-relaxed text-pnc-muted">
+        <p className="mt-2 text-[0.9375rem] leading-relaxed text-pnc-muted">
           There&apos;s nothing you need to do. The adults in your family and PNC are looking after{" "}
           {first}&apos;s accounts, and your own accounts keep working just as before.
         </p>

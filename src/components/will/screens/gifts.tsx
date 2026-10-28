@@ -226,7 +226,7 @@ function PropertyModal({
 
       {describe && (
         <div className="space-y-1.5">
-          <p className="text-[15px] font-semibold">
+          <p className="text-[0.9375rem] font-semibold">
             Enter a clear description of the property<sup className="ml-0.5">*</sup>
           </p>
           <LearnMore

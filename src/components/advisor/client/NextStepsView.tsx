@@ -169,11 +169,13 @@ export function NextStepsView({
         </div>
         <h3
           id={`${baseId}-situation`}
-          className="mt-1 font-display text-[28px] font-medium leading-tight text-pnc-ink"
+          className="mt-1 font-display text-[1.75rem] font-medium leading-tight text-pnc-ink"
         >
           {sit.headline}
         </h3>
-        <p className="mt-2 max-w-3xl text-[15px] leading-relaxed text-pnc-ink">{sit.summary}</p>
+        <p className="mt-2 max-w-3xl text-[0.9375rem] leading-relaxed text-pnc-ink">
+          {sit.summary}
+        </p>
         <dl className="mt-5 flex flex-wrap gap-x-10 gap-y-3">
           {sit.stats.map((s) => (
             <div key={s.label}>
@@ -278,7 +280,7 @@ export function NextStepsView({
               <div className="space-y-4 text-sm">
                 <figure className="rounded-md bg-pnc-surface px-4 py-3">
                   <Quote className="size-4 text-pnc-blue-700" aria-hidden="true" />
-                  <blockquote className="mt-1 text-[15px] italic leading-relaxed text-pnc-ink">
+                  <blockquote className="mt-1 text-[0.9375rem] italic leading-relaxed text-pnc-ink">
                     {briefing.opening.replace(/^"|"$/g, "")}
                   </blockquote>
                 </figure>

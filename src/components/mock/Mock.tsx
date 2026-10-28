@@ -9,7 +9,7 @@ export function MockBadge({ className }: { className?: string }) {
     <span
       title="Mock data for demonstration only"
       className={cn(
-        "inline-flex shrink-0 items-center whitespace-nowrap rounded-full border border-mock-line bg-mock-bg px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-mock",
+        "inline-flex shrink-0 items-center whitespace-nowrap rounded-full border border-mock-line bg-mock-bg px-2 py-0.5 text-[0.625rem] font-bold uppercase tracking-wide text-mock",
         className,
       )}
     >

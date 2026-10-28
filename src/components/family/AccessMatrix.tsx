@@ -193,7 +193,7 @@ export function AccessMatrix({
                         { title: "Control", cols: control },
                       ].map(({ title, cols }) => (
                         <Fragment key={title}>
-                          <p className="col-span-2 mt-1 text-[11px] font-semibold uppercase tracking-wide text-pnc-muted first:mt-0">
+                          <p className="col-span-2 mt-1 text-[0.6875rem] font-semibold uppercase tracking-wide text-pnc-muted first:mt-0">
                             {title}
                           </p>
                           {cols.map((c) => (

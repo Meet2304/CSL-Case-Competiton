@@ -96,7 +96,7 @@ export function MobileAdvisorHome() {
         }
         title={
           <>
-            <h1 className="truncate text-[28px] font-bold leading-tight">
+            <h1 className="truncate text-[1.75rem] font-bold leading-tight">
               Hello, {advisor.firstName}
             </h1>
             <p className="flex items-center gap-2 text-xs font-semibold">

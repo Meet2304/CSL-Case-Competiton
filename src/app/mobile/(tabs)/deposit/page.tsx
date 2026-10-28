@@ -16,7 +16,7 @@ export default function MobileDepositPage() {
           </label>
           <select
             id="deposit-to"
-            className="mt-1 w-full border-b border-pnc-line bg-transparent py-2 text-[17px] outline-none"
+            className="mt-1 w-full border-b border-pnc-line bg-transparent py-2 text-[1.0625rem] outline-none"
           >
             {depositAccounts.map((a) => (
               <option key={a.id}>
@@ -32,7 +32,7 @@ export default function MobileDepositPage() {
             id="deposit-amount"
             inputMode="decimal"
             placeholder="$0.00"
-            className="mt-1 w-full border-b border-pnc-line py-2 text-[17px] outline-none focus:border-pnc-link"
+            className="mt-1 w-full border-b border-pnc-line py-2 text-[1.0625rem] outline-none focus:border-pnc-link"
           />
         </MobileCard>
       </MobileHeader>
