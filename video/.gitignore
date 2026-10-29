@@ -1,0 +1,8 @@
+node_modules
+dist
+.DS_Store
+.env
+
+# Final deliverables in out/ are committed; review frames and scratch renders are not.
+out/review/
+out/*.part.mp4
