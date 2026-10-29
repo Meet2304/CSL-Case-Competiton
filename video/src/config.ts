@@ -98,7 +98,6 @@ export const CUES = {
     figuresRing: 5.3,
     panToSteps: 7.6,
     stepsRing: 8.0,
-    step1Ring: 9.6,
   },
   engine: {
     spotlight: 0.0,

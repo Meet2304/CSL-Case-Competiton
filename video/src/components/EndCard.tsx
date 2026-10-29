@@ -11,7 +11,7 @@ const FEATURES = [
   { label: "Advisor Workbench", Icon: BriefcaseBusiness },
 ];
 // The row sits where the wordmark resolves, so the features fold straight into it.
-const NODE = { w: 360, h: 96, gap: 64, y: 417 };
+const NODE = { w: 410, h: 96, gap: 40, y: 352 };
 
 /**
  * The close: the four features arrive as connected nodes, then fold into the
@@ -98,7 +98,7 @@ export const EndCard: React.FC<{
               padding: "0 24px 0 18px",
               boxSizing: "border-box",
               color: C.white,
-              fontSize: 30,
+              fontSize: 28,
               fontWeight: 600,
               whiteSpace: "nowrap",
               opacity: show * (1 - converge),
@@ -128,7 +128,7 @@ export const EndCard: React.FC<{
       <div
         style={{
           position: "absolute",
-          top: 395,
+          top: 330,
           left: 0,
           width: 1920,
           display: "flex",
@@ -152,25 +152,34 @@ export const EndCard: React.FC<{
           Findoe
         </span>
       </div>
-      <div
-        style={{
-          position: "absolute",
-          top: 600,
-          width: 1920,
-          textAlign: "center",
-          fontSize: 54,
-          fontWeight: 500,
-          color: C.white,
-          letterSpacing: "-0.005em",
-        }}
-      >
-        <span style={{ opacity: interpolate(frame, [tagline1At, tagline1At + 14], [0, 1], clamp) }}>
-          Clarity for families.
-        </span>{" "}
-        <span style={{ opacity: interpolate(frame, [tagline2At, tagline2At + 14], [0, 1], clamp) }}>
-          Context for advisors.
-        </span>
-      </div>
+      {/* The line, one half per row so each arrives centred as it is spoken. */}
+      {(
+        [
+          ["Clarity for families.", tagline1At, 540],
+          ["Context for advisors.", tagline2At, 612],
+        ] as const
+      ).map(([text, at, top]) => {
+        const show = interpolate(frame, [at, at + 14], [0, 1], { easing: ease, ...clamp });
+        return (
+          <div
+            key={text}
+            style={{
+              position: "absolute",
+              top,
+              width: 1920,
+              textAlign: "center",
+              fontSize: 54,
+              fontWeight: 500,
+              color: C.white,
+              letterSpacing: "-0.005em",
+              opacity: show,
+              translate: `0px ${(1 - show) * 12}px`,
+            }}
+          >
+            {text}
+          </div>
+        );
+      })}
       <div
         style={{
           position: "absolute",

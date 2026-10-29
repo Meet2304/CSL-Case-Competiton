@@ -1,6 +1,6 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame } from "remotion";
-import { box, center, decisionPath, labels, union } from "../captures";
+import { box, center, decisionPath, labels, shotSrc, union } from "../captures";
 import { cameraAt, focus, type CamKey } from "../camera";
 import { CUES } from "../config";
 import { AgentSpotlight } from "../components/AgentSpotlight";
@@ -10,6 +10,7 @@ import { Callout } from "../components/Callout";
 import { Cursor } from "../components/Cursor";
 import { DataSourcePanel } from "../components/DataSourcePanel";
 import { DecisionTree } from "../components/DecisionTree";
+import { FocusBlur } from "../components/FocusBlur";
 import type { SceneTiming } from "../timeline";
 import { Shot, sec, shotOpacities } from "./shared";
 
@@ -92,7 +93,23 @@ export const SceneAdvisor: React.FC<SceneTiming> = ({ voStart, voStart2, duratio
             camera: signonCam(frame),
             opacity: filled,
           },
-          { key: "home", content: <Shot id="s4-home" />, camera: homeCam(frame), opacity: home },
+          {
+            key: "home",
+            camera: homeCam(frame),
+            opacity: home,
+            content: (
+              <>
+                <Shot id="s4-home" />
+                {/* Only the flagged loss stays sharp: no other placeholder clients or dates. */}
+                <FocusBlur
+                  src={shotSrc("s4-home")}
+                  box={box("s4-home", "notifLoss")}
+                  from={a(c.toHome) + 6}
+                  pad={4}
+                />
+              </>
+            ),
+          },
           { key: "client", content: <Shot id="s4-client" />, camera: cam, opacity: client },
           { key: "decided", content: <Shot id="s4-decided" />, camera: cam, opacity: decided },
           {
@@ -122,10 +139,7 @@ export const SceneAdvisor: React.FC<SceneTiming> = ({ voStart, voStart2, duratio
             />
             <Callout
               camera={cam}
-              keys={[
-                { at: a(c.stepsRing), box: steps },
-                { at: a(c.step1Ring), box: box("s4-client", "step1") },
-              ]}
+              keys={[{ at: a(c.stepsRing), box: steps }]}
               until={e(-0.3)}
               label="Step-by-step plan"
               align="end"

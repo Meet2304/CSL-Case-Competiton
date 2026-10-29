@@ -10,7 +10,7 @@ overlays for the Findoe agent, timed to an ElevenLabs voiceover.
 | File                         | What                                                              |
 | ---------------------------- | ----------------------------------------------------------------- |
 | `out/findoe-demo.mp4`        | The video, H.264 + AAC, under 80 s                                |
-| `out/findoe-demo-poster.png` | Poster frame                                                      |
+| `out/findoe-demo-poster.png` | Poster frame (the decision tree, fully lit, at 68.2 s)            |
 | `out/vo/*.mp3`               | The six voiceover lines as used (trimmed, normalized to −16 LUFS) |
 
 ## Setup
