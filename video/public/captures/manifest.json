@@ -1,0 +1,593 @@
+{
+  "capturedAt": "2026-10-29T02:46:57.576Z",
+  "base": "https://findoe.vercel.app",
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "scale": 2,
+  "shots": {
+    "s1-signon": {
+      "file": "s1-signon.png",
+      "boxes": {
+        "chip": {
+          "x": 1164,
+          "y": 657,
+          "w": 135.1,
+          "h": 26
+        },
+        "button": {
+          "x": 1152,
+          "y": 561,
+          "w": 336,
+          "h": 48
+        }
+      }
+    },
+    "s1-signon-filled": {
+      "file": "s1-signon-filled.png",
+      "boxes": {
+        "chip": {
+          "x": 1164,
+          "y": 657,
+          "w": 135.1,
+          "h": 26
+        },
+        "button": {
+          "x": 1152,
+          "y": 561,
+          "w": 336,
+          "h": 48
+        }
+      }
+    },
+    "s2-home": {
+      "file": "s2-home.png",
+      "boxes": {
+        "glance": {
+          "x": 344,
+          "y": 160,
+          "w": 844,
+          "h": 416
+        },
+        "lifePolicy": {
+          "x": 368,
+          "y": 265.9,
+          "w": 796,
+          "h": 20
+        },
+        "notifications": {
+          "x": 1208,
+          "y": 160,
+          "w": 368,
+          "h": 416
+        },
+        "notifWill": {
+          "x": 1208,
+          "y": 217,
+          "w": 368,
+          "h": 151.5
+        },
+        "notifBeneficiary": {
+          "x": 1208,
+          "y": 368.5,
+          "w": 368,
+          "h": 151.5
+        },
+        "willLink": {
+          "x": 1276,
+          "y": 330.5,
+          "w": 112.3,
+          "h": 20
+        },
+        "beneficiaryLink": {
+          "x": 1276,
+          "y": 482,
+          "w": 123.5,
+          "h": 20
+        },
+        "navFamily": {
+          "x": 1311.8,
+          "y": 0,
+          "w": 76.3,
+          "h": 64
+        },
+        "families": {
+          "x": 344,
+          "y": 596,
+          "w": 1232,
+          "h": 135
+        }
+      }
+    },
+    "s2-family": {
+      "file": "s2-family.png",
+      "boxes": {
+        "manage": {
+          "x": 1320.4,
+          "y": 182,
+          "w": 163.3,
+          "h": 42
+        },
+        "header": {
+          "x": 344,
+          "y": 80,
+          "w": 225.1,
+          "h": 36
+        }
+      }
+    },
+    "s2-members": {
+      "file": "s2-members.png",
+      "boxes": {
+        "rolesTab": {
+          "x": 1252,
+          "y": 83,
+          "w": 121.6,
+          "h": 48
+        },
+        "dialog": {
+          "x": 1152,
+          "y": 0,
+          "w": 768,
+          "h": 1080
+        }
+      }
+    },
+    "s2-roles": {
+      "file": "s2-roles.png",
+      "boxes": {
+        "rolesTab": {
+          "x": 1252,
+          "y": 83,
+          "w": 121.6,
+          "h": 48
+        },
+        "dialog": {
+          "x": 1152,
+          "y": 0,
+          "w": 768,
+          "h": 1080
+        },
+        "roleAdmin": {
+          "x": 1173,
+          "y": 209,
+          "w": 726,
+          "h": 119
+        },
+        "roleOlder": {
+          "x": 1173,
+          "y": 328,
+          "w": 726,
+          "h": 99
+        },
+        "roleYounger": {
+          "x": 1173,
+          "y": 427,
+          "w": 726,
+          "h": 98
+        }
+      }
+    },
+    "s4-signon": {
+      "file": "s4-signon.png",
+      "boxes": {
+        "chip": {
+          "x": 1164,
+          "y": 725,
+          "w": 114.8,
+          "h": 26
+        },
+        "button": {
+          "x": 1152,
+          "y": 561,
+          "w": 336,
+          "h": 48
+        }
+      }
+    },
+    "s4-signon-filled": {
+      "file": "s4-signon-filled.png",
+      "boxes": {
+        "chip": {
+          "x": 1164,
+          "y": 725,
+          "w": 114.8,
+          "h": 26
+        },
+        "button": {
+          "x": 1152,
+          "y": 561,
+          "w": 336,
+          "h": 48
+        }
+      }
+    },
+    "s4-home": {
+      "file": "s4-home.png",
+      "boxes": {
+        "notifications": {
+          "x": 1240,
+          "y": 266,
+          "w": 336,
+          "h": 512
+        },
+        "notifLoss": {
+          "x": 1240,
+          "y": 327,
+          "w": 336,
+          "h": 106
+        },
+        "customers": {
+          "x": 344,
+          "y": 266,
+          "w": 872,
+          "h": 911
+        }
+      }
+    },
+    "s4-client": {
+      "file": "s4-client.png",
+      "boxes": {
+        "where": {
+          "x": 372,
+          "y": 296,
+          "w": 772,
+          "h": 182.8
+        },
+        "headline": {
+          "x": 372,
+          "y": 321,
+          "w": 772,
+          "h": 35
+        },
+        "figures": {
+          "x": 372,
+          "y": 432.8,
+          "w": 772,
+          "h": 46
+        },
+        "outsideProbate": {
+          "x": 372,
+          "y": 432.8,
+          "w": 130.2,
+          "h": 46
+        },
+        "probate": {
+          "x": 542.2,
+          "y": 432.8,
+          "w": 124.1,
+          "h": 46
+        },
+        "doNext": {
+          "x": 372,
+          "y": 518.8,
+          "w": 79.5,
+          "h": 28
+        },
+        "step1": {
+          "x": 372,
+          "y": 555.8,
+          "w": 772,
+          "h": 103.8
+        },
+        "panel": {
+          "x": 1192,
+          "y": 219,
+          "w": 384,
+          "h": 845
+        },
+        "grounded": {
+          "x": 1256,
+          "y": 253,
+          "w": 300,
+          "h": 16
+        },
+        "brief": {
+          "x": 1248,
+          "y": 300,
+          "w": 308,
+          "h": 97.5
+        },
+        "howIDecided": {
+          "x": 1248,
+          "y": 411.5,
+          "w": 181.5,
+          "h": 20
+        },
+        "question529": {
+          "x": 1248,
+          "y": 453.5,
+          "w": 308,
+          "h": 190.8
+        },
+        "version": {
+          "x": 1247,
+          "y": 977.5,
+          "w": 158.5,
+          "h": 16
+        }
+      }
+    },
+    "s4-decided": {
+      "file": "s4-decided.png",
+      "boxes": {
+        "panel": {
+          "x": 1192,
+          "y": 219,
+          "w": 384,
+          "h": 845
+        },
+        "iraStep": {
+          "x": 1248,
+          "y": 537.8,
+          "w": 308,
+          "h": 90
+        },
+        "grounded": {
+          "x": 1256,
+          "y": 253,
+          "w": 300,
+          "h": 16
+        }
+      }
+    },
+    "s4-question": {
+      "file": "s4-question.png",
+      "boxes": {
+        "panel": {
+          "x": 1192,
+          "y": 219,
+          "w": 384,
+          "h": 845
+        },
+        "question529": {
+          "x": 1248,
+          "y": 667.3,
+          "w": 308,
+          "h": 190.8
+        }
+      }
+    },
+    "s3-signon": {
+      "file": "s3-signon.png",
+      "boxes": {
+        "chip": {
+          "x": 1307.1,
+          "y": 657,
+          "w": 108.9,
+          "h": 26
+        },
+        "button": {
+          "x": 1152,
+          "y": 561,
+          "w": 336,
+          "h": 48
+        }
+      }
+    },
+    "s3-signon-filled": {
+      "file": "s3-signon-filled.png",
+      "boxes": {
+        "chip": {
+          "x": 1307.1,
+          "y": 657,
+          "w": 108.9,
+          "h": 26
+        },
+        "button": {
+          "x": 1152,
+          "y": 561,
+          "w": 336,
+          "h": 48
+        }
+      }
+    },
+    "s3-unclaimed": {
+      "file": "s3-unclaimed.png",
+      "boxes": {
+        "lossStrip": {
+          "x": 320,
+          "y": 64,
+          "w": 1280,
+          "h": 44
+        },
+        "intro": {
+          "x": 344,
+          "y": 294.5,
+          "w": 1232,
+          "h": 194.8
+        },
+        "list": {
+          "x": 344,
+          "y": 509.3,
+          "w": 1232,
+          "h": 420
+        },
+        "rowJoint": {
+          "x": 344,
+          "y": 509.3,
+          "w": 1232,
+          "h": 96
+        },
+        "rowIra": {
+          "x": 344,
+          "y": 617.3,
+          "w": 1232,
+          "h": 96
+        },
+        "iraStart": {
+          "x": 1293.9,
+          "y": 646.3,
+          "w": 126.8,
+          "h": 38
+        },
+        "launcher": {
+          "x": 1760.7,
+          "y": 1012,
+          "w": 139.3,
+          "h": 48
+        }
+      }
+    },
+    "s3-answer": {
+      "file": "s3-answer.png",
+      "boxes": {
+        "panel": {
+          "x": 1536,
+          "y": 0,
+          "w": 384,
+          "h": 1080
+        },
+        "input": {
+          "x": 1550,
+          "y": 944.8,
+          "w": 357,
+          "h": 44
+        },
+        "question": {
+          "x": 1615.9,
+          "y": 73.2,
+          "w": 284.1,
+          "h": 42.8
+        },
+        "work": {
+          "x": 1593,
+          "y": 135.9,
+          "w": 307,
+          "h": 1142.1
+        },
+        "asks": {
+          "x": 1593,
+          "y": 448,
+          "w": 307,
+          "h": 22.8
+        },
+        "claimList": {
+          "x": 1593,
+          "y": 480.8,
+          "w": 307,
+          "h": 152.5
+        },
+        "next": {
+          "x": 1593,
+          "y": 643.3,
+          "w": 307,
+          "h": 68.3
+        }
+      }
+    },
+    "s3-claim": {
+      "file": "s3-claim.png",
+      "boxes": {
+        "title": {
+          "x": 368,
+          "y": 354.5,
+          "w": 1184,
+          "h": 32
+        },
+        "progress": {
+          "x": 368,
+          "y": 498,
+          "w": 1184,
+          "h": 20
+        },
+        "progressLabel": {
+          "x": 1477.2,
+          "y": 498,
+          "w": 74.8,
+          "h": 20
+        },
+        "step1": {
+          "x": 368,
+          "y": 538,
+          "w": 1184,
+          "h": 204
+        },
+        "step2": {
+          "x": 368,
+          "y": 754,
+          "w": 1184,
+          "h": 246
+        },
+        "confirm": {
+          "x": 425,
+          "y": 963,
+          "w": 1110,
+          "h": 20
+        }
+      }
+    },
+    "s3-claim-done": {
+      "file": "s3-claim-done.png",
+      "boxes": {
+        "progress": {
+          "x": 368,
+          "y": 498,
+          "w": 1184,
+          "h": 20
+        },
+        "progressLabel": {
+          "x": 1477.2,
+          "y": 498,
+          "w": 74.8,
+          "h": 20
+        },
+        "confirm": {
+          "x": 425,
+          "y": 963,
+          "w": 1110,
+          "h": 20
+        }
+      }
+    }
+  },
+  "clips": {
+    "s3-agent": {
+      "file": "s3-agent.mp4",
+      "duration": 7.938,
+      "width": 1920,
+      "height": 1080,
+      "events": {
+        "launcherClick": 0.508,
+        "inputClick": 1.258,
+        "typingStart": 1.539,
+        "typingEnd": 3.429,
+        "send": 3.634,
+        "answered": 6.031
+      }
+    }
+  },
+  "labels": {
+    "rulebookVersion": "v2026.10-pa-pilot",
+    "grounded": "Claude Haiku 5.5 · grounded in the rulebook",
+    "howIDecided": "How I decided · 10 accounts",
+    "question529": "Who should own 529 College Savings x0018 now?",
+    "step1": "Call Morgan to offer condolences",
+    "iraPath": "Traditional IRA x0015: Sole owner → Traditional IRA → Yes → Surviving spouse → Spouse chooses how to take over the IRA",
+    "answerWork": "Used 1 record and 1 law · 2.4s",
+    "claimProgress": "1 of 5 done"
+  },
+  "decisionPath": {
+    "account": "Traditional IRA x0015",
+    "steps": [
+      {
+        "question": "What was Riley to this account?",
+        "answer": "Sole owner"
+      },
+      {
+        "question": "What kind of account did Riley own alone?",
+        "answer": "Traditional IRA"
+      },
+      {
+        "question": "Is a living beneficiary named on the retirement account?",
+        "answer": "Yes"
+      },
+      {
+        "question": "Who is the primary beneficiary?",
+        "answer": "Surviving spouse"
+      }
+    ],
+    "outcome": "Spouse chooses how to take over the IRA"
+  }
+}
