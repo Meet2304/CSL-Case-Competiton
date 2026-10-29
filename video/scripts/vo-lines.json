@@ -1,0 +1,55 @@
+{
+  "model": "eleven_v4",
+  "voices": {
+    "A": {
+      "name": "Carolyn - Warm Grounded Narrator",
+      "voiceId": "4rgssJ1pg3E9c0U78Iid",
+      "settings": {
+        "stability": 0.8,
+        "similarity_boost": 0.85
+      }
+    },
+    "B": {
+      "name": "Aabo - Engaging Confident Explainer Voice",
+      "voiceId": "KeU8nqWFDbaoi0QVUjD3",
+      "settings": {
+        "stability": 0.75,
+        "similarity_boost": 0.85
+      }
+    }
+  },
+  "pronunciation": "Findoe is sent as the IPA /ˈfɪndoʊ/ (FIN-doe), which eleven_v4 reads from slashes.",
+  "lines": [
+    {
+      "id": "01-open",
+      "voice": "A",
+      "text": "This is /ˈfɪndoʊ/, inside PNC Online Banking."
+    },
+    {
+      "id": "02-family",
+      "voice": "A",
+      "text": "Before a loss, /ˈfɪndoʊ/ puts every account in one place, even a life policy held outside PNC. It flags the gaps, like a missing beneficiary or no will, each with a fix one click away. Admins set access by role, so every family member sees only what they should."
+    },
+    {
+      "id": "03-widow",
+      "voice": "A",
+      "text": "After her husband passes, his wife sees one list of everything he left: what's already hers, and what's waiting to be claimed. She asks /ˈfɪndoʊ/ about his IRA. The answer is built from her actual accounts and the settlement rules, so she knows exactly what to bring, and what happens next."
+    },
+    {
+      "id": "04a-advisor",
+      "voice": "B",
+      "text": "Meanwhile, the advisor sees the full picture. /ˈfɪndoʊ/ flags the loss, shows that nothing at PNC goes through probate, and builds a step-by-step plan, starting with a condolence call."
+    },
+    {
+      "id": "04b-engine",
+      "voice": "B",
+      "text": "Every answer is grounded in two sources: the customer's own account data, and a legal settlement rulebook. /ˈfɪndoʊ/ walks each account down a fixed decision tree. The same inputs always give the same result, and it shows its path. Where the rules need more, it asks instead of guessing."
+    },
+    {
+      "id": "05-close",
+      "voice": "B",
+      "text": "/ˈfɪndoʊ/. Clarity for families. Context for advisors.",
+      "maxPause": 0.7
+    }
+  ]
+}
