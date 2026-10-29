@@ -53,7 +53,16 @@ export function loudness(file: string): {
   input_thresh: string;
   target_offset: string;
 } {
-  const report = ffmpeg(["-i", file, "-af", "loudnorm=print_format=json", "-f", "null", "-"]);
+  const report = ffmpeg([
+    "-i",
+    file,
+    "-vn",
+    "-af",
+    "loudnorm=print_format=json",
+    "-f",
+    "null",
+    "-",
+  ]);
   const json = report.slice(report.lastIndexOf("{"), report.lastIndexOf("}") + 1);
   return JSON.parse(json);
 }
