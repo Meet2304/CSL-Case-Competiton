@@ -137,8 +137,9 @@ function process_(line: Line) {
       `${graph};[edit]${norm},aresample=44100[out]`,
       "-map",
       "[out]",
+      // Stereo, so a line measures the same on its own as in the (stereo) video mix.
       "-ac",
-      "1",
+      "2",
       "-c:a",
       "libmp3lame",
       "-b:a",
