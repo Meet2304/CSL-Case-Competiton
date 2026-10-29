@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-10-29T02:46:57.576Z",
+  "capturedAt": "2026-10-29T03:46:18.138Z",
   "base": "https://findoe.vercel.app",
   "viewport": {
     "width": 1920,
@@ -114,6 +114,30 @@
           "y": 80,
           "w": 225.1,
           "h": 36
+        },
+        "stats": {
+          "x": 344,
+          "y": 244,
+          "w": 1232,
+          "h": 76
+        },
+        "shared": {
+          "x": 344,
+          "y": 340,
+          "w": 924,
+          "h": 842
+        },
+        "people": {
+          "x": 1288,
+          "y": 340,
+          "w": 288,
+          "h": 316
+        },
+        "jointRow": {
+          "x": 365,
+          "y": 462,
+          "w": 882,
+          "h": 65
         }
       }
     },
@@ -545,16 +569,16 @@
   "clips": {
     "s3-agent": {
       "file": "s3-agent.mp4",
-      "duration": 7.938,
+      "duration": 7.895,
       "width": 1920,
       "height": 1080,
       "events": {
-        "launcherClick": 0.508,
-        "inputClick": 1.258,
-        "typingStart": 1.539,
-        "typingEnd": 3.429,
-        "send": 3.634,
-        "answered": 6.031
+        "launcherClick": 0.509,
+        "inputClick": 1.255,
+        "typingStart": 1.538,
+        "typingEnd": 3.397,
+        "send": 3.603,
+        "answered": 5.988
       }
     }
   },
@@ -565,7 +589,7 @@
     "question529": "Who should own 529 College Savings x0018 now?",
     "step1": "Call Morgan to offer condolences",
     "iraPath": "Traditional IRA x0015: Sole owner → Traditional IRA → Yes → Surviving spouse → Spouse chooses how to take over the IRA",
-    "answerWork": "Used 1 record and 1 law · 2.4s",
+    "answerWork": "Used 1 record and 1 law · 2.2s",
     "claimProgress": "1 of 5 done"
   },
   "decisionPath": {

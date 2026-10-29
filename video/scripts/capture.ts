@@ -290,9 +290,19 @@ async function husband(page: Page) {
 
   await page.goto(`${BASE}/family#fam-sample`);
   const manage = page.getByRole("button", { name: "Manage family" });
+  // The family dashboard: one family's shared accounts, stats and people.
   await still(page, "s2-family", {
     manage,
     header: page.getByRole("heading", { name: "Sample Family" }),
+    stats: page
+      .getByText("Accounts shared", { exact: true })
+      .first()
+      .locator(
+        "xpath=ancestor::*[contains(concat(' ', normalize-space(@class), ' '), ' shadow-card ')][1]",
+      ),
+    shared: cardOf(page, "Shared assets"),
+    people: cardOf(page, "People"),
+    jointRow: near(page, "Owned by Husband & Wife", "li"),
   });
   await manage.click();
   const rolesTab = page.getByRole("tab", { name: "Roles & access" });

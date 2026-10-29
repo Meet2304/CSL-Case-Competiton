@@ -39,7 +39,7 @@
     "lint": "eslint src && tsc --noEmit",
     "upgrade": "remotion upgrade",
     "review": "node scripts/review.ts",
-    "poster": "remotion still FindoeDemo out/findoe-demo-poster.png --frame=2046"
+    "poster": "remotion still FindoeDemo out/findoe-demo-poster.png --frame=2085"
   },
   "allowScripts": {
     "esbuild": false

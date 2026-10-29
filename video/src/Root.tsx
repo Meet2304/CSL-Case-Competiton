@@ -21,7 +21,7 @@ export const RemotionRoot: React.FC = () => {
         defaultProps={{
           vo: {
             "01-open": 3.74,
-            "02-family": 18.29,
+            "02-family": 19.62,
             "03-widow": 18.91,
             "04a-advisor": 11.52,
             "04b-engine": 18.16,

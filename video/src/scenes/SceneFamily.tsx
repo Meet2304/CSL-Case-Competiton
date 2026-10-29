@@ -12,7 +12,8 @@ import { Shot, sec, shotOpacities } from "./shared";
 
 /**
  * Scene 2, the husband before a loss: every account in one view, the gaps
- * flagged in Notifications, and role-based access in Manage family.
+ * flagged in Notifications, then the family dashboard (shared accounts, the
+ * household) and role-based access in Manage family.
  */
 export const SceneFamily: React.FC<SceneTiming> = ({ voStart, durationInFrames }) => {
   const frame = useCurrentFrame();
@@ -37,9 +38,12 @@ export const SceneFamily: React.FC<SceneTiming> = ({ voStart, durationInFrames }
     { at: at(c.panToNotifications + 1.0), ...focus(notifications, 2.2, 0, 10) },
     { at: at(c.toFamily + 0.4), ...focus(notifications, 2.28, 0, 10) },
   ];
+  // The dashboard: open wide on the whole family, then push in on its accounts and people.
   const familyKeys: CamKey[] = [
-    { at: at(c.toFamily), zoom: 1.32, cx: 1180, cy: 360 },
-    { at: at(c.toMembers + 0.2), zoom: 1.4, cx: 1200, cy: 340 },
+    { at: at(c.toFamily), zoom: 1.1, cx: 960, cy: 520 },
+    { at: at(c.householdRing - 0.1), zoom: 1.1, cx: 960, cy: 520 },
+    { at: at(c.shareRing), zoom: 1.4, cx: 1000, cy: 470 },
+    { at: at(c.toMembers + 0.2), zoom: 1.42, cx: 1000, cy: 470 },
   ];
   const rolesKeys: CamKey[] = [
     { at: at(c.toMembers), ...focus(roles, 1.5, -40, -30) },
@@ -108,6 +112,17 @@ export const SceneFamily: React.FC<SceneTiming> = ({ voStart, durationInFrames }
               pad={4}
             />
             <Callout
+              camera={familyCam(frame)}
+              keys={[
+                { at: at(c.dashboardRing), box: box("s2-family", "stats") },
+                { at: at(c.householdRing), box: box("s2-family", "people") },
+                { at: at(c.shareRing), box: box("s2-family", "jointRow") },
+              ]}
+              until={at(c.manageClick - 0.15)}
+              label="Family dashboard"
+              pad={8}
+            />
+            <Callout
               camera={rolesCam(frame)}
               keys={[{ at: at(c.rolesRing), box: roles }]}
               until={durationInFrames}
@@ -119,13 +134,10 @@ export const SceneFamily: React.FC<SceneTiming> = ({ voStart, durationInFrames }
         }
       >
         <Cursor
-          from={at(c.fixLink - 0.8)}
+          from={at(c.shareRing - 0.6)}
           to={durationInFrames}
           keys={[
-            { at: at(c.fixLink - 0.6), x: 1640, y: 760, cam: homeCam },
-            { at: at(c.fixLink + 0.3), ...center(box("s2-home", "beneficiaryLink")), cam: homeCam },
-            // Rest on the fix until the cut to Family.
-            { at: at(c.toFamily), ...center(box("s2-home", "beneficiaryLink")), cam: homeCam },
+            { at: at(c.shareRing - 0.5), x: 1500, y: 760, cam: familyCam },
             {
               at: at(c.manageClick) - 5,
               ...center(box("s2-family", "manage")),

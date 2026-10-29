@@ -32,19 +32,19 @@ export const SPACING = {
   /** Silence before the first line, while the wordmark resolves. */
   lead: 0.3,
   /** Breathing room after a line, before the next scene's line starts. */
-  gap: 0.4,
+  gap: 0.35,
   /** Between the two advisor lines, which share a scene. */
   innerGap: 0.35,
   /** The closing feature nodes animate before "Findoe" is said. */
-  closePreroll: 0.9,
+  closePreroll: 0.75,
   /** Hold on the end card after the last word. */
-  tail: 1.1,
+  tail: 0.75,
 };
 
 /** Fallback durations (seconds) for Studio before metadata resolves. Measured from public/vo/. */
 export const DEFAULT_VO_DURATIONS: VoDurations = {
   "01-open": 3.74,
-  "02-family": 18.29,
+  "02-family": 19.62,
   "03-widow": 18.91,
   "04a-advisor": 11.52,
   "04b-engine": 18.16,
@@ -65,16 +65,19 @@ export const CUES = {
   family: {
     glanceRing: 1.1,
     lifePolicyRing: 4.2,
-    panToNotifications: 6.5,
-    beneficiaryRing: 8.5,
-    willRing: 9.85,
-    fixLink: 11.2,
-    toFamily: 12.9,
-    manageClick: 13.75,
-    toMembers: 14.05,
-    rolesTabClick: 14.75,
-    toRoles: 14.95,
-    rolesRing: 15.3,
+    panToNotifications: 6.3,
+    beneficiaryRing: 8.6,
+    willRing: 10.0,
+    /** "The family dashboard…" */
+    toFamily: 11.0,
+    dashboardRing: 11.35,
+    householdRing: 12.4,
+    shareRing: 14.3,
+    manageClick: 15.0,
+    toMembers: 15.3,
+    rolesTabClick: 15.85,
+    toRoles: 16.05,
+    rolesRing: 16.35,
   },
   widow: {
     chipClick: 0.45,
