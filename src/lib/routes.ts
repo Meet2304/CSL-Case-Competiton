@@ -6,6 +6,8 @@
  */
 export const routes = {
   signOn: "/",
+  /** Guided tour of the concept: open to everyone, one layout for every device. */
+  tour: "/tour",
   /** Customer home: money at a glance, notifications and families. */
   home: "/home",
   /** My Assets: everything the customer owns, manages, or family shares with them. */

@@ -38,6 +38,32 @@ phone user-agent) and reload. For demos/recordings you can also pin a view with
 `?view=mobile` or `?view=web` on any URL (stored in a cookie; `?view=auto` clears
 it). A pinned mobile view on a wide screen is shown inside an iPhone frame.
 
+## Guided tour — `/tour`
+
+A short, clickable walk through the concept, made to be talked over in customer discovery and
+presentations. It needs no sign-on. Open it from the link on the sign-on page or go straight to
+`/tour`.
+
+Each of the 16 steps is one headline, one sentence and one visual; the presenter says the rest.
+The chapters are **The problem**, **Before a loss** (every asset in one view, gaps, family
+sharing), **The day it happens** (the Bank Advisor's alert, plan and transfer plan), **After the
+loss** (Wife's condolence screen, her list and a guided claim), **Findoe AI** (cited answers, the
+fixed rules, the question it asks) and **Summary**.
+
+- **Move** with Back / Next, the ← and → keys, or the chapter names in the header. Each step has
+  its own link (`/tour#sharing`, `/tour#claim`, …).
+- **Nothing scrolls on a laptop or projector.** Each visual is laid out at a fixed width and
+  scaled to fit the space (`FitCanvas`), so text also grows on a bigger screen. On a phone the
+  page scrolls as a whole.
+- **People are named by role only**: Husband, Wife, Child 1, Child 2 and Bank Advisor.
+- **Some steps are clickable, and choices carry forward**: naming Wife as the beneficiary of
+  Savings x0002 before the loss moves that account out of probate in the transfer plan, in Wife's
+  list and in Findoe's answer.
+- The visuals are drawn for the tour; they are not the working pages. The script and mock data
+  are in `src/data/tour.ts` (balances come from `src/data/household.ts`), the rules in
+  `src/lib/tour.ts` (tested in `src/lib/__tests__/tour.test.ts`), and the visuals in
+  `src/components/tour`. Nothing is saved; reloading starts the tour again.
+
 ## Roles — customer vs. advisor
 
 Sign-on decides the experience. Demo User IDs (any password; defined in
