@@ -108,6 +108,16 @@ and mobile views stay in one design language.
   checks this). Anything a click changes goes through `tourReducer` and is derived in
   `src/lib/tour.ts` (`routesFor`, `advisorPlan`, `findoeAnswer`), never stored per visual. Legal
   citations must be ids in `rulebook.sources` (also tested).
+- **Product film (`/film`, `routes.film`):** the working app filmed in a same-origin frame, open
+  to every role like the tour. The script is data in `src/data/film.ts`: a scene is a page, who is
+  signed in and whether the death is recorded yet; a shot is a caption (headline of at most 8
+  words, body of at most 14), optional actions (`click`, `type`, `wait`, `look`) and what the
+  camera frames. Shots find elements by their visible words (`Target` in `src/lib/film.ts`), so
+  when you rename a label or heading in the app, update the script and replay `/film`. The app
+  must not know the film exists: no film-only props, classes or branches in app components. Camera
+  maths and shot planning are pure functions in `src/lib/film.ts`; the player
+  (`src/components/film`) signs in through `filmSignIn` and sets the demo state through
+  `bereavementActions`.
 - **Formatting:** Prettier (`.prettierrc.json`, print width 100). Run `npm run format`
   before committing.
 - **Settlement rules** live in `src/data/settlement` (rulebook data, every rule cites a source

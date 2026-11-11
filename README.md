@@ -64,6 +64,31 @@ fixed rules, the question it asks) and **Summary**.
   `src/lib/tour.ts` (tested in `src/lib/__tests__/tour.test.ts`), and the visuals in
   `src/components/tour`. Nothing is saved; reloading starts the tour again.
 
+## Product film — `/film`
+
+The same story as the tour, told on the working software instead of drawn visuals. The real pages
+run in a frame on a dark stage; each of the 25 shots signs in as the right person, clicks the
+real controls with a visible cursor, and a camera zooms and cuts between parts of the page. It
+needs no sign-on. Open it from the link on the sign-on page or go straight to `/film`.
+
+The chapters are **Before a loss** (Husband's home page, the family dashboard, roles and
+account-by-account access, what Child 1 sees), **The day it happens** (the Bank Advisor records
+the death, the alert, the plan, how Findoe decided), **After the loss** (Wife's condolence strip,
+the family dashboard with Husband marked deceased, her list, a guided claim, a cited Findoe
+answer, the children's note) and **Summary**.
+
+- **Move** with Back / Next, the ← and → keys, or the chapter names in the header. **Play** (or
+  the space bar) runs it hands-free. Each shot has its own link (`/film#roles`, `/film#claim`, …).
+- **It is live, not a recording.** Stepping forward plays the clicks; stepping back or jumping to
+  a shot reloads the page and replays the earlier clicks instantly. The film resets the demo's
+  saved state (recorded deaths, claim progress) when it starts and whenever a scene needs the
+  world before or after the death.
+- **It needs a laptop-size screen** (1024px or wider) and shows the laptop version of the app.
+- The script is data in `src/data/film.ts` (scenes, shots, what is clicked and framed); the camera
+  maths and shot planning are in `src/lib/film.ts` (tested in `src/lib/__tests__/film.test.ts`);
+  the player is `src/components/film`. Shots find elements by the words on them, so a renamed
+  label in the app needs the same change in the script.
+
 ## Roles — customer vs. advisor
 
 Sign-on decides the experience. Demo User IDs (any password; defined in

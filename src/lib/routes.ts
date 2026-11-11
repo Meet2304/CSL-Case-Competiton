@@ -8,6 +8,8 @@ export const routes = {
   signOn: "/",
   /** Guided tour of the concept: open to everyone, one layout for every device. */
   tour: "/tour",
+  /** Product film: a movie-style walk through the working app. Open to everyone. */
+  film: "/film",
   /** Customer home: money at a glance, notifications and families. */
   home: "/home",
   /** My Assets: everything the customer owns, manages, or family shares with them. */
