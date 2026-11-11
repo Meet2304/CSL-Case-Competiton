@@ -89,6 +89,9 @@ function subscribe(listener: () => void) {
   };
 }
 
+/** The state as stored right now, for code outside React (browser only). */
+export const currentBereavement = (): BereavementState => read();
+
 /** Current bereavement state. Empty during server render, filled after hydration. */
 export function useBereavement(): BereavementState {
   return useSyncExternalStore(subscribe, read, () => EMPTY);

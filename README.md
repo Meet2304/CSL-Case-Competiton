@@ -38,6 +38,57 @@ phone user-agent) and reload. For demos/recordings you can also pin a view with
 `?view=mobile` or `?view=web` on any URL (stored in a cookie; `?view=auto` clears
 it). A pinned mobile view on a wide screen is shown inside an iPhone frame.
 
+## Guided tour — `/tour`
+
+A short, clickable walk through the concept, made to be talked over in customer discovery and
+presentations. It needs no sign-on. Open it from the link on the sign-on page or go straight to
+`/tour`.
+
+Each of the 16 steps is one headline, one sentence and one visual; the presenter says the rest.
+The chapters are **The problem**, **Before a loss** (every asset in one view, gaps, family
+sharing), **The day it happens** (the Bank Advisor's alert, plan and transfer plan), **After the
+loss** (Wife's condolence screen, her list and a guided claim), **Findoe AI** (cited answers, the
+fixed rules, the question it asks) and **Summary**.
+
+- **Move** with Back / Next, the ← and → keys, or the chapter names in the header. Each step has
+  its own link (`/tour#sharing`, `/tour#claim`, …).
+- **Nothing scrolls on a laptop or projector.** Each visual is laid out at a fixed width and
+  scaled to fit the space (`FitCanvas`), so text also grows on a bigger screen. On a phone the
+  page scrolls as a whole.
+- **People are named by role only**: Husband, Wife, Child 1, Child 2 and Bank Advisor.
+- **Some steps are clickable, and choices carry forward**: naming Wife as the beneficiary of
+  Savings x0002 before the loss moves that account out of probate in the transfer plan, in Wife's
+  list and in Findoe's answer.
+- The visuals are drawn for the tour; they are not the working pages. The script and mock data
+  are in `src/data/tour.ts` (balances come from `src/data/household.ts`), the rules in
+  `src/lib/tour.ts` (tested in `src/lib/__tests__/tour.test.ts`), and the visuals in
+  `src/components/tour`. Nothing is saved; reloading starts the tour again.
+
+## Product film — `/film`
+
+The same story as the tour, told on the working software instead of drawn visuals. The real pages
+run in a frame on a dark stage; each of the 25 shots signs in as the right person, clicks the
+real controls with a visible cursor, and a camera zooms and cuts between parts of the page. It
+needs no sign-on. Open it from the link on the sign-on page or go straight to `/film`.
+
+The chapters are **Before a loss** (Husband's home page, the family dashboard, roles and
+account-by-account access, what Child 1 sees), **The day it happens** (the Bank Advisor records
+the death, the alert, the plan, how Findoe decided), **After the loss** (Wife's condolence strip,
+the family dashboard with Husband marked deceased, her list, a guided claim, a cited Findoe
+answer, the children's note) and **Summary**.
+
+- **Move** with Back / Next, the ← and → keys, or the chapter names in the header. **Play** (or
+  the space bar) runs it hands-free. Each shot has its own link (`/film#roles`, `/film#claim`, …).
+- **It is live, not a recording.** Stepping forward plays the clicks; stepping back or jumping to
+  a shot reloads the page and replays the earlier clicks instantly. The film resets the demo's
+  saved state (recorded deaths, claim progress) when it starts and whenever a scene needs the
+  world before or after the death.
+- **It needs a laptop-size screen** (1024px or wider) and shows the laptop version of the app.
+- The script is data in `src/data/film.ts` (scenes, shots, what is clicked and framed); the camera
+  maths and shot planning are in `src/lib/film.ts` (tested in `src/lib/__tests__/film.test.ts`);
+  the player is `src/components/film`. Shots find elements by the words on them, so a renamed
+  label in the app needs the same change in the script.
+
 ## Roles — customer vs. advisor
 
 Sign-on decides the experience. Demo User IDs (any password; defined in

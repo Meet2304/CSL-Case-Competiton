@@ -1,9 +1,15 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { FacetBackdrop } from "@/components/brand/FacetBackdrop";
 import { PncLogo } from "@/components/brand/PncLogo";
 import { WebSignOnForm } from "@/components/web/WebSignOnForm";
+import { routes } from "@/lib/routes";
 
 export const metadata: Metadata = { title: "Sign On" };
+
+const demoLink =
+  "inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-semibold text-white ring-1 ring-white/30 hover:bg-white/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white";
 
 export default function WebLoginPage() {
   return (
@@ -21,6 +27,14 @@ export default function WebLoginPage() {
             Customers sign on to view accounts, pay bills, and move money. Advisors sign on to see
             the customers assigned to them. Demo prototype — any password works.
           </p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link href={routes.tour} className={demoLink}>
+              New here? Take the guided tour <ArrowRight className="size-4" aria-hidden="true" />
+            </Link>
+            <Link href={routes.film} className={demoLink}>
+              Watch the product film <ArrowRight className="size-4" aria-hidden="true" />
+            </Link>
+          </div>
         </div>
         <WebSignOnForm />
       </div>

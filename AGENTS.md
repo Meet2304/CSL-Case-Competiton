@@ -98,6 +98,26 @@ and mobile views stay in one design language.
   Flow content is data in `src/data/bereavement.ts`; completion is derived in
   `src/lib/transfer.ts` — don't store "done" flags. Customer-facing copy about a
   loss must stay gentle: condolence first, no pressure, nothing urgent today.
+- **Guided tour (`/tour`, `routes.tour`):** a scripted demo that is open to every role, so it
+  lives at `src/app/tour` and `src/proxy.ts` lets it through untouched. Keep it sparse: each step
+  in `tourSteps` (`src/data/tour.ts`) is a headline of at most 8 words, a body of at most 20 words
+  and one visual (`src/components/tour/visuals`, keyed by the step id). A visual uses at most one
+  `Sheet` (never a card inside a card) with rows split by hairlines, and nothing may scroll: the
+  visual is laid out 760px wide (380px on phones, switch with `@[600px]:`) and `FitCanvas` scales
+  it to fit. People are named by role only: Husband, Wife, Child 1, Child 2, Bank Advisor (a test
+  checks this). Anything a click changes goes through `tourReducer` and is derived in
+  `src/lib/tour.ts` (`routesFor`, `advisorPlan`, `findoeAnswer`), never stored per visual. Legal
+  citations must be ids in `rulebook.sources` (also tested).
+- **Product film (`/film`, `routes.film`):** the working app filmed in a same-origin frame, open
+  to every role like the tour. The script is data in `src/data/film.ts`: a scene is a page, who is
+  signed in and whether the death is recorded yet; a shot is a caption (headline of at most 8
+  words, body of at most 14), optional actions (`click`, `type`, `wait`, `look`) and what the
+  camera frames. Shots find elements by their visible words (`Target` in `src/lib/film.ts`), so
+  when you rename a label or heading in the app, update the script and replay `/film`. The app
+  must not know the film exists: no film-only props, classes or branches in app components. Camera
+  maths and shot planning are pure functions in `src/lib/film.ts`; the player
+  (`src/components/film`) signs in through `filmSignIn` and sets the demo state through
+  `bereavementActions`.
 - **Formatting:** Prettier (`.prettierrc.json`, print width 100). Run `npm run format`
   before committing.
 - **Settlement rules** live in `src/data/settlement` (rulebook data, every rule cites a source
