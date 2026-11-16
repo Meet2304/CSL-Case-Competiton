@@ -21,7 +21,7 @@ export const MOCK_AS_OF = "2026-10-25";
 
 export const customer: Customer = {
   id: "c-sample",
-  firstName: "Husband",
+  firstName: "John",
   lastName: "Sample",
   tier: "Silver Tier Member",
   userIdMasked: "••••••0000",

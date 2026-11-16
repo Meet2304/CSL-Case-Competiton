@@ -1037,7 +1037,7 @@ export function answerQuestion(f: ClientFacts, question: string, answers: Answer
       followUps: ["Who inherits?", "Summarize the family"],
     };
   }
-  if (/family|child|kid|son|daughter|spouse|wife|husband|who/.test(q)) {
+  if (/family|child|kid|son|daughter|spouse|wife|husband|john|maya|david|alexis|who/.test(q)) {
     return {
       paragraphs: p.members
         .filter((m) => m.relationship !== "Self")

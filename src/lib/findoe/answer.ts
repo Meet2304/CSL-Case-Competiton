@@ -27,7 +27,7 @@ export type BankSource = {
   table: BankTable;
   /** e.g. "Savings x0002". */
   title: string;
-  /** The fields that matter, e.g. "Owner: Husband · No beneficiary · $18,250.00". */
+  /** The fields that matter, e.g. "Owner: John · No beneficiary · $18,250.00". */
   detail: string;
 };
 

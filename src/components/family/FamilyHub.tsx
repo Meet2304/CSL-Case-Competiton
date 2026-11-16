@@ -242,7 +242,7 @@ function CreateFamily({
           value={name}
           onChange={(e) => setName(e.target.value)}
           maxLength={40}
-          placeholder="e.g. Sample Family"
+          placeholder="e.g. My Family"
           aria-invalid={tried && error ? true : undefined}
           aria-describedby={tried && error ? `${id}-error` : undefined}
           className={fieldInput}

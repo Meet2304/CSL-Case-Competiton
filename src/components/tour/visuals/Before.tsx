@@ -25,7 +25,7 @@ export function OneViewVisual() {
   return (
     <Visual person="husband" when="before a loss">
       <Sheet className="p-6 @[600px]:p-10">
-        <p className="text-md text-pnc-muted">Everything Husband owns at PNC</p>
+        <p className="text-md text-pnc-muted">Everything John owns at PNC</p>
         <p className="mt-1 font-display text-4xl font-medium @[600px]:text-6xl">
           <Money value={net} />
         </p>
@@ -91,7 +91,7 @@ export function GapsVisual() {
               </div>
               {beneficiaryOf(state, id) ? (
                 <span className="flex items-center gap-2 text-md">
-                  <Avatar person="wife" className="size-7" /> Wife
+                  <Avatar person="wife" className="size-7" /> Maya
                 </span>
               ) : (
                 <span className="flex flex-wrap items-center gap-3">
@@ -100,7 +100,7 @@ export function GapsVisual() {
                   </span>
                   {id === "savings" && (
                     <TourButton tone="orange" onClick={() => dispatch({ type: "nameBeneficiary" })}>
-                      Name Wife
+                      Name Maya
                     </TourButton>
                   )}
                 </span>

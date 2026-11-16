@@ -17,7 +17,7 @@ import { cn, formatCompactMoney } from "@/lib/format";
 import { chapterStart, husbandMoney, settlementSplit } from "@/lib/tour";
 import { Avatar, Visual, useTour } from "../parts";
 
-/** The four family members side by side. `lost` fades Husband. */
+/** The four family members side by side. `lost` fades John. */
 function FamilyRow({ lost = false }: { lost?: boolean }) {
   return (
     <>
@@ -43,7 +43,7 @@ function FamilyRow({ lost = false }: { lost?: boolean }) {
 const Link = () => <span className="my-2 h-8 w-0.5 rounded bg-pnc-blue-700" aria-hidden="true" />;
 
 // ---------------------------------------------------------------------------
-// Everything hangs off Husband: the accounts above him, the Bank Advisor below.
+// Everything hangs off John: the accounts above him, the Bank Advisor below.
 
 export function FamilyVisual() {
   return (
@@ -77,12 +77,12 @@ export function FamilyVisual() {
 }
 
 // ---------------------------------------------------------------------------
-// The same family without Husband, and the three things that break.
+// The same family without John, and the three things that break.
 
 export function TodayVisual() {
   const { state } = useTour();
   const breaks: { icon: LucideIcon; text: string }[] = [
-    { icon: FileQuestion, text: "Wife does not know what exists" },
+    { icon: FileQuestion, text: "Maya does not know what exists" },
     {
       icon: Scale,
       text: `${formatCompactMoney(settlementSplit(state).estate)} goes through probate`,

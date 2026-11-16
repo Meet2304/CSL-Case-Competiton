@@ -18,7 +18,7 @@ and mobile views stay in one design language.
 - **Mock data only.** Every name, balance and account number lives in
   `src/data/mock.ts` (customer), `src/data/advisor.ts` (advisor) or
   `src/data/users.ts` (demo logins); shapes are in `src/data/types.ts`. Never hard-code figures in
-  components. Keep names obviously fake (e.g. "Husband", "Morgan Placeholder", "Sample Grocer",
+  components. Keep names obviously fake (e.g. "John", "Morgan Placeholder", "Sample Grocer",
   account numbers x0001–x0099).
 - **Label mock data.** Any section that shows figures gets a `MockBadge`.
 - **Colors come from tokens** in `src/app/globals.css` (`bg-pnc-blue-700`,
@@ -104,7 +104,7 @@ and mobile views stay in one design language.
   and one visual (`src/components/tour/visuals`, keyed by the step id). A visual uses at most one
   `Sheet` (never a card inside a card) with rows split by hairlines, and nothing may scroll: the
   visual is laid out 760px wide (380px on phones, switch with `@[600px]:`) and `FitCanvas` scales
-  it to fit. People are named by role only: Husband, Wife, Child 1, Child 2, Bank Advisor (a test
+  it to fit. People are named John, Maya, David, Alexis and Bank Advisor only (a test
   checks this). Anything a click changes goes through `tourReducer` and is derived in
   `src/lib/tour.ts` (`routesFor`, `advisorPlan`, `findoeAnswer`), never stored per visual. Legal
   citations must be ids in `rulebook.sources` (also tested).

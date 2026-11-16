@@ -1,7 +1,7 @@
 /**
  * State and rules for the guided tour (`/tour`). The tour is a scripted demo,
  * but what the viewer clicks carries forward: naming a beneficiary before the
- * loss changes what passes to Wife after it. Everything shown is derived here
+ * loss changes what passes to Maya after it. Everything shown is derived here
  * from that state, so the visuals never disagree with each other.
  */
 import {
@@ -24,7 +24,7 @@ import {
 export type BenefitsAnswer = "yes" | "no" | "unsure";
 
 export type TourState = {
-  /** Husband named Wife on Savings x0002 before the loss. */
+  /** John named Maya on Savings x0002 before the loss. */
   beneficiaryNamed: boolean;
   childAccess: Record<ChildId, TourAccountId[]>;
   previewAs: ChildId;
@@ -105,7 +105,7 @@ export const chapterStart = (chapter: TourChapterId) =>
   tourSteps.findIndex((s) => s.chapter === chapter);
 
 // ---------------------------------------------------------------------------
-// What happens to each of Husband's accounts
+// What happens to each of John's accounts
 
 export type RouteOutcome = "direct" | "estate" | "outside";
 
@@ -114,7 +114,7 @@ export type TourRoute = {
   outcome: RouteOutcome;
   /** Why it goes there, in two or three words. */
   reason: string;
-  /** How long the bank's review usually takes, when Wife claims it at PNC. */
+  /** How long the bank's review usually takes, when Maya claims it at PNC. */
   review?: string;
   /** Ids in `rulebook.sources`. */
   sources: string[];
@@ -170,7 +170,7 @@ export function routesFor(state: Pick<TourState, "beneficiaryNamed">): TourRoute
 
 const sum = (ids: TourAccountId[]) => ids.reduce((t, id) => t + tourAccounts[id].balance, 0);
 
-/** The headline figures: Husband's own money at PNC that passes directly, and through the estate. */
+/** The headline figures: John's own money at PNC that passes directly, and through the estate. */
 export function settlementSplit(state: Pick<TourState, "beneficiaryNamed">) {
   const routes = routesFor(state);
   const owned = (outcome: RouteOutcome) =>
@@ -181,20 +181,20 @@ export function settlementSplit(state: Pick<TourState, "beneficiaryNamed">) {
     direct: sum(owned("direct")),
     estate: sum(owned("estate")),
     outside: sum(owned("outside")),
-    /** Accounts Wife can act on: everything except what the estate handles. */
+    /** Accounts Maya can act on: everything except what the estate handles. */
     toWife: routes.filter((r) => r.outcome !== "estate"),
     viaEstate: routes.filter((r) => r.outcome === "estate"),
   };
 }
 
-/** Husband's money at PNC by kind, the total, and the total after what he owes on cards. */
+/** John's money at PNC by kind, the total, and the total after what he owes on cards. */
 export function husbandMoney() {
   const groups = glanceGroups.map((g) => ({ ...g, total: sum(g.ids) }));
   const assets = groups.reduce((t, g) => t + g.total, 0);
   return { groups, assets, net: assets + tourAccounts.card.balance };
 }
 
-/** Who inherits each account Husband leaves, as he sees it before the loss. */
+/** Who inherits each account John leaves, as he sees it before the loss. */
 export function beneficiaryOf(
   state: Pick<TourState, "beneficiaryNamed">,
   account: TourAccountId,
@@ -229,7 +229,7 @@ export function advisorPlan(state: Pick<TourState, "beneficiaryNamed" | "benefit
   const steps: PlanStep[] = [
     {
       id: "condolences",
-      title: "Call Wife to offer condolences",
+      title: "Call Maya to offer condolences",
       when: "Today",
       note: "Lead with care. No account talk unless she raises it.",
     },
@@ -238,9 +238,9 @@ export function advisorPlan(state: Pick<TourState, "beneficiaryNamed" | "benefit
       title: "Flag the death and request the death certificate",
       when: "Today",
     },
-    { id: "proceed", title: "Ask Wife how she wants to proceed", when: "This week" },
-    { id: "retitle", title: `Retitle ${accountLabel("joint")} to Wife`, when: "This week" },
-    { id: "ira", title: "Open the IRA claim with Wife", when: "When she is ready" },
+    { id: "proceed", title: "Ask Maya how she wants to proceed", when: "This week" },
+    { id: "retitle", title: `Retitle ${accountLabel("joint")} to Maya`, when: "This week" },
+    { id: "ira", title: "Open the IRA claim with Maya", when: "When she is ready" },
     { id: "estate", title: "Introduce the estate attorney", when: "This month" },
   ];
   if (state.benefits === "yes") {
@@ -270,7 +270,7 @@ export function benefitsReply(answer: BenefitsAnswer): string {
 }
 
 // ---------------------------------------------------------------------------
-// Findoe's answers to Wife
+// Findoe's answers to Maya
 
 export type FindoeAnswer = {
   /** The bank record the answer rests on. */
@@ -290,7 +290,7 @@ export function findoeAnswer(
       record: accountLabel("ira"),
       lawSourceId: "irs-pub-590b",
       sentences: [
-        "It passes to you because Husband named you as the beneficiary [1].",
+        "It passes to you because John named you as the beneficiary [1].",
         "As his spouse, you can treat it as your own or keep it as an inherited account [2].",
         "The claim is five short steps, and review usually takes 2 to 3 weeks.",
       ],
@@ -301,7 +301,7 @@ export function findoeAnswer(
         record: accountLabel("savings"),
         lawSourceId: "pa-6304",
         sentences: [
-          "It passes directly to you, because Husband named you as its beneficiary [1] [2].",
+          "It passes directly to you, because John named you as its beneficiary [1] [2].",
           "It is in your list with a short claim. There is no rush.",
         ],
       }
@@ -309,7 +309,7 @@ export function findoeAnswer(
         record: accountLabel("savings"),
         lawSourceId: "pa-register-of-wills",
         sentences: [
-          "It has no beneficiary on file [1], so it is settled through Husband's estate.",
+          "It has no beneficiary on file [1], so it is settled through John's estate.",
           "The person the Register of Wills appoints for the estate collects it [2].",
           "There is nothing for you to do today.",
         ],

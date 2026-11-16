@@ -2,8 +2,8 @@
  * MOCK DATA and script for the guided tour (`/tour`): a short walk through one
  * family's story that shows the problem and what Findoe does about it.
  * Balances come from the shared household so the tour and the prototype never
- * disagree. People are named by role only (Husband, Wife, Child 1, Child 2,
- * Bank Advisor); the tour introduces no other names.
+ * disagree. People are John, Maya, David, Alexis
+ * and the Bank Advisor; the tour introduces no other names.
  */
 import { accounts } from "./household";
 import type { AvatarLook } from "./types";
@@ -17,10 +17,10 @@ export const tourPeople: Record<
   TourPersonId,
   { id: TourPersonId; name: string; look?: AvatarLook }
 > = {
-  husband: { id: "husband", name: "Husband", look: "husband" },
-  wife: { id: "wife", name: "Wife", look: "wife" },
-  child1: { id: "child1", name: "Child 1", look: "teen" },
-  child2: { id: "child2", name: "Child 2", look: "child" },
+  husband: { id: "husband", name: "John", look: "husband" },
+  wife: { id: "wife", name: "Maya", look: "wife" },
+  child1: { id: "child1", name: "David", look: "teen" },
+  child2: { id: "child2", name: "Alexis", look: "child" },
   advisor: { id: "advisor", name: "Bank Advisor" },
 };
 
@@ -71,7 +71,7 @@ function build(id: TourAccountId): TourAccount {
   if (!source) throw new Error(`Tour account ${id} is missing from the household`);
   return {
     id,
-    name: id === "teenSavings" ? "Child 2's Teen Savings" : source.name,
+    name: id === "teenSavings" ? "Alexis's Teen Savings" : source.name,
     last4: source.last4,
     balance: source.balance,
     external: source.external,
@@ -88,14 +88,14 @@ export function accountLabel(id: TourAccountId): string {
   return a.last4 ? `${a.name} x${a.last4}` : a.name;
 }
 
-/** Husband's money at PNC, by kind. */
+/** John's money at PNC, by kind. */
 export const glanceGroups: { label: string; ids: TourAccountId[]; tone: string }[] = [
   { label: "Cash", ids: ["joint", "savings"], tone: "bg-pnc-blue-600" },
   { label: "Retirement", ids: ["ira"], tone: "bg-pnc-navy" },
   { label: "Investments", ids: ["brokerage"], tone: "bg-pnc-orange" },
 ];
 
-/** The accounts Husband leaves, in the order the tour lists them. */
+/** The accounts John leaves, in the order the tour lists them. */
 export const husbandAccountIds: TourAccountId[] = ["joint", "ira", "savings", "brokerage", "life"];
 
 /** Accounts shared into the family dashboard. */
@@ -122,7 +122,7 @@ export const initialChildAccess: Record<ChildId, TourAccountId[]> = {
 };
 
 // ---------------------------------------------------------------------------
-// Wife's claim for the IRA
+// Maya's claim for the IRA
 
 export type ClaimStepId = "certificate" | "form" | "identity" | "receive" | "withholding";
 
@@ -146,15 +146,15 @@ export const findoeQuestions: Record<FindoeQuestionId, string> = {
 
 /** The rulebook's path for the IRA, as the Bank Advisor sees it. */
 export const iraDecisionPath: { question: string; answer: string }[] = [
-  { question: "Husband's role", answer: "Sole owner" },
+  { question: "John's role", answer: "Sole owner" },
   { question: "Account type", answer: "IRA" },
   { question: "Beneficiary named", answer: "Yes" },
   { question: "Beneficiary", answer: "Surviving spouse" },
 ];
-export const iraOutcome = "Wife chooses how to take over the IRA";
+export const iraOutcome = "Maya chooses how to take over the IRA";
 
 export const benefitsQuestion =
-  "Did Husband receive Social Security or other federal benefits by direct deposit?";
+  "Did John receive Social Security or other federal benefits by direct deposit?";
 
 // ---------------------------------------------------------------------------
 // The script
@@ -204,7 +204,7 @@ export const tourSteps: TourStep[] = [
     id: "family",
     chapter: "problem",
     title: "One person holds the whole picture",
-    body: "Husband manages the family's money. He is also the only one the Bank Advisor knows.",
+    body: "John manages the family's money. He is also the only one the Bank Advisor knows.",
   },
   {
     id: "today",
@@ -216,28 +216,28 @@ export const tourSteps: TourStep[] = [
     id: "one-view",
     chapter: "before",
     title: "Every asset in one view",
-    body: "Husband sees everything he owns, including the life policy he holds outside PNC.",
+    body: "John sees everything he owns, including the life policy he holds outside PNC.",
   },
   {
     id: "gaps",
     chapter: "before",
     title: "Gaps are found early",
-    body: "Two accounts have no beneficiary. Naming Wife now keeps the account out of probate later.",
-    tryIt: "Select Name Wife.",
+    body: "Two accounts have no beneficiary. Naming Maya now keeps the account out of probate later.",
+    tryIt: "Select Name Maya.",
   },
   {
     id: "sharing",
     chapter: "before",
     title: "The whole family, inside the bank",
-    body: "Husband shares his accounts with the family and decides who sees each one.",
-    tryIt: "Select a circle under Child 1 or Child 2.",
+    body: "John shares his accounts with the family and decides who sees each one.",
+    tryIt: "Select a circle under David or Alexis.",
   },
   {
     id: "preview",
     chapter: "before",
     title: "The children are already customers",
     body: "Each child has a login and sees only what the family shares with them.",
-    tryIt: "Switch between Child 1 and Child 2.",
+    tryIt: "Switch between David and Alexis.",
   },
   {
     id: "notice",
@@ -249,7 +249,7 @@ export const tourSteps: TourStep[] = [
     id: "plan",
     chapter: "advisor",
     title: "A plan that starts with condolences",
-    body: "People come first. The account work follows at Wife's pace.",
+    body: "People come first. The account work follows at Maya's pace.",
     tryIt: "Tick a step.",
   },
   {
@@ -261,14 +261,14 @@ export const tourSteps: TourStep[] = [
   {
     id: "condolence",
     chapter: "widow",
-    title: "Wife is met with care",
+    title: "Maya is met with care",
     body: "The first screen has no forms and no deadlines. There is one link, for when she is ready.",
   },
   {
     id: "unclaimed",
     chapter: "widow",
     title: "One list of everything he left",
-    body: "Each account that passes to Wife is listed with the reason. The estate handles the rest.",
+    body: "Each account that passes to Maya is listed with the reason. The estate handles the rest.",
   },
   {
     id: "claim",
