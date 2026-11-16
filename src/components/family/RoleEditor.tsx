@@ -4,7 +4,6 @@ import { useId, useState } from "react";
 import { ArrowLeft, ShieldCheck, Trash2 } from "lucide-react";
 import { NO_ACCESS } from "@/data/family";
 import type { AssetAccess, FamilyRole } from "@/data/types";
-import { isLocked } from "@/lib/family";
 import { cn } from "@/lib/format";
 import { AccessMatrix } from "./AccessMatrix";
 import { useFamily } from "./FamilyProvider";
@@ -13,8 +12,9 @@ import { fieldInput, fieldLabel, linkButton, primaryButton, secondaryButton } fr
 const DESCRIPTION_MAX = 500;
 
 /**
- * Create or edit a family role: name, description and per-asset visibility
- * and control. The built-in Admin role is shown read-only.
+ * Create or edit a family role: name, description and what it can see of
+ * each shared asset. Roles never grant control: only an asset's owners can
+ * move money or change it. The built-in Admin role is shown read-only.
  */
 export function RoleEditor({ role, onDone }: { role: FamilyRole | null; onDone: () => void }) {
   const { state, dispatch } = useFamily();
@@ -32,7 +32,6 @@ export function RoleEditor({ role, onDone }: { role: FamilyRole | null; onDone: 
     : state.roles.some((r) => r.id !== role?.id && r.name.toLowerCase() === trimmed.toLowerCase())
       ? "A role with this name already exists."
       : null;
-  const lockedIds = new Set(state.assets.filter((a) => isLocked(state, a.id)).map((a) => a.id));
 
   function save() {
     setSubmitted(true);
@@ -59,20 +58,16 @@ export function RoleEditor({ role, onDone }: { role: FamilyRole | null; onDone: 
       <h3 className="mt-3 text-xl font-semibold text-pnc-ink">
         {readOnly ? "Admin role" : role ? `Edit role · ${role.name}` : "New role"}
       </h3>
-      <ol className="mt-1 flex items-center gap-2 text-sm text-pnc-muted" aria-label="Steps">
-        <li className="font-semibold text-pnc-ink">General</li>
-        <li aria-hidden="true">›</li>
-        <li className="font-semibold text-pnc-ink">Segmented access control</li>
-      </ol>
 
       {readOnly ? (
         <div className="mt-5 flex gap-3 rounded-md bg-pnc-blue-50 p-4 text-sm text-pnc-ink">
           <ShieldCheck className="mt-0.5 size-5 shrink-0 text-pnc-blue-700" aria-hidden="true" />
           <div>
-            <p className="font-semibold">Admins have full access to every asset.</p>
+            <p className="font-semibold">Admins see every shared asset.</p>
             <p className="mt-1 text-pnc-muted">
-              They can add family members and assets, and decide what every other role can see and
-              control. More than one admin is allowed. Assign this role from the Members tab.
+              They can invite people, share their own accounts and decide what every other role can
+              see. Like everyone else, they can only move money in or change accounts they own.
+              Assign this role from the Members tab.
             </p>
           </div>
         </div>
@@ -117,22 +112,17 @@ export function RoleEditor({ role, onDone }: { role: FamilyRole | null; onDone: 
         </div>
       )}
 
-      <h4 className="mt-6 text-base font-semibold text-pnc-ink">Segmented access control</h4>
+      <h4 className="mt-6 text-base font-semibold text-pnc-ink">What this role can see</h4>
       <p className="mb-3 mt-0.5 text-sm text-pnc-muted">
-        <strong className="font-semibold text-pnc-ink">Visibility</strong> decides what this role
-        can see. <strong className="font-semibold text-pnc-ink">Control</strong> decides what it can
-        do. Any permission includes viewing the balance.
+        Only an account&apos;s owners can move money or change it.
       </p>
       <AccessMatrix
         assets={state.assets}
         value={(assetId) =>
-          readOnly
-            ? { view: true, activity: true, transact: true, manage: true }
-            : (access[assetId] ?? NO_ACCESS)
+          readOnly ? { ...NO_ACCESS, view: true, activity: true } : (access[assetId] ?? NO_ACCESS)
         }
         onChange={(assetId, next) => setAccess((prev) => ({ ...prev, [assetId]: next }))}
         readOnly={readOnly}
-        lockedIds={lockedIds}
       />
 
       <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-pnc-line pt-4">

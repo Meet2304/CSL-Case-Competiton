@@ -26,10 +26,8 @@ export function RolesPanel() {
           </button>
         }
       >
-        Roles decide what each family member can{" "}
-        <strong className="font-semibold text-pnc-ink">see</strong> and{" "}
-        <strong className="font-semibold text-pnc-ink">control</strong>, asset by asset. Admins
-        always have full access.
+        Roles decide what each family member can see, account by account. Only an account&apos;s
+        owners can move money or change it.
       </PanelIntro>
 
       <ul className={panelList}>
@@ -67,7 +65,6 @@ export function RolesPanel() {
                     <span>
                       Sees {summary.sees} of {summary.total} assets
                     </span>
-                    <span>Controls {summary.controls}</span>
                   </span>
                 </span>
                 <ChevronRight className="size-4 shrink-0 text-pnc-link" aria-hidden="true" />

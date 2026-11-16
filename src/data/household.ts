@@ -256,7 +256,7 @@ export const adminRole: FamilyRole = {
   id: "r-admin",
   name: "Admin",
   description:
-    "Full access to every shared account. Can invite people, share accounts and decide what each role can see and do.",
+    "Sees every shared account. Can invite people, share their own accounts and decide what each role can see.",
   isAdmin: true,
   builtIn: true,
   access: {},
@@ -321,7 +321,7 @@ export const seedFamilies: StoredFamily[] = [
       {
         id: "r-older-child",
         name: "Older child",
-        description: "Sees the household checking account and its activity. No control.",
+        description: "Sees the household checking account and its activity.",
         isAdmin: false,
         builtIn: false,
         access: { "acct-joint-checking": viewActivity },

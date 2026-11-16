@@ -91,7 +91,8 @@ and mobile views stay in one design language.
 - **Family dashboard rules live in `src/lib/family.ts`** (`effectiveAccess`,
   `isLocked`, `successorsFor`, `familyReducer`). Components read state through
   `useFamily()` and change it only via `dispatch` actions; add a reducer action
-  rather than mutating state in a component. Seed data and per-method legal
+  rather than mutating state in a component. Roles grant visibility only (hidden / balance /
+  balance and activity); only an asset's owners can transact or manage it, never by role. Seed data and per-method legal
   steps are in `src/data/family.ts`. The dashboard adapts with container queries
   (`@container` / `@2xl:`), so it works inside the phone frame as well.
 - **Never reveal access limits to non-admins.** Member-facing UI (`MemberFamilyView`)

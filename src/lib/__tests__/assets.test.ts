@@ -42,10 +42,13 @@ describe("my assets", () => {
       assetsFor(seed, personId, all, [])
         .filter((i) => canManage(i, personId))
         .map((i) => i.account.id);
-    // Husband: everything they own, Child 2's account (custodian), and Wife's accounts (admin).
+    // Husband: everything they own and Child 2's account (custodian). Being an admin of the
+    // family never lets him manage Wife's accounts: only owners manage.
     expect(manageable("p-jordan")).toEqual(
-      expect.arrayContaining(["acct-jordan-savings", "acct-riley-savings", "acct-casey-roth"]),
+      expect.arrayContaining(["acct-jordan-savings", "acct-riley-savings"]),
     );
+    expect(manageable("p-jordan")).not.toContain("acct-casey-roth");
+    expect(manageable("p-jordan")).not.toContain("acct-casey-savings");
     // Child 1: their account is run by a custodian; the shared checking is view-only for the role.
     expect(manageable("p-avery")).toEqual([]);
   });

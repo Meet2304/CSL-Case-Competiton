@@ -347,8 +347,8 @@ export function familySummary(
 
 /**
  * Whether a person may manage an account they can see: their own (unless a
- * custodian runs it until they turn 18), one they're the custodian of, or one
- * shared with them with the Manage permission.
+ * custodian runs it until they turn 18) or one they're the custodian of. A
+ * family role never lets anyone manage someone else's account.
  */
 export function canManage(item: PersonAsset, personId: string): boolean {
   const a = item.account;
@@ -359,8 +359,8 @@ export function canManage(item: PersonAsset, personId: string): boolean {
 
 /**
  * Whether a person can pay bills from an account: a PNC checking or savings
- * account they run themselves (theirs, or one they're custodian of), or one
- * shared with them whose role allows paying and transferring.
+ * account they run themselves (theirs, or one they're custodian of). Accounts
+ * shared through a family are for seeing only.
  */
 export function canPayFrom(item: PersonAsset, personId: string): boolean {
   const a = item.account;

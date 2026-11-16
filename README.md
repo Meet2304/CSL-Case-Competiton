@@ -141,10 +141,12 @@ and Child 2 sees nothing. Families are just family: no outside advisors.
   a shared account until their role is given access.
 - **Members**: add people from your household in one tap, or invite someone
   by email.
-- **Roles & access**: per account, **Visibility** (balance, activity) and
-  **Control** (transact, manage). The last admin can't be removed.
+- **Roles & access**: roles only decide what each member can **see** of each
+  account: hidden, the balance, or the balance and activity. Nobody but an
+  account's owners can move money or change it, admins included
+  (`effectiveAccess` in `src/lib/family.ts`). The last admin can't be removed.
 - **Access limits are confidential to admins.** Members only see what they
-  can use; admins check it with **Preview as**.
+  can use.
 - Families keep working after a death: the person shows as deceased.
 - **Pay bills** (under People): electricity, phone, rent, insurance, tuition
   and more, paid from your own cash accounts or a shared one your role lets you

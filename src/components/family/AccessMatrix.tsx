@@ -1,233 +1,95 @@
 "use client";
 
-import { Lock } from "lucide-react";
-import { Fragment } from "react";
-import { FULL_ACCESS, NO_ACCESS } from "@/data/family";
+import { NO_ACCESS } from "@/data/family";
 import { assetCategories, type AssetAccess, type FamilyAsset } from "@/data/types";
-import { isFull, normalizeAccess } from "@/lib/family";
 import { cn } from "@/lib/format";
-import { Checkbox } from "./parts";
 
-type Column = { key: keyof AssetAccess; label: string; hint: string };
+type Level = "hidden" | "balance" | "activity";
 
-const visibility: Column[] = [
-  { key: "view", label: "View balance", hint: "See the asset and its balance" },
-  { key: "activity", label: "View activity", hint: "See transactions, statements and documents" },
+const levels: { id: Level; label: string }[] = [
+  { id: "hidden", label: "Hidden" },
+  { id: "balance", label: "Balance" },
+  { id: "activity", label: "Balance and activity" },
 ];
-const control: Column[] = [
-  { key: "transact", label: "Transact", hint: "Move money, pay or trade" },
-  { key: "manage", label: "Manage", hint: "Change settings, cards and beneficiaries" },
-];
-const columns = [...visibility, ...control];
 
-/** Applies one checkbox change while keeping the permission set consistent. */
-function toggle(current: AssetAccess, key: keyof AssetAccess | "full"): AssetAccess {
-  if (key === "full") return isFull(current) ? NO_ACCESS : FULL_ACCESS;
-  if (key === "view" && current.view) return NO_ACCESS; // hiding an asset removes everything
-  return normalizeAccess({ ...current, [key]: !current[key] });
-}
+const levelOf = (a: AssetAccess): Level =>
+  a.activity ? "activity" : a.view ? "balance" : "hidden";
+
+const accessFor = (level: Level): AssetAccess =>
+  level === "hidden" ? NO_ACCESS : { ...NO_ACCESS, view: true, activity: level === "activity" };
 
 /**
- * Segmented access control: per-asset visibility and control checkboxes,
- * grouped by category. Table layout when the container is wide, stacked
- * cards when narrow (container queries, so it adapts inside the phone too).
+ * What a role can see, asset by asset: hidden, the balance, or the balance
+ * and its activity. Roles only decide visibility; moving money or changing an
+ * account is for its owners alone, so there is nothing else to set here.
  */
 export function AccessMatrix({
   assets,
   value,
   onChange,
   readOnly = false,
-  lockedIds,
 }: {
   assets: FamilyAsset[];
   value: (assetId: string) => AssetAccess;
   onChange?: (assetId: string, next: AssetAccess) => void;
   readOnly?: boolean;
-  /** Assets whose control is frozen by an in-progress legal process. */
-  lockedIds: Set<string>;
 }) {
   const groups = assetCategories
     .map((category) => ({ category, items: assets.filter((a) => a.category === category) }))
     .filter((g) => g.items.length > 0);
-
-  const disabledFor = (asset: FamilyAsset, key: keyof AssetAccess | "full") =>
-    readOnly ||
-    ((lockedIds.has(asset.id) || asset.closed === true) &&
-      (key === "transact" || key === "manage" || key === "full"));
-
   const label = (asset: FamilyAsset) => `${asset.name}${asset.last4 ? ` x${asset.last4}` : ""}`;
 
   return (
-    <div className="@container">
-      {/* Wide: one table per category, like a permissions matrix; "Full access" closes each row. */}
-      <div className="hidden space-y-5 @xl:block">
-        {groups.map(({ category, items }) => (
-          <table key={category} className="w-full table-fixed text-sm">
-            <colgroup>
-              <col />
-              {columns.map((c) => (
-                <col key={c.key} className="w-[4.75rem]" />
-              ))}
-              <col className="w-[4.75rem]" />
-            </colgroup>
-            <thead>
-              <tr className="bg-pnc-surface">
-                <th
-                  scope="col"
-                  rowSpan={2}
-                  className="rounded-tl-md px-4 py-2 text-left align-bottom font-semibold text-pnc-ink"
+    <div className="space-y-5">
+      {groups.map(({ category, items }) => (
+        <section key={category}>
+          <h4 className="mb-2 text-xs font-semibold text-pnc-muted">{category}</h4>
+          <ul className="divide-y divide-pnc-line rounded-md border border-pnc-line">
+            {items.map((asset) => {
+              const current = levelOf(value(asset.id));
+              return (
+                <li
+                  key={asset.id}
+                  className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3"
                 >
-                  {category}
-                </th>
-                <th
-                  scope="colgroup"
-                  colSpan={2}
-                  className="border-l border-pnc-line px-2 py-2 text-center text-xs font-semibold uppercase tracking-wide text-pnc-muted"
-                >
-                  Visibility
-                </th>
-                <th
-                  scope="colgroup"
-                  colSpan={2}
-                  className="border-l border-pnc-line px-2 py-2 text-center text-xs font-semibold uppercase tracking-wide text-pnc-muted"
-                >
-                  Control
-                </th>
-                <th
-                  scope="col"
-                  rowSpan={2}
-                  title="Every permission on this asset"
-                  className="rounded-tr-md border-l border-pnc-line bg-pnc-blue-50 px-2 py-2 text-center align-bottom text-xs font-semibold text-pnc-blue-800"
-                >
-                  Full access
-                </th>
-              </tr>
-              <tr className="border-b border-pnc-line text-xs text-pnc-muted">
-                {columns.map((c, i) => (
-                  <th
-                    key={c.key}
-                    scope="col"
-                    title={c.hint}
-                    className={cn(
-                      "px-2 py-2 text-center font-semibold",
-                      (i === 0 || i === 2) && "border-l border-pnc-line",
-                    )}
+                  <span className="min-w-0 flex-1 basis-40 text-sm font-semibold text-pnc-ink">
+                    {label(asset)}
+                  </span>
+                  <div
+                    role="radiogroup"
+                    aria-label={`What this role sees of ${label(asset)}`}
+                    className="flex shrink-0 rounded-full bg-pnc-chip p-0.5"
                   >
-                    {c.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((asset) => {
-                const access = value(asset.id);
-                const locked = lockedIds.has(asset.id);
-                return (
-                  <tr key={asset.id} className="border-b border-pnc-line last:border-b-0">
-                    <th scope="row" className="px-4 py-2.5 text-left font-normal">
-                      <span className="block truncate text-pnc-ink" title={label(asset)}>
-                        {label(asset)}
-                      </span>
-                      {(locked || asset.closed) && (
-                        <span className="flex items-center gap-1 text-xs text-pnc-muted">
-                          <Lock className="size-3" aria-hidden="true" />
-                          {asset.closed ? "Closed" : "Control locked · legal process in progress"}
-                        </span>
-                      )}
-                    </th>
-                    {columns.map((c, i) => (
-                      <td
-                        key={c.key}
-                        className={cn(
-                          "px-2 py-2.5 text-center",
-                          (i === 0 || i === 2) && "border-l border-pnc-line",
-                        )}
-                      >
-                        <Checkbox
-                          aria-label={`${c.label}: ${label(asset)}`}
-                          checked={access[c.key]}
-                          disabled={disabledFor(asset, c.key)}
-                          onChange={() => onChange?.(asset.id, toggle(access, c.key))}
-                        />
-                      </td>
-                    ))}
-                    <td className="border-l border-pnc-line bg-pnc-blue-50/50 px-2 py-2.5 text-center">
-                      <Checkbox
-                        aria-label={`Full access to ${label(asset)}`}
-                        checked={isFull(access)}
-                        disabled={disabledFor(asset, "full")}
-                        onChange={() => onChange?.(asset.id, toggle(access, "full"))}
-                      />
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        ))}
-      </div>
-
-      {/* Narrow: one card per asset; "Full access" is its own row at the bottom. */}
-      <div className="space-y-5 @xl:hidden">
-        {groups.map(({ category, items }) => (
-          <section key={category}>
-            <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-pnc-muted">
-              {category}
-            </h4>
-            <ul className="divide-y divide-pnc-line overflow-hidden rounded-md border border-pnc-line">
-              {items.map((asset) => {
-                const access = value(asset.id);
-                const locked = lockedIds.has(asset.id);
-                return (
-                  <li key={asset.id} className="px-3 pt-3">
-                    <p className="text-sm font-semibold text-pnc-ink">{label(asset)}</p>
-                    {(locked || asset.closed) && (
-                      <p className="flex items-center gap-1 text-xs text-pnc-muted">
-                        <Lock className="size-3" aria-hidden="true" />{" "}
-                        {asset.closed ? "Closed" : "Control locked"}
-                      </p>
-                    )}
-                    <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2">
-                      {[
-                        { title: "Visibility", cols: visibility },
-                        { title: "Control", cols: control },
-                      ].map(({ title, cols }) => (
-                        <Fragment key={title}>
-                          <p className="col-span-2 mt-1 text-2xs font-semibold uppercase tracking-wide text-pnc-muted first:mt-0">
-                            {title}
-                          </p>
-                          {cols.map((c) => (
-                            <label
-                              key={c.key}
-                              className="flex items-center gap-2 text-sm text-pnc-ink"
-                            >
-                              <Checkbox
-                                checked={access[c.key]}
-                                disabled={disabledFor(asset, c.key)}
-                                onChange={() => onChange?.(asset.id, toggle(access, c.key))}
-                              />
-                              {c.label}
-                            </label>
-                          ))}
-                        </Fragment>
-                      ))}
-                    </div>
-                    <label className="-mx-3 mt-3 flex items-center gap-2 border-t border-pnc-line bg-pnc-blue-50/50 px-3 py-2.5 text-sm font-semibold text-pnc-blue-800">
-                      <Checkbox
-                        checked={isFull(access)}
-                        disabled={disabledFor(asset, "full")}
-                        onChange={() => onChange?.(asset.id, toggle(access, "full"))}
-                      />
-                      Full access
-                      <span className="font-normal text-pnc-muted">· everything above</span>
-                    </label>
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-        ))}
-      </div>
+                    {levels.map((l) => {
+                      const on = current === l.id;
+                      return (
+                        <button
+                          key={l.id}
+                          type="button"
+                          role="radio"
+                          aria-checked={on}
+                          disabled={readOnly}
+                          onClick={() => onChange?.(asset.id, accessFor(l.id))}
+                          className={cn(
+                            "rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-pnc-link disabled:cursor-default",
+                            on
+                              ? l.id === "hidden"
+                                ? "bg-white text-pnc-ink shadow-card"
+                                : "bg-pnc-blue-700 text-white shadow-card"
+                              : "text-pnc-muted enabled:hover:text-pnc-ink",
+                          )}
+                        >
+                          {l.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ))}
     </div>
   );
 }

@@ -6,13 +6,8 @@ import { useViewer } from "@/components/customer/Viewer";
 import { MockBadge } from "@/components/mock/Mock";
 import { Dialog } from "@/components/ui/Dialog";
 import { Money } from "@/components/ui/Money";
-import {
-  assetCategories,
-  type AssetAccess,
-  type FamilyAsset,
-  type FamilyMember,
-} from "@/data/types";
-import { effectiveAccess, isAdminMember, memberById, roleById, viewersOf } from "@/lib/family";
+import { assetCategories, type FamilyAsset, type FamilyMember } from "@/data/types";
+import { effectiveAccess, memberById, roleById, viewersOf } from "@/lib/family";
 import { cn } from "@/lib/format";
 import { accountLabel, accountsOf, familySummary, firstName } from "@/lib/household";
 import { useFamily } from "./FamilyProvider";
@@ -21,19 +16,10 @@ import { MemberFamilyView } from "./MemberFamilyView";
 import { PayBills } from "./PayBills";
 import { Avatar, AvatarStack, Pill, secondaryButton, StatusBadge } from "./parts";
 
-/** What a member can do with an asset, in a few words (admin view only). */
-function accessLabel(a: AssetAccess): string {
-  if (a.manage) return "Full control";
-  if (a.transact) return "Can pay and transfer";
-  if (a.activity) return "Sees balance and activity";
-  if (a.view) return "Sees balance";
-  return "No access";
-}
-
 /**
  * One family, in the viewer's role. Everyone sees the accounts shared with
  * them; admins also see who can see each account, can share their own, and
- * open "Manage family" for members, roles and visibility. Non-admins get no
+ * open "Manage family" for members and roles. Non-admins get no
  * hint of what is hidden from them. Under People, everyday bills can be paid
  * from any account the viewer may pay from.
  */
@@ -177,7 +163,7 @@ export function FamilyDetail({ onBack }: { onBack: () => void }) {
   );
 }
 
-/** Admin list of shared accounts; each opens to who can see it and what they can do. */
+/** Admin list of shared accounts; each opens to who can see it. */
 function AdminAssets({
   indexOf,
   onChangeAccess,
@@ -233,6 +219,21 @@ function AssetRow({
   const owners = asset.owners.map((id) => memberById(state, id)?.name).filter(Boolean);
   const living = state.members.filter((m) => m.status !== "Deceased");
   const isOwner = asset.owners.includes(person.id);
+  const who = (m: FamilyMember) => (m.id === person.id ? "You" : firstName(m.name));
+  // Owners first, then everyone else who can see it; the rest are named once, quietly.
+  const seers = living
+    .map((m) => ({ m, access: effectiveAccess(state, m, asset) }))
+    .filter(({ access }) => access.view)
+    .map(({ m, access }) => ({
+      m,
+      label: asset.owners.includes(m.id)
+        ? "Owner"
+        : access.activity
+          ? "Balance and activity"
+          : "Balance",
+    }))
+    .sort((a, b) => Number(b.label === "Owner") - Number(a.label === "Owner"));
+  const hiddenFrom = living.filter((m) => !seers.some((x) => x.m.id === m.id));
 
   return (
     <li>
@@ -268,35 +269,28 @@ function AssetRow({
           aria-hidden="true"
         />
       </button>
-      <div
-        id={panelId}
-        hidden={!open}
-        className="border-t border-pnc-line bg-pnc-surface/50 px-4 py-3"
-      >
-        <p className="text-xs font-semibold text-pnc-muted">Who can see and do what</p>
-        <ul className="mt-2 grid gap-x-6 gap-y-1.5 @2xl:grid-cols-2">
-          {living.map((m) => {
-            const access = effectiveAccess(state, m, asset);
-            return (
-              <li key={m.id} className="flex items-baseline justify-between gap-3 text-sm">
-                <span className="truncate text-pnc-ink">
-                  {m.id === person.id ? "You" : firstName(m.name)}
-                </span>
-                <span
-                  className={cn(
-                    "shrink-0",
-                    access.view ? "font-medium text-pnc-ink" : "text-pnc-muted",
-                  )}
-                >
-                  {isAdminMember(state, m) ? "Admin · full control" : accessLabel(access)}
-                </span>
-              </li>
-            );
-          })}
+      <div id={panelId} hidden={!open} className="px-4 pb-4">
+        <p className="text-xs font-semibold text-pnc-muted">Who can see it</p>
+        <ul className="mt-2 flex flex-wrap gap-2">
+          {seers.map(({ m, label }) => (
+            <li
+              key={m.id}
+              className="flex items-center gap-2 rounded-full bg-pnc-surface py-1 pl-1 pr-3"
+            >
+              <Avatar member={m} index={indexOf(m)} size="sm" />
+              <span className="text-sm font-semibold text-pnc-ink">{who(m)}</span>
+              <span className="text-xs text-pnc-muted">{label}</span>
+            </li>
+          ))}
         </ul>
+        {hiddenFrom.length > 0 && (
+          <p className="mt-2 text-xs text-pnc-muted">
+            Hidden from {hiddenFrom.map(who).join(", ")}
+          </p>
+        )}
         <div className="mt-3 flex flex-wrap gap-4 text-sm font-semibold">
           <button type="button" onClick={onChangeAccess} className="text-pnc-link hover:underline">
-            Change access
+            Change who can see it
           </button>
           {isOwner && (
             <button
