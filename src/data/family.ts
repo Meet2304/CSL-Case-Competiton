@@ -1,6 +1,6 @@
 /**
  * MOCK DATA for the family dashboard (customer side). The signed-in customer
- * is Husband, an admin of the Sample family. Balances for accounts that
+ * is John, an admin of My Family. Balances for accounts that
  * also appear on the Accounts dashboard come from ./mock so they always match.
  *
  * This is only the starting state: admins can add members, roles and assets
@@ -27,29 +27,29 @@ const [cashRewards, coreVisa] = creditCardAccounts;
 const walletTotal = virtualWallet.accounts.reduce((sum, a) => sum + a.balance, 0);
 
 export const initialFamilyState: FamilyState = {
-  familyName: "Sample Family",
+  familyName: "My Family",
   selfId: "m-jordan",
   members: [
     {
       id: "m-jordan",
-      name: "Husband",
-      email: "husband@example.com",
+      name: "John",
+      email: "john@example.com",
       relationship: "Self",
       roleId: "r-admin",
       status: "Active",
     },
     {
       id: "m-casey",
-      name: "Wife",
-      email: "wife@example.com",
+      name: "Maya",
+      email: "maya@example.com",
       relationship: "Spouse",
       roleId: "r-admin",
       status: "Active",
     },
     {
       id: "m-avery",
-      name: "Child 1",
-      email: "child1@example.com",
+      name: "David",
+      email: "david@example.com",
       relationship: "Child",
       note: "Age 21",
       roleId: "r-adult-child",
@@ -57,8 +57,8 @@ export const initialFamilyState: FamilyState = {
     },
     {
       id: "m-riley",
-      name: "Child 2",
-      email: "child2@example.com",
+      name: "Alexis",
+      email: "alexis@example.com",
       relationship: "Child",
       note: "Age 15",
       roleId: "r-teen",

@@ -118,7 +118,7 @@ export type DemoUser = {
   displayName: string;
   /** For customers: who they are in the household (see src/data/household.ts). */
   personId?: string;
-  /** Shown on the demo sign-on buttons, e.g. "Husband, 52". */
+  /** Shown on the demo sign-on buttons, e.g. "John, 52". */
   hint?: string;
 };
 
@@ -133,7 +133,7 @@ export type AvatarLook = "husband" | "wife" | "teen" | "child" | "service" | "su
 export type HouseholdPerson = {
   id: string;
   name: string;
-  /** Relationship to the household's primary customer (Husband). */
+  /** Relationship to the household's primary customer (John). */
   relationship: FamilyMemberRelationship;
   birthdate: string; // ISO
   email: string;

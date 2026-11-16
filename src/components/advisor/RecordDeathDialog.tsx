@@ -22,8 +22,8 @@ const reportedOptions: LossEvent["reportedVia"][] = [
   "Mobile app",
 ];
 const people = customerDirectory(advisorCustomers);
-// In the demo story Husband is the one who dies; Wife, Child 1 and Child 2 survive.
-const DEFAULT_PERSON = "Husband";
+// In the demo story John is the one who dies; Maya, David and Alexis survive.
+const DEFAULT_PERSON = "John";
 
 const input =
   "mt-1 w-full rounded-md border border-pnc-line bg-white px-3 py-2.5 text-sm outline-none focus:border-pnc-link";

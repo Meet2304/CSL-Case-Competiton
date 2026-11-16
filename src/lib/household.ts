@@ -175,7 +175,7 @@ export function sharedWith(
   return out;
 }
 
-/** What `other` is to `viewer` (the seed records relationships to Husband). */
+/** What `other` is to `viewer` (the seed records relationships to John). */
 export function relationshipTo(
   viewer: HouseholdPerson,
   other: HouseholdPerson,

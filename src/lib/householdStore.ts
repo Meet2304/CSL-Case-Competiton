@@ -8,6 +8,7 @@ import { useMemo, useSyncExternalStore } from "react";
 import {
   adminRole,
   people,
+  previousFamilyNames,
   retiredRoleIds,
   seedFamilies,
   type StoredFamily,
@@ -41,15 +42,18 @@ function read(): HouseholdState {
 
 /**
  * Brings families saved by earlier builds in line with the seed: household
- * members' names and emails come from the seed (so a rename such as Jordan
- * Sample → Husband reaches them), families hold family only (an outside
- * professional such as the estate attorney is dropped), and retired roles go
- * once nobody holds them.
+ * members' names and emails come from the seed (so a rename such as Husband
+ * → John reaches them), a seeded family still under a retired name takes
+ * the seed's name, families hold family only (an outside professional such as
+ * the estate attorney is dropped), and retired roles go once nobody holds them.
  */
 function normalize(state: HouseholdState): HouseholdState {
   return {
     ...state,
     families: state.families.map((f) => {
+      const seed = seedFamilies.find((s) => s.id === f.id);
+      const familyName =
+        seed && previousFamilyNames.includes(f.familyName) ? seed.familyName : f.familyName;
       const members = f.members.flatMap((m) => {
         const p = people.find((x) => x.id === m.id);
         if (!p) return [m];
@@ -59,7 +63,7 @@ function normalize(state: HouseholdState): HouseholdState {
       const roles = f.roles.filter(
         (r) => !retiredRoleIds.includes(r.id) || members.some((m) => m.roleId === r.id),
       );
-      return { ...f, members, roles };
+      return { ...f, familyName, members, roles };
     }),
   };
 }

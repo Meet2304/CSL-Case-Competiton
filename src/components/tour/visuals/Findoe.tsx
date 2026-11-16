@@ -25,7 +25,7 @@ import { Citation, Sheet, TourButton, Visual, useTour } from "../parts";
 const WHEN = "after the loss";
 
 // ---------------------------------------------------------------------------
-// Wife asks Findoe
+// Maya asks Findoe
 
 /** "…the beneficiary [1]." with the markers turned into small numbered marks. */
 function Cited({ text }: { text: string }) {

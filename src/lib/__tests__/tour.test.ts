@@ -35,12 +35,12 @@ describe("tour script", () => {
     }
   });
 
-  it("names people by role only", () => {
+  it("names only the family and the Bank Advisor", () => {
     expect(Object.values(tourPeople).map((p) => p.name)).toEqual([
-      "Husband",
-      "Wife",
-      "Child 1",
-      "Child 2",
+      "John",
+      "Maya",
+      "David",
+      "Alexis",
       "Bank Advisor",
     ]);
     // Everything the tour can say, in every state the viewer can reach.
@@ -56,11 +56,11 @@ describe("tour script", () => {
       ]),
       (["yes", "no", "unsure"] as const).map(benefitsReply),
     ]);
-    expect(said).not.toMatch(/Alex|Dana|Morgan|Avery|Jamie|Taylor|Placeholder|Example|Sample/);
+    expect(said).not.toMatch(/\bAlex\b|Dana|Morgan|Avery|Jamie|Taylor|Placeholder|Example|Sample/);
   });
 });
 
-describe("what happens to the accounts Husband leaves", () => {
+describe("what happens to the accounts John leaves", () => {
   it("cites only sources that exist in the rulebook", () => {
     for (const beneficiaryNamed of [false, true]) {
       const ids = [
@@ -85,7 +85,7 @@ describe("what happens to the accounts Husband leaves", () => {
     expect(before.estate - after.estate).toBeCloseTo(savings);
   });
 
-  it("splits exactly the money Husband owns at PNC", () => {
+  it("splits exactly the money John owns at PNC", () => {
     const split = settlementSplit(initialTourState);
     expect(split.direct + split.estate).toBeCloseTo(husbandMoney().assets);
     expect(split.direct).toBeCloseTo(tourAccounts.joint.balance + tourAccounts.ira.balance);

@@ -16,7 +16,7 @@ const seed: HouseholdState = { families: seedFamilies, designations: {} };
 const person = (id: string) => people.find((p) => p.id === id)!;
 const husbandDied: RecordedLoss = {
   id: "t1",
-  personName: "Husband",
+  personName: "John",
   date: "2026-10-20",
   reportedVia: "Phone call",
   recordedOn: "2026-10-21",
@@ -84,9 +84,9 @@ describe("Findoe for customers", () => {
       });
     }
 
-  it("shows Husband which accounts would go through probate, and how to fix each", () => {
+  it("shows John which accounts would go through probate, and how to fix each", () => {
     const r = customerReply(ctxFor("p-jordan"), "What happens to my accounts if I die?");
-    expect(r.text).toContain("Joint Checking x0001** passes straight to Wife");
+    expect(r.text).toContain("Joint Checking x0001** passes straight to Maya");
     expect(r.text).toContain("2 accounts ($1,372,750.00) would go through probate");
     expect(r.actions.map((a) => a.href)).toEqual([
       routes.manageAsset("acct-jordan-savings"),
@@ -101,9 +101,9 @@ describe("Findoe for customers", () => {
     expect(r.actions.some((a) => a.href === routes.will)).toBe(false);
   });
 
-  it("walks Wife through what to do first after Husband dies, gently", () => {
+  it("walks Maya through what to do first after John dies, gently", () => {
     const r = customerReply(ctxFor("p-casey", { loss: true }), "What should I do first?");
-    expect(r.text).toMatch(/^I'm so sorry about Husband/);
+    expect(r.text).toMatch(/^I'm so sorry about John/);
     expect(r.text).toContain("Joint Checking is already yours");
     expect(r.text).toContain("Claim the 401(k) Rollover IRA");
     expect(r.text).toContain("Leave Savings x0002 and Brokerage Account x0012 to the executor");
@@ -120,23 +120,21 @@ describe("Findoe for customers", () => {
     expect(contacts.sources.map((s) => s.key)).toContain("ssa-lump-sum");
   });
 
-  it("lists what Wife can claim after Husband dies, and walks her through one claim", () => {
+  it("lists what Maya can claim after John dies, and walks her through one claim", () => {
     const ctx = ctxFor("p-casey", { loss: true });
     const all = customerReply(ctx, "What can I claim?");
     for (const t of [
       "Joint Checking",
       "401(k) Rollover IRA",
       "Term Life Policy",
-      "Child 2's Teen Savings",
+      "Alexis's Teen Savings",
     ])
       expect(all.text).toContain(`**${t}**`);
-    expect(all.text).toContain("go through Husband's estate");
+    expect(all.text).toContain("go through John's estate");
     expect(all.actions[0].href).toBe(routes.unclaimedAssets);
 
     const one = customerReply(ctx, "How do I claim the 401(k) Rollover IRA?");
-    expect(one.text).toMatch(
-      /^\*\*401\(k\) Rollover IRA\*\* can pass to you because Husband named/,
-    );
+    expect(one.text).toMatch(/^\*\*401\(k\) Rollover IRA\*\* can pass to you because John named/);
     expect(one.text).toContain("What the claim asks for:");
     expect(one.actions[0].href).toBe(routes.claimAsset("retirement:acct-jordan-ira"));
     expect(one.sources.map((s) => s.key)).toContain("irs-pub-590b");
@@ -157,11 +155,11 @@ describe("Findoe for customers", () => {
 
   it("describes other members' access only to admins", () => {
     const admin = customerReply(ctxFor("p-jordan"), "Who can see my accounts?");
-    expect(admin.text).toContain("**Child 1** (Older child): sees Joint Checking x0001");
+    expect(admin.text).toContain("**David** (Older child): sees Joint Checking x0001");
     const member = customerReply(ctxFor("p-avery"), "Who can see my accounts?");
     expect(member.text).toContain("you can see Joint Checking x0001");
     expect(member.text).not.toContain("Admin");
-    expect(member.text).not.toContain("Child 2");
+    expect(member.text).not.toContain("Alexis");
   });
 
   it("suggests loss questions while a death is being settled", () => {

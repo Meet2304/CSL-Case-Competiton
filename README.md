@@ -47,7 +47,7 @@ presentations. It needs no sign-on. Open it from the link on the sign-on page or
 Each of the 16 steps is one headline, one sentence and one visual; the presenter says the rest.
 The chapters are **The problem**, **Before a loss** (every asset in one view, gaps, family
 sharing), **The day it happens** (the Bank Advisor's alert, plan and transfer plan), **After the
-loss** (Wife's condolence screen, her list and a guided claim), **Findoe AI** (cited answers, the
+loss** (Maya's condolence screen, her list and a guided claim), **Findoe AI** (cited answers, the
 fixed rules, the question it asks) and **Summary**.
 
 - **Move** with Back / Next, the ← and → keys, or the chapter names in the header. Each step has
@@ -55,9 +55,9 @@ fixed rules, the question it asks) and **Summary**.
 - **Nothing scrolls on a laptop or projector.** Each visual is laid out at a fixed width and
   scaled to fit the space (`FitCanvas`), so text also grows on a bigger screen. On a phone the
   page scrolls as a whole.
-- **People are named by role only**: Husband, Wife, Child 1, Child 2 and Bank Advisor.
-- **Some steps are clickable, and choices carry forward**: naming Wife as the beneficiary of
-  Savings x0002 before the loss moves that account out of probate in the transfer plan, in Wife's
+- **The family is John, Maya, David and Alexis**, plus the Bank Advisor; no other names appear.
+- **Some steps are clickable, and choices carry forward**: naming Maya as the beneficiary of
+  Savings x0002 before the loss moves that account out of probate in the transfer plan, in Maya's
   list and in Findoe's answer.
 - The visuals are drawn for the tour; they are not the working pages. The script and mock data
   are in `src/data/tour.ts` (balances come from `src/data/household.ts`), the rules in
@@ -71,10 +71,10 @@ run in a frame on a dark stage; each of the 25 shots signs in as the right perso
 real controls with a visible cursor, and a camera zooms and cuts between parts of the page. It
 needs no sign-on. Open it from the link on the sign-on page or go straight to `/film`.
 
-The chapters are **Before a loss** (Husband's home page, the family dashboard, roles and
-account-by-account access, what Child 1 sees), **The day it happens** (the Bank Advisor records
-the death, the alert, the plan, how Findoe decided), **After the loss** (Wife's condolence strip,
-the family dashboard with Husband marked deceased, her list, a guided claim, a cited Findoe
+The chapters are **Before a loss** (John's home page, the family dashboard, roles and
+account-by-account access, what David sees), **The day it happens** (the Bank Advisor records
+the death, the alert, the plan, how Findoe decided), **After the loss** (Maya's condolence strip,
+the family dashboard with John marked deceased, her list, a guided claim, a cited Findoe
 answer, the children's note) and **Summary**.
 
 - **Move** with Back / Next, the ← and → keys, or the chapter names in the header. **Play** (or
@@ -96,19 +96,19 @@ Sign-on decides the experience. Demo User IDs (any password; defined in
 
 | User ID   | Who                                                       | Lands on   |
 | --------- | --------------------------------------------------------- | ---------- |
-| `husband` | Husband, 52                                               | `/home`    |
-| `wife`    | Wife, 49 — Husband's spouse                               | `/home`    |
-| `child1`  | Child 1, 17 — turns 18 on Nov 30, 2026                    | `/home`    |
-| `child2`  | Child 2, 14                                               | `/home`    |
+| `john`    | John, 52                                                  | `/home`    |
+| `maya`    | Maya, 49 — John's spouse                                  | `/home`    |
+| `david`   | David, 17 — turns 18 on Nov 30, 2026                      | `/home`    |
+| `alexis`  | Alexis, 14                                                | `/home`    |
 | `advisor` | Bank representative (Alex Example, Senior Wealth Advisor) | `/advisor` |
 
-Earlier IDs still sign in as the same people: `father` and `mother`, and
+Earlier IDs still sign in as the same people: `husband`, `wife`, `child1` and `child2`, then `father` and `mother`, and
 before them `jordan`, `casey`, `avery` and `riley`. Each person's profile picture is an illustration that matches
 their role (`PersonAvatar`, set by `avatar` in `src/data/household.ts`).
 
 All four customers read one shared household (`src/data/household.ts`): ten
 simple accounts (joint checking, savings, an IRA, a brokerage account, a credit
-card, a life policy held outside PNC, Wife's savings and Roth IRA, and the
+card, a life policy held outside PNC, Maya's savings and Roth IRA, and the
 kids' custodial accounts). The session keeps the role (`pnc-session`) and the
 person (`pnc-person`); `src/proxy.ts` keeps each role on its own pages.
 
@@ -125,7 +125,7 @@ family (with what they're allowed to do).
 
 **Reminders** (`src/lib/nudges.ts`) come from what's on file: write or finish
 a will, add a beneficiary to each account that can take one, and update a
-beneficiary who has died. Child 1 gets a heads-up about turning 18; Child 2 gets
+beneficiary who has died. David gets a heads-up about turning 18; Alexis gets
 none. Beneficiary reminders show as a count on **Assets and Debts** and the will
 reminder on **Will** in the navigation, where each is resolved.
 
@@ -133,9 +133,9 @@ reminder on **Will** in the navigation, where each is resolved.
 
 A family is a group of people you trust with access to your finances. Anyone
 18 or over can **create a family** and becomes its admin; a person can belong
-to several families and switch between them. Husband's _Sample Family_ is
-seeded: Husband and Wife are admins, Child 1 can see the joint checking account,
-and Child 2 sees nothing. Families are just family: no outside advisors.
+to several families and switch between them. John's _My Family_ is
+seeded: John and Maya are admins, David can see the joint checking account,
+and Alexis sees nothing. Families are just family: no outside advisors.
 
 - **Share an account** you own with a family, or stop sharing it. Nobody sees
   a shared account until their role is given access.
@@ -173,21 +173,21 @@ dropdown in the navigation (More on the phone). The old `/plan` and `/will` URLs
 
 Nothing happens automatically. A death only exists once the bank records it.
 
-1. **Advisor** (`advisor`): _Record a death notice_ (defaults to Husband).
-2. **Husband's login** shows that the accounts are being settled.
-3. **Wife** sees a soft condolence strip and a **Next steps** page
-   (`src/lib/survivor.ts`), built from Husband's accounts as they stand:
-   - _Coming to you_: a guided flow for each account that passes to Wife (the
-     joint account, the IRA, Child 2's account as new custodian, and any
-     account where Husband had named Wife as beneficiary). The life policy is
+1. **Advisor** (`advisor`): _Record a death notice_ (defaults to John).
+2. **John's login** shows that the accounts are being settled.
+3. **Maya** sees a soft condolence strip and a **Next steps** page
+   (`src/lib/survivor.ts`), built from John's accounts as they stand:
+   - _Coming to you_: a guided flow for each account that passes to Maya (the
+     joint account, the IRA, Alexis's account as new custodian, and any
+     account where John had named Maya as beneficiary). The life policy is
      claimed with the insurer.
    - _Handled through the estate_: accounts with no beneficiary, and the
      credit card.
    - The death certificate is uploaded once and reused. _Send to PNC_ leaves a
      flow **In review**; nothing approves itself.
-   - If Husband's will is on file and names Wife, the executor can begin
+   - If John's will is on file and names Maya, the executor can begin
      executing it from this page.
-4. **Child 1 and Child 2** get a gentle message and nothing to do.
+4. **David and Alexis** get a gentle message and nothing to do.
 
 State lives in the browser (`localStorage`). _Reset demo_ on the advisor home
 clears the recorded deaths, flows, families, beneficiary changes and wills.
@@ -285,7 +285,7 @@ rulebook — **same protocols, run before the death instead of after**:
 - **Add a rule:** add a node / overlay / household rule with a source in
   `src/data/settlement`, then a test in `src/lib/settlement/__tests__`. `npm test`
   checks every branch is covered, every source exists, and the golden plans for
-  Morgan, Avery and the Sample family.
+  Morgan, Avery and My Family.
 - The only stored state is what the advisor tells us: sign-offs
   (`src/lib/settlement/reviews.ts`), answers and done steps
   (`src/lib/settlement/casework.ts`), all in the browser. _Reset demo_ on the

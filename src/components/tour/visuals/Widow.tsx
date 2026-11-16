@@ -14,7 +14,7 @@ const listOf = (items: string[]) =>
   items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items.at(-1)}`;
 
 // ---------------------------------------------------------------------------
-// The first thing Wife sees
+// The first thing Maya sees
 
 export function CondolenceVisual() {
   const { dispatch } = useTour();
@@ -23,7 +23,7 @@ export function CondolenceVisual() {
       <Sheet className="px-8 py-14 text-center">
         <Heart className="mx-auto size-9 text-attention" aria-hidden="true" />
         <p className="mt-5 font-display text-2xl font-medium @[600px]:text-3xl">
-          We&apos;re so sorry for the loss of Husband.
+          We&apos;re so sorry for the loss of John.
         </p>
         <p className="mt-2 text-lg text-pnc-muted">There is nothing you need to do today.</p>
         <button
@@ -48,7 +48,7 @@ export function UnclaimedVisual() {
     <Visual person="wife" when={WHEN}>
       <Sheet>
         <p className="px-6 pb-3 pt-5 text-md text-pnc-muted">
-          Husband&apos;s accounts that can pass to you
+          John&apos;s accounts that can pass to you
         </p>
         <ul className="divide-y divide-pnc-line border-t border-pnc-line">
           {split.toWife.map((r) => (
