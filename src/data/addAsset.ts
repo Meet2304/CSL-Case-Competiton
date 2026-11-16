@@ -1,11 +1,14 @@
 /**
  * MOCK DATA for the Add an asset page (`routes.addAsset`). Every institution,
- * ticker price and estimate is invented, and nothing a customer adds is
- * saved: each flow is a demo that ends on a confirmation.
+ * account, ticker price and estimate is invented, and nothing a customer adds
+ * is saved: each flow is a demo that ends on a confirmation.
+ *
+ * Three classifications: accounts already inside PNC, accounts at other
+ * institutions, and assets the customer enters themselves.
  */
 
 /** How a kind of asset is added; each kind has its own short demo flow. */
-export type AddFlow = "connect" | "ticker" | "estimate" | "manual" | "import" | "portfolio";
+export type AddFlow = "pnc" | "connect" | "ticker" | "estimate" | "manual" | "import" | "portfolio";
 
 export type AddOption = {
   id: string;
@@ -18,19 +21,69 @@ export type AddOption = {
   ask?: { title: string; fields: { id: string; label: string; placeholder?: string }[] };
 };
 
-export type AddGroup = { id: string; label: string; intro?: string; options: AddOption[] };
+export type AddGroup = { id: string; label: string; intro: string; options: AddOption[] };
 
 export const addAssetGroups: AddGroup[] = [
   {
-    id: "connect",
-    label: "Connect an account",
+    id: "pnc",
+    label: "PNC accounts",
+    intro: "Accounts you hold with PNC, found for you",
+    options: [
+      {
+        id: "pnc-deposit",
+        label: "Checking, savings and CDs",
+        description: "PNC deposit accounts in your name, added in one step.",
+        flow: "pnc",
+        keywords: "pnc checking savings money market cd certificate deposit",
+      },
+      {
+        id: "pnc-investments",
+        label: "PNC investments",
+        description: "Brokerage and managed portfolios with PNC Investments.",
+        flow: "pnc",
+        keywords: "pnc brokerage managed portfolio investments",
+      },
+      {
+        id: "pnc-retirement",
+        label: "PNC retirement",
+        description: "IRAs and rollovers held at PNC.",
+        flow: "pnc",
+        keywords: "pnc ira roth rollover retirement",
+      },
+      {
+        id: "pnc-trust",
+        label: "Trust and custody",
+        description: "Trust, custody and estate accounts at PNC Private Bank.",
+        flow: "pnc",
+        keywords: "pnc private bank trust custody estate fiduciary",
+      },
+    ],
+  },
+  {
+    id: "external",
+    label: "External accounts",
+    intro: "Accounts at other banks and institutions",
     options: [
       {
         id: "banks",
         label: "Banks and brokerages",
-        description: "Link any online account. Balances update on their own.",
+        description: "Link a checking, savings or brokerage account elsewhere.",
         flow: "connect",
-        keywords: "checking savings brokerage 401k ira investment",
+        keywords: "checking savings brokerage investment other bank external",
+      },
+      {
+        id: "joint-external",
+        label: "Joint account elsewhere",
+        description: "An account you share with someone at another bank.",
+        flow: "connect",
+        keywords: "joint shared spouse partner other bank external",
+      },
+      {
+        id: "workplace",
+        label: "Retirement plan at work",
+        description: "A 401(k), 403(b) or pension with your employer's provider.",
+        flow: "connect",
+        keywords: "401k 403b pension employer workplace plan",
       },
       {
         id: "crypto-wallets",
@@ -38,6 +91,13 @@ export const addAssetGroups: AddGroup[] = [
         description: "Connect a wallet address or an exchange account.",
         flow: "connect",
         keywords: "bitcoin ethereum coinbase wallet exchange",
+      },
+      {
+        id: "insurance",
+        label: "Insurance and annuities",
+        description: "Life policies and annuities held with an insurer.",
+        flow: "connect",
+        keywords: "life insurance policy annuity insurer",
       },
       {
         id: "web-sync",
@@ -49,42 +109,9 @@ export const addAssetGroups: AddGroup[] = [
     ],
   },
   {
-    id: "ticker",
-    label: "Track by ticker",
-    options: [
-      {
-        id: "stocks",
-        label: "Stocks and funds",
-        description: "Add holdings by ticker. Prices update every day.",
-        flow: "ticker",
-        keywords: "shares etf mutual fund equity",
-        ask: {
-          title: "Which holding?",
-          fields: [
-            { id: "ticker", label: "Ticker", placeholder: "e.g. SMPL" },
-            { id: "quantity", label: "Shares", placeholder: "e.g. 25" },
-          ],
-        },
-      },
-      {
-        id: "crypto-tickers",
-        label: "Crypto",
-        description: "Add coins by ticker, like BTC or ETH.",
-        flow: "ticker",
-        keywords: "bitcoin ethereum coin token",
-        ask: {
-          title: "Which coin?",
-          fields: [
-            { id: "ticker", label: "Ticker", placeholder: "e.g. BTC" },
-            { id: "quantity", label: "Amount", placeholder: "e.g. 0.5" },
-          ],
-        },
-      },
-    ],
-  },
-  {
-    id: "property",
-    label: "Property and valuables",
+    id: "manual",
+    label: "Added by you",
+    intro: "Property, valuables and anything else you enter yourself",
     options: [
       {
         id: "real-estate",
@@ -112,6 +139,40 @@ export const addAssetGroups: AddGroup[] = [
         },
       },
       {
+        id: "jewelry",
+        label: "Jewelry and watches",
+        description: "Rings, necklaces and watches, valued from a description.",
+        flow: "estimate",
+        keywords: "jewelry jewellery ring necklace watch diamond",
+        ask: {
+          title: "What is it?",
+          fields: [
+            {
+              id: "description",
+              label: "Describe it",
+              placeholder: "e.g. A gold watch, a diamond ring",
+            },
+          ],
+        },
+      },
+      {
+        id: "art",
+        label: "Art and collectibles",
+        description: "Paintings, prints, wine and other collections.",
+        flow: "estimate",
+        keywords: "art painting print collectible collection wine",
+        ask: {
+          title: "What is it?",
+          fields: [
+            {
+              id: "description",
+              label: "Describe it",
+              placeholder: "e.g. A signed print, a wine collection",
+            },
+          ],
+        },
+      },
+      {
         id: "metals",
         label: "Precious metals",
         description: "Gold, silver and other bullion, priced by weight.",
@@ -130,31 +191,52 @@ export const addAssetGroups: AddGroup[] = [
         label: "Estimate with Findoe",
         description: "No market price? Findoe estimates its value and keeps it current.",
         flow: "estimate",
-        keywords: "ai appraiser art jewelry collectible watch",
+        keywords: "ai appraiser estimate other",
         ask: {
           title: "Describe it",
           fields: [
             {
               id: "description",
               label: "What it is",
-              placeholder: "e.g. A signed print, a watch, a collection",
+              placeholder: "e.g. A rare instrument, a domain name",
             },
           ],
         },
       },
-    ],
-  },
-  {
-    id: "manual",
-    label: "Enter it yourself",
-    intro: "For private investments, angel or venture stakes, and accounts that won't connect.",
-    options: [
+      {
+        id: "stocks",
+        label: "Stocks and funds",
+        description: "Track holdings by ticker. Prices update every day.",
+        flow: "ticker",
+        keywords: "shares etf mutual fund equity ticker",
+        ask: {
+          title: "Which holding?",
+          fields: [
+            { id: "ticker", label: "Ticker", placeholder: "e.g. SMPL" },
+            { id: "quantity", label: "Shares", placeholder: "e.g. 25" },
+          ],
+        },
+      },
+      {
+        id: "crypto-tickers",
+        label: "Crypto by ticker",
+        description: "Track coins by ticker, like BTC or ETH.",
+        flow: "ticker",
+        keywords: "bitcoin ethereum coin token",
+        ask: {
+          title: "Which coin?",
+          fields: [
+            { id: "ticker", label: "Ticker", placeholder: "e.g. BTC" },
+            { id: "quantity", label: "Amount", placeholder: "e.g. 0.5" },
+          ],
+        },
+      },
       {
         id: "qty-price",
         label: "Quantity and price",
-        description: "Track the units you own and a price you update.",
+        description: "Private shares or stakes: units you own and a price you update.",
         flow: "manual",
-        keywords: "units private shares angel vc",
+        keywords: "units private shares angel vc venture",
         ask: {
           title: "What are you tracking?",
           fields: [
@@ -167,7 +249,7 @@ export const addAssetGroups: AddGroup[] = [
       {
         id: "value",
         label: "Asset value",
-        description: "Enter a value and update it when it changes.",
+        description: "Anything else: enter a value and update it when it changes.",
         flow: "manual",
         keywords: "manual value private fund other",
         ask: {
@@ -185,18 +267,12 @@ export const addAssetGroups: AddGroup[] = [
         flow: "import",
         keywords: "csv excel spreadsheet bulk upload",
       },
-    ],
-  },
-  {
-    id: "structures",
-    label: "Ownership structures",
-    options: [
       {
         id: "portfolio",
-        label: "Link a portfolio",
+        label: "Trusts and LLCs",
         description: "Group assets held by a trust, LLC or partnership.",
         flow: "portfolio",
-        keywords: "trust llc partnership entity nested",
+        keywords: "trust llc partnership entity nested portfolio",
         ask: {
           title: "Who holds the assets?",
           fields: [{ id: "name", label: "Name", placeholder: "e.g. Sample Family Trust" }],
@@ -206,6 +282,18 @@ export const addAssetGroups: AddGroup[] = [
   },
 ];
 
+/** PNC accounts in the customer's name that aren't on Assets and Debts yet. */
+export const samplePncAccounts: Record<string, { name: string; last4: string; balance: number }[]> =
+  {
+    "pnc-deposit": [
+      { name: "Premiere Money Market", last4: "0061", balance: 152_400 },
+      { name: "12-Month CD", last4: "0062", balance: 100_000 },
+    ],
+    "pnc-investments": [{ name: "Managed Portfolio", last4: "0063", balance: 418_750 }],
+    "pnc-retirement": [{ name: "Traditional IRA", last4: "0064", balance: 96_300 }],
+    "pnc-trust": [{ name: "Family Trust Custody", last4: "0065", balance: 612_000 }],
+  };
+
 /** Institutions the connect flow can find. */
 export const sampleInstitutions = [
   "Sample National Bank",
@@ -213,6 +301,7 @@ export const sampleInstitutions = [
   "Example Credit Union",
   "Placeholder Crypto Exchange",
   "Mock Retirement Services",
+  "Sample Life Insurance Co.",
 ];
 
 /** What a connected institution turns up. */
@@ -232,15 +321,17 @@ export const defaultPrice = 100;
 
 /** Estimates by option id: a value and the range around it. */
 export const sampleEstimates: Record<string, { value: number; low: number; high: number }> = {
-  "real-estate": { value: 412_000, low: 389_000, high: 436_000 },
-  vehicles: { value: 23_800, low: 21_500, high: 25_900 },
+  "real-estate": { value: 1_412_000, low: 1_339_000, high: 1_486_000 },
+  vehicles: { value: 68_800, low: 63_500, high: 72_900 },
+  jewelry: { value: 18_400, low: 14_900, high: 22_600 },
+  art: { value: 42_000, low: 31_000, high: 55_000 },
   metals: { value: 24_600, low: 24_100, high: 25_100 },
   appraise: { value: 3_200, low: 2_400, high: 4_100 },
 };
 
 /** What the import flow finds in a file. */
 export const sampleImport = [
-  { name: "Private fund", value: 25_000 },
-  { name: "Angel investment", value: 10_000 },
-  { name: "Art collection", value: 6_500 },
+  { name: "Private fund", value: 250_000 },
+  { name: "Angel investment", value: 75_000 },
+  { name: "Art collection", value: 46_500 },
 ];

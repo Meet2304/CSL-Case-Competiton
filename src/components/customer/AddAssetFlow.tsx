@@ -13,6 +13,7 @@ import {
   sampleEstimates,
   sampleImport,
   sampleInstitutions,
+  samplePncAccounts,
   samplePrices,
   type AddOption,
 } from "@/data/addAsset";
@@ -45,9 +46,10 @@ export function AddAssetFlow({
 }
 
 function Flow({ option: o, onClose }: { option: AddOption; onClose: () => void }) {
-  const [step, setStep] = useState<Step>("ask");
+  // PNC already knows the customer's accounts, so that flow starts by looking them up.
+  const [step, setStep] = useState<Step>(o.flow === "pnc" ? "working" : "ask");
   const [values, setValues] = useState<Record<string, string>>({});
-  const [picked, setPicked] = useState<string | null>(null);
+  const [picked, setPicked] = useState<string | null>(o.flow === "pnc" ? "PNC" : null);
   const [kind, setKind] = useState("Trust");
 
   // A short pause where a real flow would connect, look up or estimate.
@@ -68,11 +70,13 @@ function Flow({ option: o, onClose }: { option: AddOption; onClose: () => void }
             aria-hidden="true"
           />
           <p className="mt-3 font-semibold text-pnc-ink">
-            {o.flow === "connect"
-              ? `Connecting to ${picked}`
-              : o.flow === "import"
-                ? "Reading your file"
-                : "Estimating its value"}
+            {o.flow === "pnc"
+              ? "Finding your PNC accounts"
+              : o.flow === "connect"
+                ? `Connecting to ${picked}`
+                : o.flow === "import"
+                  ? "Reading your file"
+                  : "Estimating its value"}
           </p>
           <p className="mt-1 text-sm text-pnc-muted">This takes a moment.</p>
         </div>
@@ -234,7 +238,16 @@ function Result({
 }) {
   let body: ReactNode;
   let action = "Add to Assets and Debts";
-  if (o.flow === "connect") {
+  if (o.flow === "pnc") {
+    const found = samplePncAccounts[o.id] ?? [];
+    body = (
+      <>
+        <p className="font-semibold text-pnc-ink">In your name at PNC</p>
+        <Rows rows={found.map((a) => [`${a.name} x${a.last4}`, a.balance])} />
+      </>
+    );
+    action = found.length === 1 ? "Add this account" : `Add ${found.length} accounts`;
+  } else if (o.flow === "connect") {
     body = (
       <>
         <p className="font-semibold text-pnc-ink">Found at {picked}</p>

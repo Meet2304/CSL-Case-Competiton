@@ -4,8 +4,10 @@ import Link from "next/link";
 import { useId, useState } from "react";
 import {
   Bitcoin,
+  Briefcase,
   Car,
   ChartCandlestick,
+  ChartLine,
   ChevronRight,
   Coins,
   FileUp,
@@ -16,14 +18,22 @@ import {
   Landmark,
   ListFilter,
   Network,
+  Palette,
   PencilLine,
+  PiggyBank,
   Search,
+  ShieldCheck,
   Sparkles,
+  Sunset,
+  Umbrella,
+  Users,
   Wallet,
+  Watch,
   X,
   type LucideIcon,
 } from "lucide-react";
 import { Pagination, usePagination } from "@/components/advisor/Pagination";
+import { PncMark } from "@/components/brand/PncLogo";
 import { AddAssetFlow } from "@/components/customer/AddAssetFlow";
 import { IconChip } from "@/components/ui/IconChip";
 import { SelectMenu } from "@/components/ui/SelectMenu";
@@ -31,23 +41,32 @@ import { addAssetGroups, type AddOption } from "@/data/addAsset";
 import { routes } from "@/lib/routes";
 
 export const optionIcons: Record<string, LucideIcon> = {
+  "pnc-deposit": PiggyBank,
+  "pnc-investments": ChartLine,
+  "pnc-retirement": Sunset,
+  "pnc-trust": ShieldCheck,
   banks: Landmark,
+  "joint-external": Users,
+  workplace: Briefcase,
   "crypto-wallets": Wallet,
+  insurance: Umbrella,
   "web-sync": Globe,
-  stocks: ChartCandlestick,
-  "crypto-tickers": Bitcoin,
   "real-estate": House,
   vehicles: Car,
+  jewelry: Watch,
+  art: Palette,
   metals: Coins,
   appraise: Sparkles,
+  stocks: ChartCandlestick,
+  "crypto-tickers": Bitcoin,
   "qty-price": Hash,
   value: PencilLine,
   import: FileUp,
   portfolio: Network,
 };
 
-/** Two full rows of four on wide screens. */
-const PAGE_SIZE = 8;
+/** Three full rows of four on wide screens. */
+const PAGE_SIZE = 12;
 
 const options = addAssetGroups.flatMap((g) => g.options.map((o) => ({ ...o, group: g })));
 type Card = (typeof options)[number];
@@ -60,8 +79,9 @@ const matches = (o: AddOption, q: string) => {
 
 /**
  * Add an asset (`routes.addAsset`): every kind of asset a customer can bring
- * into Assets and Debts, as a grid of cards (four across on wide screens),
- * paged. The same one-line toolbar as Assets and Debts narrows it: a select
+ * into Assets and Debts, in three classifications (PNC accounts, external
+ * accounts, added by you), as a grid of cards four across on wide screens,
+ * twelve to a page. The same one-line toolbar as Assets and Debts narrows it: a select
  * menu for the kind and a search. Each card opens a short demo flow.
  */
 export function AddAsset() {
@@ -180,7 +200,10 @@ export function AddAsset() {
                     {c.description}
                   </span>
                   <span className="mt-4 flex items-center justify-between gap-2 border-t border-pnc-line pt-3 text-xs text-pnc-muted">
-                    {c.group.label}
+                    <span className="flex items-center gap-1.5">
+                      {c.group.id === "pnc" && <PncMark size={14} />}
+                      {c.group.label}
+                    </span>
                     <ChevronRight className="size-4 text-pnc-link" aria-hidden="true" />
                   </span>
                 </button>
