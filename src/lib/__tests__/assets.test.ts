@@ -42,11 +42,11 @@ describe("my assets", () => {
       assetsFor(seed, personId, all, [])
         .filter((i) => canManage(i, personId))
         .map((i) => i.account.id);
-    // Husband: everything they own, Child 2's account (custodian), and Wife's accounts (admin).
+    // John: everything they own, Alexis's account (custodian), and Maya's accounts (admin).
     expect(manageable("p-jordan")).toEqual(
       expect.arrayContaining(["acct-jordan-savings", "acct-riley-savings", "acct-casey-roth"]),
     );
-    // Child 1: their account is run by a custodian; the shared checking is view-only for the role.
+    // David: their account is run by a custodian; the shared checking is view-only for the role.
     expect(manageable("p-avery")).toEqual([]);
   });
 
@@ -63,13 +63,13 @@ describe("my assets", () => {
       assetsFor(seed, personId, all, [])
         .filter((i) => canPayFrom(i, personId))
         .map((i) => i.account.id);
-    // Husband: his own cash accounts and Child 2's account he's custodian of; never the IRA or card.
+    // John: his own cash accounts and Alexis's account he's custodian of; never the IRA or card.
     expect(payable("p-jordan")).toEqual(
       expect.arrayContaining(["acct-joint-checking", "acct-jordan-savings", "acct-riley-savings"]),
     );
     expect(payable("p-jordan")).not.toContain("acct-jordan-ira");
     expect(payable("p-jordan")).not.toContain("acct-jordan-card");
-    // Child 1 only sees the joint checking (no pay permission); Child 2's account is run by a custodian.
+    // David only sees the joint checking (no pay permission); Alexis's account is run by a custodian.
     expect(payable("p-avery")).toEqual([]);
     expect(payable("p-riley")).toEqual([]);
   });
@@ -78,8 +78,8 @@ describe("my assets", () => {
     const items = assetsFor(seed, "p-jordan", all, []);
     const find = (q: string) => items.filter((i) => assetMatches(i, q)).map((i) => i.account.id);
     expect(find("x0011")).toEqual(["acct-jordan-ira"]);
-    expect(find("wife roth")).toEqual(["acct-casey-roth"]);
-    expect(find("sample family")).toEqual(["acct-casey-savings", "acct-casey-roth"]);
+    expect(find("maya roth")).toEqual(["acct-casey-roth"]);
+    expect(find("my family")).toEqual(["acct-casey-savings", "acct-casey-roth"]);
     expect(find("")).toHaveLength(items.length);
   });
 });

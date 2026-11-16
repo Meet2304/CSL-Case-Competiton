@@ -2,7 +2,7 @@
  * The script of the product film (`/film`): which page of the working app each
  * shot is filmed on, what is clicked, and what the camera frames. Captions are
  * one headline and one sentence; the presenter says the rest. People are
- * named by role only (Husband, Wife, Child 1, Child 2, Bank Advisor).
+ * John, Maya, David, Alexis and the Bank Advisor; no other names.
  *
  * Targets describe elements by the words on them, so the film keeps working
  * when the app's markup changes but its labels do not.
@@ -88,7 +88,7 @@ export const filmShots: FilmShot[] = [
     id: "home",
     chapter: "before",
     scene: "husband-home",
-    title: "Husband's home page",
+    title: "John's home page",
     body: "He runs the family's money. This is what he sees.",
   },
   {
@@ -114,7 +114,7 @@ export const filmShots: FilmShot[] = [
     chapter: "before",
     scene: "husband-family",
     title: "The family dashboard",
-    body: "Husband shares his accounts with the people he trusts.",
+    body: "John shares his accounts with the people he trusts.",
   },
   {
     id: "shared",
@@ -131,7 +131,7 @@ export const filmShots: FilmShot[] = [
     chapter: "before",
     scene: "husband-family",
     title: "Everyone has a role",
-    body: "Husband and Wife are admins. Each child has their own role.",
+    body: "John and Maya are admins. Each child has their own role.",
     focus: { text: "People", exact: true, closest: "aside" },
   },
   {
@@ -152,7 +152,7 @@ export const filmShots: FilmShot[] = [
     chapter: "before",
     scene: "husband-family",
     title: "Access is set account by account",
-    body: "Child 1 can see the joint checking account and nothing else.",
+    body: "David can see the joint checking account and nothing else.",
     actions: [
       { do: "click", on: { text: "Sees the household checking account", closest: "button" } },
       { do: "wait", for: { text: "Segmented access control" } },
@@ -164,7 +164,7 @@ export const filmShots: FilmShot[] = [
     id: "child",
     chapter: "before",
     scene: "child-family",
-    title: "What Child 1 sees",
+    title: "What David sees",
     body: "Only the account shared with them. Nothing shows what is hidden.",
     // The heading, not the count above it that carries the same words.
     focus: { css: "h3", text: "Shared with you", closest: ".shadow-card" },
@@ -174,7 +174,7 @@ export const filmShots: FilmShot[] = [
   {
     id: "loss",
     chapter: "day",
-    title: "Husband passes away",
+    title: "John passes away",
     body: "The bank hears by phone.",
   },
   {
@@ -196,19 +196,19 @@ export const filmShots: FilmShot[] = [
     chapter: "day",
     scene: "advisor-home",
     title: "The Bank Advisor knows what to do first",
-    body: "Call Wife. Lead with condolences, not paperwork.",
+    body: "Call Maya. Lead with condolences, not paperwork.",
     actions: [
       { do: "click", on: { css: "dialog[open] button", text: "Record and notify" } },
-      { do: "wait", for: { css: 'section[aria-label="Death recorded: Husband"]' } },
+      { do: "wait", for: { css: 'section[aria-label="Death recorded: John"]' } },
     ],
-    focus: { css: 'section[aria-label="Death recorded: Husband"]' },
+    focus: { css: 'section[aria-label="Death recorded: John"]' },
   },
   {
     id: "standing",
     chapter: "day",
     scene: "advisor-client",
     title: "The full picture before the first call",
-    body: "What passes to Wife, what goes through probate, and the next date.",
+    body: "What passes to Maya, what goes through probate, and the next date.",
     focus: { text: "Where things stand", closest: "section" },
   },
   {
@@ -250,18 +250,18 @@ export const filmShots: FilmShot[] = [
     id: "condolence",
     chapter: "after",
     scene: "wife-home",
-    title: "Wife is met with care",
+    title: "Maya is met with care",
     body: "Nothing is urgent. There is one link, for when she is ready.",
     // The strip's content column, not the full-width strip itself.
-    focus: { text: "so sorry for the loss of Husband", closest: ".max-w-7xl" },
+    focus: { text: "so sorry for the loss of John", closest: ".max-w-7xl" },
   },
   {
     id: "ahead",
     chapter: "after",
     scene: "wife-home",
     title: "The bank looks ahead for her",
-    body: "Her own savings still names Husband, so she is asked to update it.",
-    focus: card("Looking after Husband's accounts"),
+    body: "Her own savings still names John, so she is asked to update it.",
+    focus: card("Looking after John's accounts"),
     mark: { text: "Update the beneficiary on Savings x0021", closest: "li" },
   },
   {
@@ -269,7 +269,7 @@ export const filmShots: FilmShot[] = [
     chapter: "after",
     scene: "wife-family",
     title: "The family dashboard after the loss",
-    body: "Husband is marked deceased. The family and its accounts stay together.",
+    body: "John is marked deceased. The family and its accounts stay together.",
     focus: { text: "People", exact: true, closest: "aside" },
     mark: { text: "Deceased", exact: true, closest: "li" },
   },
@@ -320,7 +320,7 @@ export const filmShots: FilmShot[] = [
     scene: "child-home",
     title: "The children get a gentle note",
     body: "Nothing is asked of them.",
-    focus: { text: "so sorry about Husband", closest: ".max-w-7xl" },
+    focus: { text: "so sorry about John", closest: ".max-w-7xl" },
   },
 
   // --- Summary -------------------------------------------------------------

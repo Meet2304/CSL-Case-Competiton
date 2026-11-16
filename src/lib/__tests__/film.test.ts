@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { filmChapters, filmScenes, filmShots } from "@/data/film";
-import { demoUsers } from "@/data/users";
+import { findDemoUser } from "@/data/users";
 import { frameFor, planShot, visiblePart, type FilmShot } from "@/lib/film";
 
 const stage = { w: 1200, h: 600 };
@@ -15,7 +15,7 @@ describe("film script", () => {
 
   it("signs in only as people the app knows", () => {
     for (const scene of Object.values(filmScenes))
-      expect(demoUsers.some((u) => u.userId === scene.as)).toBe(true);
+      expect(findDemoUser(scene.as), scene.as).toBeDefined();
   });
 
   it("keeps each caption to a headline and a sentence", () => {
@@ -25,9 +25,9 @@ describe("film script", () => {
     }
   });
 
-  it("names people by role only", () => {
+  it("names only the family and the Bank Advisor", () => {
     const said = JSON.stringify(filmShots.map((s) => [s.title, s.body]));
-    expect(said).not.toMatch(/Alex|Dana|Morgan|Avery|Jamie|Taylor|Placeholder|Example|Sample/);
+    expect(said).not.toMatch(/\bAlex\b|Dana|Morgan|Avery|Jamie|Taylor|Placeholder|Example|Sample/);
   });
 
   it("never shows the death before the bank has recorded it", () => {

@@ -1,37 +1,38 @@
 /**
  * MOCK sign-on accounts. The User ID decides who is signed in; any password
- * is accepted. Each customer is a person in the Sample household
+ * is accepted. Each customer is a person in the household
  * (src/data/household.ts), so every login sees their own dashboard. The
- * household's earlier User IDs (father, mother; jordan, casey, avery, riley) still sign in.
+ * household's earlier User IDs (husband, wife, child1, child2; father, mother; jordan,
+ * casey, avery, riley) still sign in.
  */
 import type { DemoUser } from "./types";
 
 export const demoUsers: DemoUser[] = [
   {
-    userId: "husband",
+    userId: "john",
     role: "customer",
-    displayName: "Husband",
+    displayName: "John",
     personId: "p-jordan",
-    hint: "Husband, 52",
+    hint: "John, 52",
   },
   {
-    userId: "wife",
+    userId: "maya",
     role: "customer",
-    displayName: "Wife",
+    displayName: "Maya",
     personId: "p-casey",
-    hint: "Wife, 49",
+    hint: "Maya, 49",
   },
   {
-    userId: "child1",
+    userId: "david",
     role: "customer",
-    displayName: "Child 1",
+    displayName: "David",
     personId: "p-avery",
     hint: "Older child, 17",
   },
   {
-    userId: "child2",
+    userId: "alexis",
     role: "customer",
-    displayName: "Child 2",
+    displayName: "Alexis",
     personId: "p-riley",
     hint: "Younger child, 14",
   },
@@ -40,12 +41,16 @@ export const demoUsers: DemoUser[] = [
 
 /** User IDs from before the household was renamed, so rehearsed sign-ins keep working. */
 const previousIds: Record<string, string> = {
-  jordan: "husband",
-  casey: "wife",
-  father: "husband",
-  mother: "wife",
-  avery: "child1",
-  riley: "child2",
+  husband: "john",
+  wife: "maya",
+  child1: "david",
+  child2: "alexis",
+  jordan: "john",
+  casey: "maya",
+  father: "john",
+  mother: "maya",
+  avery: "david",
+  riley: "alexis",
 };
 
 export function findDemoUser(userId: string): DemoUser | undefined {

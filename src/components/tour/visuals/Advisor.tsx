@@ -57,7 +57,7 @@ export function NoticeVisual() {
       <Sheet className="mt-12 flex flex-wrap items-center gap-x-5 gap-y-3 px-6 py-6">
         <Heart className="size-8 shrink-0 text-attention" aria-hidden="true" />
         <div className="min-w-0 flex-1">
-          <p className="text-xl font-semibold">Husband has passed away</p>
+          <p className="text-xl font-semibold">John has passed away</p>
           <p className="text-md text-pnc-muted">Recorded by the bank 2 days ago</p>
         </div>
         <TourButton tone="navy" onClick={() => dispatch({ type: "next" })}>
@@ -133,7 +133,7 @@ export function TransferVisual() {
         <div className="px-6 pb-5 pt-6">
           <div className="flex justify-between gap-4 text-md">
             <p>
-              <span className="text-pnc-muted">Passes to Wife </span>
+              <span className="text-pnc-muted">Passes to Maya </span>
               <Money value={split.direct} compact className="font-semibold text-pnc-positive" />
             </p>
             <p className="text-right">
@@ -172,7 +172,7 @@ export function TransferVisual() {
                   </>
                 ) : (
                   <>
-                    <Avatar person="wife" className="size-6" /> Wife
+                    <Avatar person="wife" className="size-6" /> Maya
                   </>
                 )}
               </span>

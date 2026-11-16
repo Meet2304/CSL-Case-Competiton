@@ -33,7 +33,7 @@ export type Action =
 
 export type FilmPersona = "husband" | "wife" | "child1" | "advisor";
 
-/** Whether the bank has recorded Husband's death yet. */
+/** Whether the bank has recorded John's death yet. */
 export type FilmWorld = "before" | "after";
 
 /** A page of the app, who is signed in to it, and when. Shots in a scene share one page load. */
