@@ -138,3 +138,53 @@ describe("family at a glance", () => {
     expect(notes).toEqual([]);
   });
 });
+
+describe("account-only visibility", () => {
+  // Child 1's role, changed to show the joint checking account but not its balance.
+  const accountOnly: HouseholdState = {
+    ...seed,
+    families: seedFamilies.map((f) => ({
+      ...f,
+      roles: f.roles.map((r) =>
+        r.id === "r-older-child"
+          ? {
+              ...r,
+              access: {
+                "acct-joint-checking": {
+                  view: true,
+                  balance: false,
+                  transact: false,
+                  manage: false,
+                },
+              },
+            }
+          : r,
+      ),
+    })),
+  };
+
+  it("shows the account without its balance or activity", () => {
+    const item = assetsFor(accountOnly, "p-avery", all, []).find(
+      (i) => i.account.id === "acct-joint-checking",
+    )!;
+    expect(item.relation).toBe("shared");
+    expect(item.account.balanceHidden).toBe(true);
+    expect(item.account.balance).toBe(0);
+    expect(item.account.transactions).toBeUndefined();
+  });
+
+  it("leaves a hidden balance out of the family total", () => {
+    const s = familySummary(accountOnly.families[0], "p-avery", all, []);
+    expect(s.visible.map((a) => a.id)).toContain("acct-joint-checking");
+    expect(s.total).toBe(0);
+  });
+
+  it("shows the balance, never the activity, when the role allows the balance", () => {
+    const item = assetsFor(seed, "p-avery", all, []).find(
+      (i) => i.account.id === "acct-joint-checking",
+    )!;
+    expect(item.account.balanceHidden).toBeUndefined();
+    expect(item.account.balance).toBeCloseTo(84_620.55, 2);
+    expect(item.account.transactions).toBeUndefined();
+  });
+});

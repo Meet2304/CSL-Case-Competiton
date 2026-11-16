@@ -4,23 +4,19 @@ import { NO_ACCESS } from "@/data/family";
 import { assetCategories, type AssetAccess, type FamilyAsset } from "@/data/types";
 import { cn } from "@/lib/format";
 
-type Column = { key: "view" | "activity"; label: string; hint: string };
+type Column = { key: "view" | "balance"; label: string; hint: string };
 
 const columns: Column[] = [
-  { key: "view", label: "View balance", hint: "See the asset and its balance" },
-  {
-    key: "activity",
-    label: "View activity",
-    hint: "See the balance plus transactions, statements and documents",
-  },
+  { key: "view", label: "Account", hint: "Knows the account exists, without its balance" },
+  { key: "balance", label: "Account and balances", hint: "Knows the account and sees its balance" },
 ];
 
-/** The one option picked for an asset: activity includes the balance; null is hidden. */
+/** The one option picked for an asset; null keeps it hidden from the role. */
 const levelOf = (a: AssetAccess): Column["key"] | null =>
-  a.activity ? "activity" : a.view ? "view" : null;
+  a.balance ? "balance" : a.view ? "view" : null;
 
 const accessFor = (level: Column["key"] | null): AssetAccess =>
-  level ? { ...NO_ACCESS, view: true, activity: level === "activity" } : NO_ACCESS;
+  level ? { ...NO_ACCESS, view: true, balance: level === "balance" } : NO_ACCESS;
 
 /**
  * One round radio button. Picking it sets the asset's visibility; clicking it
@@ -54,9 +50,9 @@ function Radio({
 }
 
 /**
- * What a role can see, asset by asset: one radio button per asset for the
- * balance or the balance and activity (neither picked: hidden), grouped by
- * category. Roles never grant control, since
+ * What a role can see, asset by asset: one radio button per asset, either
+ * that the account exists or the account and its balance (neither picked:
+ * hidden), grouped by category. Roles never grant control, since
  * only an account's owners can move money or change it. Table layout when the
  * container is wide, stacked rows when narrow (container queries, so it adapts
  * inside the phone too).
@@ -87,7 +83,7 @@ export function AccessMatrix({
             <colgroup>
               <col />
               {columns.map((c) => (
-                <col key={c.key} className="w-[6.5rem]" />
+                <col key={c.key} className="w-[8.5rem]" />
               ))}
             </colgroup>
             <thead>

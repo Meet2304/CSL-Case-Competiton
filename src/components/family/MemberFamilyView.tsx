@@ -50,13 +50,8 @@ export function MemberFamilyView({ member }: { member: FamilyMember }) {
                     )}
                   </span>
                   {/* Only the actions this member can take are rendered — never a disabled or "locked" control. */}
-                  {(access.activity || access.transact || access.manage) && (
+                  {(access.transact || access.manage) && (
                     <span className="flex gap-4 text-sm font-semibold">
-                      {access.activity && (
-                        <a href="#" className="text-pnc-link hover:underline">
-                          Activity
-                        </a>
-                      )}
                       {access.transact && (
                         <a href="#" className="text-pnc-link hover:underline">
                           {asset.category === "Debts" ? "Pay" : "Transfer"}
@@ -69,7 +64,9 @@ export function MemberFamilyView({ member }: { member: FamilyMember }) {
                       )}
                     </span>
                   )}
-                  <Money value={asset.value} className="w-28 text-right font-semibold" />
+                  <span className="w-28 text-right font-semibold">
+                    {access.balance && <Money value={asset.value} />}
+                  </span>
                 </li>
               ))}
             </ul>

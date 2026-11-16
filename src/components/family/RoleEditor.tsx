@@ -119,7 +119,7 @@ export function RoleEditor({ role, onDone }: { role: FamilyRole | null; onDone: 
       <AccessMatrix
         assets={state.assets}
         value={(assetId) =>
-          readOnly ? { ...NO_ACCESS, view: true, activity: true } : (access[assetId] ?? NO_ACCESS)
+          readOnly ? { ...NO_ACCESS, view: true, balance: true } : (access[assetId] ?? NO_ACCESS)
         }
         onChange={(assetId, next) => setAccess((prev) => ({ ...prev, [assetId]: next }))}
         readOnly={readOnly}

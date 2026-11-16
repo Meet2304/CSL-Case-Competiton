@@ -41,12 +41,12 @@ export const livingAdmins = (s: FamilyState) => s.members.filter((m) => isAdminM
 // ---------------------------------------------------------------------------
 // Access
 
-/** Visibility only: seeing activity implies seeing the balance; control is never granted. */
+/** Visibility only: seeing the balance implies knowing the account; control is never granted. */
 export function visibilityOnly(a: AssetAccess): AssetAccess {
-  return { view: a.view || a.activity, activity: a.activity, transact: false, manage: false };
+  return { view: a.view || a.balance, balance: a.balance, transact: false, manage: false };
 }
 
-const SEES_ALL: AssetAccess = { view: true, activity: true, transact: false, manage: false };
+const SEES_ALL: AssetAccess = { view: true, balance: true, transact: false, manage: false };
 
 /** What a role lets its members see of an asset. Admins see every shared asset in full. */
 export function roleAccess(role: FamilyRole | undefined, assetId: string): AssetAccess {

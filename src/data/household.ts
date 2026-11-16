@@ -250,7 +250,7 @@ export const accounts: BankAccount[] = [
 // The family Husband has set up: who's in it, their roles, and what's shared.
 
 const view: AssetAccess = { ...NO_ACCESS, view: true };
-const viewActivity: AssetAccess = { ...view, activity: true };
+const viewActivity: AssetAccess = { ...view, balance: true };
 
 export const adminRole: FamilyRole = {
   id: "r-admin",
@@ -321,7 +321,7 @@ export const seedFamilies: StoredFamily[] = [
       {
         id: "r-older-child",
         name: "Older child",
-        description: "Sees the household checking account and its activity.",
+        description: "Sees the household checking account and its balance.",
         isAdmin: false,
         builtIn: false,
         access: { "acct-joint-checking": viewActivity },

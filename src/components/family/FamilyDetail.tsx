@@ -228,9 +228,9 @@ function AssetRow({
       m,
       label: asset.owners.includes(m.id)
         ? "Owner"
-        : access.activity
-          ? "Balance and activity"
-          : "Balance",
+        : access.balance
+          ? "Account and balance"
+          : "Account",
     }))
     .sort((a, b) => Number(b.label === "Owner") - Number(a.label === "Owner"));
   const hiddenFrom = living.filter((m) => !seers.some((x) => x.m.id === m.id));

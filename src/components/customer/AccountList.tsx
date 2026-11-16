@@ -81,7 +81,9 @@ function AccountItem({
           </div>
         </div>
         <div className="flex shrink-0 items-start gap-1">
-          <Money value={a.balance} className="pt-0.5 text-base font-semibold @2xl:text-lg" />
+          {!a.balanceHidden && (
+            <Money value={a.balance} className="pt-0.5 text-base font-semibold @2xl:text-lg" />
+          )}
           {action}
           {activity.length > 0 ? (
             <button

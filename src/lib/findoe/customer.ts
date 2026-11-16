@@ -140,6 +140,7 @@ const namesOf = (ids: string[], youId?: string) =>
   ids.map((id) => (id === youId ? "you" : nameOf(id))).join(" and ");
 
 function amount(a: BankAccount): string {
+  if (a.balanceHidden) return "";
   if (a.kind === "life-insurance") return `Face value ${formatMoney(a.balance)}`;
   if (a.kind === "credit-card") return `Balance owed ${formatMoney(-a.balance)}`;
   return formatMoney(a.balance);
@@ -752,7 +753,7 @@ function overview(ctx: CustomerContext): Reply {
       `You can see ${ctx.assets.length} accounts at PNC${shared ? `, including ${shared} shared with you through your family` : ""}:`,
       ...ctx.assets.map(
         (i) =>
-          `- **${accountLabel(i.account)}**: ${amount(i.account)}${relation(i)}.${accountRow(c, i.account)}`,
+          `- **${accountLabel(i.account)}**${amount(i.account) ? `: ${amount(i.account)}` : ""}${relation(i)}.${accountRow(c, i.account)}`,
       ),
       `Together that's ${formatMoney(total(atPnc))} held at PNC.`,
     ],

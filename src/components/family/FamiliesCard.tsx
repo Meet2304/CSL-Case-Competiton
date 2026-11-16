@@ -178,7 +178,9 @@ function FamilyRow({ family: f }: { family: StoredFamily }) {
                       {a.name}
                       {a.last4 && <span className="text-pnc-muted"> x{a.last4}</span>}
                     </span>
-                    <Money value={a.value} compact className="shrink-0 font-semibold" />
+                    {!a.balanceHidden && (
+                      <Money value={a.value} compact className="shrink-0 font-semibold" />
+                    )}
                   </li>
                 ))}
                 {s.visible.length > 4 && (

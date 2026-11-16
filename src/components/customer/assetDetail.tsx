@@ -12,9 +12,9 @@ export const accessText = (a: AssetAccess) =>
     ? "You can manage it"
     : a.transact
       ? "You can make payments and transfers"
-      : a.activity
-        ? "You can see the balance and activity"
-        : "You can see the balance";
+      : a.balance
+        ? "You can see the balance"
+        : "Shared with you";
 
 /**
  * The one-line detail under an account, from the signed-in person's side:

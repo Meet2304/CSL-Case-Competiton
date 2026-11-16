@@ -142,6 +142,16 @@ export function familyView(
 export const familiesOf = (s: HouseholdState, personId: string) =>
   s.families.filter((f) => f.members.some((m) => m.id === personId));
 
+/**
+ * Someone else's account as a family member sees it: never its transactions
+ * (no role grants them), and no balance unless their role shows it. Filtering
+ * here keeps every screen, total and Findoe answer to what the role allows.
+ */
+function asShared(a: BankAccount, access: AssetAccess): BankAccount {
+  const seen = { ...a, transactions: undefined };
+  return access.balance ? seen : { ...seen, balance: 0, balanceHidden: true };
+}
+
 /** Accounts other people share with this person through a family, with what they may do. */
 export function sharedWith(
   s: HouseholdState,
@@ -159,7 +169,7 @@ export function sharedWith(
       if (account.owners.includes(personId) || account.custodian === personId) continue;
       if (out.some((x) => x.account.id === account.id)) continue;
       const access = effectiveAccess(view, me, asset);
-      if (access.view) out.push({ account, family: f, access });
+      if (access.view) out.push({ account: asShared(account, access), family: f, access });
     }
   }
   return out;
@@ -325,8 +335,15 @@ export function familySummary(
   const state = familyView(f, viewerId, all, deceasedIds);
   const me = state.members.find((m) => m.id === viewerId);
   const isAdmin = me ? isAdminMember(state, me) : false;
+  // Admins see every shared account in full; anyone else sees what their role shows,
+  // with no amount where it shows the account but not the balance.
   const visible = me
-    ? state.assets.filter((a) => isAdmin || effectiveAccess(state, me, a).view)
+    ? state.assets.flatMap((a) => {
+        if (isAdmin) return [a];
+        const access = effectiveAccess(state, me, a);
+        if (!access.view) return [];
+        return [access.balance ? a : { ...a, value: 0, balanceHidden: true }];
+      })
     : [];
   const living = state.members.filter((m) => m.status !== "Deceased");
   return {
