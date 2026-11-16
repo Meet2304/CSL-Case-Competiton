@@ -14,6 +14,7 @@ import {
   Hash,
   House,
   Landmark,
+  ListFilter,
   Network,
   PencilLine,
   Search,
@@ -22,10 +23,11 @@ import {
   X,
   type LucideIcon,
 } from "lucide-react";
+import { Pagination, usePagination } from "@/components/advisor/Pagination";
 import { AddAssetFlow } from "@/components/customer/AddAssetFlow";
 import { IconChip } from "@/components/ui/IconChip";
+import { SelectMenu } from "@/components/ui/SelectMenu";
 import { addAssetGroups, type AddOption } from "@/data/addAsset";
-import { cn } from "@/lib/format";
 import { routes } from "@/lib/routes";
 
 export const optionIcons: Record<string, LucideIcon> = {
@@ -44,6 +46,12 @@ export const optionIcons: Record<string, LucideIcon> = {
   portfolio: Network,
 };
 
+/** Two full rows of four on wide screens. */
+const PAGE_SIZE = 8;
+
+const options = addAssetGroups.flatMap((g) => g.options.map((o) => ({ ...o, group: g })));
+type Card = (typeof options)[number];
+
 const matches = (o: AddOption, q: string) => {
   const words = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
   const text = `${o.label} ${o.description} ${o.keywords ?? ""}`.toLowerCase();
@@ -52,17 +60,28 @@ const matches = (o: AddOption, q: string) => {
 
 /**
  * Add an asset (`routes.addAsset`): every kind of asset a customer can bring
- * into Assets and Debts, grouped by how it's added, each a row that opens a short
- * demo flow. A search box narrows the list; on wide screens an index of the
- * groups sits beside it.
+ * into Assets and Debts, as a grid of cards (four across on wide screens),
+ * paged. The same one-line toolbar as Assets and Debts narrows it: a select
+ * menu for the kind and a search. Each card opens a short demo flow.
  */
 export function AddAsset() {
   const [query, setQuery] = useState("");
+  const [group, setGroup] = useState("all");
   const [open, setOpen] = useState<AddOption | null>(null);
   const searchId = useId();
-  const groups = addAssetGroups
-    .map((g) => ({ ...g, options: g.options.filter((o) => matches(o, query)) }))
-    .filter((g) => g.options.length > 0);
+
+  const inGroup = (c: Card) => group === "all" || c.group.id === group;
+  const shown = options.filter((c) => inGroup(c) && matches(c, query));
+  const pager = usePagination(shown, PAGE_SIZE);
+  const countOf = (id: string) =>
+    options.filter((c) => (id === "all" || c.group.id === id) && matches(c, query)).length;
+
+  // Any change to what's shown starts again from the first page.
+  const narrow = (next: { query?: string; group?: string }) => {
+    if (next.query !== undefined) setQuery(next.query);
+    if (next.group !== undefined) setGroup(next.group);
+    pager.setPage(1);
+  };
 
   return (
     <div className="@container">
@@ -82,128 +101,101 @@ export function AddAsset() {
         </ol>
       </nav>
 
-      <div className="grid items-start gap-5 @4xl:grid-cols-[15rem_minmax(0,1fr)]">
-        {/* The index: what can be added, at a glance. Wide screens only. */}
-        <nav
-          aria-label="Kinds of asset"
-          className="sticky top-4 hidden rounded-lg bg-white py-2 shadow-card @4xl:block"
+      {/* One line to narrow the cards, as on Assets and Debts: what kind, then a search. */}
+      <div className="flex items-center gap-2">
+        <SelectMenu
+          label="Show"
+          icon={<ListFilter className="size-4 text-pnc-muted" aria-hidden="true" />}
+          value={group}
+          onChange={(g) => narrow({ group: g })}
+          options={[
+            { id: "all", label: "All", hint: "Every kind of asset", count: countOf("all") },
+            ...addAssetGroups.map((g) => ({
+              id: g.id,
+              label: g.label,
+              hint: g.intro,
+              count: countOf(g.id),
+            })),
+          ]}
+        />
+        <label
+          htmlFor={searchId}
+          className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-full border border-pnc-line bg-white px-3.5 focus-within:border-pnc-link focus-within:ring-2 focus-within:ring-pnc-link/15"
         >
-          <ul>
-            {addAssetGroups.map((g) => (
-              <li key={g.id}>
+          <Search className="size-4 shrink-0 text-pnc-muted" aria-hidden="true" />
+          <span className="sr-only">Search kinds of asset</span>
+          <input
+            id={searchId}
+            type="search"
+            value={query}
+            onChange={(e) => narrow({ query: e.target.value })}
+            onKeyDown={(e) => e.key === "Escape" && narrow({ query: "" })}
+            placeholder="Search asset types"
+            title="Search by name, like a bank, a ticker or a kind of asset"
+            className="min-w-0 flex-1 bg-transparent text-sm text-pnc-ink outline-none placeholder:text-pnc-muted [&::-webkit-search-cancel-button]:hidden"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => narrow({ query: "" })}
+              aria-label="Clear search"
+              className="grid size-6 place-items-center rounded-full text-pnc-muted hover:bg-pnc-surface hover:text-pnc-ink"
+            >
+              <X className="size-3.5" aria-hidden="true" />
+            </button>
+          )}
+        </label>
+      </div>
+
+      {shown.length === 0 ? (
+        <div className="mt-5 rounded-lg bg-white px-6 py-10 text-center shadow-card">
+          <p className="font-semibold text-pnc-ink">Nothing matches &ldquo;{query}&rdquo;</p>
+          <p className="mt-1 text-sm text-pnc-muted">
+            You can still add it by{" "}
+            <button
+              type="button"
+              onClick={() => setOpen(options.find((o) => o.id === "value")!)}
+              className="font-semibold text-pnc-link hover:underline"
+            >
+              entering its value yourself
+            </button>
+            .
+          </p>
+        </div>
+      ) : (
+        <>
+          <ul className="mt-5 grid grid-cols-1 gap-4 @md:grid-cols-2 @3xl:grid-cols-3 @5xl:grid-cols-4">
+            {pager.pageItems.map((c) => (
+              <li key={c.id}>
                 <button
                   type="button"
-                  onClick={() =>
-                    document
-                      .getElementById(`add-${g.id}`)
-                      ?.scrollIntoView({ behavior: "smooth", block: "start" })
-                  }
-                  className="flex w-full items-center justify-between gap-2 px-5 py-2.5 text-left text-sm font-semibold text-pnc-ink hover:bg-pnc-surface hover:text-pnc-link focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-pnc-link"
+                  onClick={() => setOpen(c)}
+                  className="group flex h-full w-full flex-col rounded-lg bg-white p-5 text-left shadow-card transition-shadow hover:shadow-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pnc-link"
                 >
-                  {g.label}
-                  <span className="text-xs font-normal tabular-nums text-pnc-muted">
-                    {g.options.length}
+                  <IconChip icon={optionIcons[c.id] ?? Gem} />
+                  <span className="mt-4 block font-semibold text-pnc-ink group-hover:text-pnc-link">
+                    {c.label}
+                  </span>
+                  <span className="mt-1 block flex-1 text-sm leading-relaxed text-pnc-muted">
+                    {c.description}
+                  </span>
+                  <span className="mt-4 flex items-center justify-between gap-2 border-t border-pnc-line pt-3 text-xs text-pnc-muted">
+                    {c.group.label}
+                    <ChevronRight className="size-4 text-pnc-link" aria-hidden="true" />
                   </span>
                 </button>
               </li>
             ))}
           </ul>
-        </nav>
+          <div className="mt-4">
+            <Pagination {...pager} noun="kinds of asset" />
+          </div>
+        </>
+      )}
 
-        <div className="min-w-0 space-y-5">
-          <label
-            htmlFor={searchId}
-            className="flex items-center gap-2.5 rounded-full border border-pnc-line bg-white px-4 py-2.5 shadow-card focus-within:border-pnc-link focus-within:ring-2 focus-within:ring-pnc-link/15"
-          >
-            <Search className="size-4.5 shrink-0 text-pnc-muted" aria-hidden="true" />
-            <span className="sr-only">Search kinds of asset</span>
-            <input
-              id={searchId}
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => e.key === "Escape" && setQuery("")}
-              placeholder="Search for a bank, a ticker or a kind of asset"
-              className="min-w-0 flex-1 bg-transparent text-md text-pnc-ink outline-none placeholder:text-pnc-muted [&::-webkit-search-cancel-button]:hidden"
-            />
-            {query && (
-              <button
-                type="button"
-                onClick={() => setQuery("")}
-                aria-label="Clear search"
-                className="grid size-7 place-items-center rounded-full text-pnc-muted hover:bg-pnc-surface hover:text-pnc-ink"
-              >
-                <X className="size-4" aria-hidden="true" />
-              </button>
-            )}
-          </label>
-
-          {groups.length === 0 ? (
-            <div className="rounded-lg bg-white px-6 py-10 text-center shadow-card">
-              <p className="font-semibold text-pnc-ink">Nothing matches &ldquo;{query}&rdquo;</p>
-              <p className="mt-1 text-sm text-pnc-muted">
-                You can still add it by{" "}
-                <button
-                  type="button"
-                  onClick={() =>
-                    setOpen(addAssetGroups.flatMap((g) => g.options).find((o) => o.id === "value")!)
-                  }
-                  className="font-semibold text-pnc-link hover:underline"
-                >
-                  entering its value yourself
-                </button>
-                .
-              </p>
-            </div>
-          ) : (
-            groups.map((g) => (
-              <section
-                key={g.id}
-                id={`add-${g.id}`}
-                aria-labelledby={`add-${g.id}-title`}
-                className="scroll-mt-4 rounded-lg bg-white shadow-card"
-              >
-                <header className="border-b border-pnc-line px-5 py-4 @2xl:px-6">
-                  <h2
-                    id={`add-${g.id}-title`}
-                    className="font-display text-lg font-medium text-pnc-ink"
-                  >
-                    {g.label}
-                  </h2>
-                  {g.intro && <p className="mt-0.5 text-sm text-pnc-muted">{g.intro}</p>}
-                </header>
-                <ul className="divide-y divide-pnc-line">
-                  {g.options.map((o) => (
-                    <li key={o.id}>
-                      <button
-                        type="button"
-                        onClick={() => setOpen(o)}
-                        className="group flex w-full items-center gap-4 px-5 py-3.5 text-left hover:bg-pnc-surface/60 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-pnc-link @2xl:px-6"
-                      >
-                        <IconChip icon={optionIcons[o.id] ?? Gem} size="sm" />
-                        <span className="min-w-0 flex-1">
-                          <span className="block font-semibold text-pnc-ink group-hover:text-pnc-link">
-                            {o.label}
-                          </span>
-                          <span className="block text-sm text-pnc-muted">{o.description}</span>
-                        </span>
-                        <ChevronRight
-                          className={cn("size-5 shrink-0 text-pnc-link")}
-                          aria-hidden="true"
-                        />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            ))
-          )}
-
-          <p className="px-1 text-xs text-pnc-muted">
-            You can enter a value in any currency, for example EUR 100 or GBP 100.
-          </p>
-        </div>
-      </div>
+      <p className="mt-2 text-xs text-pnc-muted">
+        You can enter a value in any currency, for example EUR 100 or GBP 100.
+      </p>
 
       <AddAssetFlow option={open} onClose={() => setOpen(null)} />
     </div>
