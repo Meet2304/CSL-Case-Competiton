@@ -8,7 +8,7 @@ import { homeFor, PERSON_COOKIE, SESSION_COOKIE } from "@/lib/session";
 
 export type SignInState = { error?: string };
 
-/** Demo sign-on: the User ID picks the role, any password is accepted. */
+/** Demo sign-on: the User ID picks the role. There is no password, by design. */
 export async function signIn(_prev: SignInState, formData: FormData): Promise<SignInState> {
   const user = findDemoUser(String(formData.get("userId") ?? ""));
   if (!user) {

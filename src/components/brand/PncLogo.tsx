@@ -41,3 +41,82 @@ export function PncLogo({ tone = "dark", size = "md", className }: PncLogoProps)
     />
   );
 }
+
+const lockup = {
+  sm: {
+    mark: 22,
+    name: "text-[0.8125rem]",
+    product: "text-[0.8125rem]",
+    rule: "h-4",
+    gap: "gap-2.5",
+  },
+  md: { mark: 30, name: "text-base", product: "text-base", rule: "h-5", gap: "gap-3" },
+  lg: { mark: 40, name: "text-xl", product: "text-xl", rule: "h-6", gap: "gap-3.5" },
+};
+
+/**
+ * The PNC Private Bank lockup, after the PortfolioView header: the mark, "PNC
+ * PRIVATE BANK" in serif capitals, a thin rule and "PORTFOLIOVIEW". The light
+ * tone (navy headers) uses the white mark with the triangle cut out.
+ */
+export function PrivateBankLogo({
+  tone = "light",
+  size = "sm",
+  product = true,
+  className,
+}: {
+  tone?: "light" | "dark";
+  size?: keyof typeof lockup;
+  /** Show "| PORTFOLIOVIEW" after the bank's name. */
+  product?: boolean;
+  className?: string;
+}) {
+  const s = lockup[size];
+  const light = tone === "light";
+  return (
+    <span
+      role="img"
+      aria-label={product ? "PNC Private Bank PortfolioView" : "PNC Private Bank"}
+      className={cn("inline-flex shrink-0 items-center", s.gap, className)}
+    >
+      <Image
+        src={light ? "/brand/pnc-mark-white.png" : "/brand/pnc-mark.png"}
+        alt=""
+        width={s.mark}
+        height={s.mark}
+        priority
+        className="shrink-0"
+        style={{ width: s.mark, height: s.mark }}
+      />
+      <span
+        aria-hidden="true"
+        className={cn(
+          "whitespace-nowrap font-[Georgia,'Times_New_Roman',serif] tracking-[0.06em]",
+          s.name,
+          light ? "text-white" : "text-pnc-navy",
+        )}
+      >
+        PNC PRIVATE BANK
+      </span>
+      {product && (
+        <>
+          <span
+            aria-hidden="true"
+            className={cn("w-px shrink-0", s.rule, light ? "bg-white/45" : "bg-pnc-line")}
+          />
+          <span
+            aria-hidden="true"
+            className={cn(
+              "whitespace-nowrap font-display tracking-[0.14em]",
+              s.product,
+              light ? "text-white" : "text-pnc-navy",
+            )}
+          >
+            <span className="font-semibold">PORTFOLIO</span>
+            <span className="font-light">VIEW</span>
+          </span>
+        </>
+      )}
+    </span>
+  );
+}

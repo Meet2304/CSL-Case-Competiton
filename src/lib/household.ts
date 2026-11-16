@@ -254,7 +254,7 @@ export const assetGroups: { id: AssetGroup; label: string }[] = [
   { id: "retirement", label: "Retirement" },
   { id: "investments", label: "Investments" },
   { id: "insurance", label: "Life insurance" },
-  { id: "owed", label: "Owed" },
+  { id: "owed", label: "Debts" },
 ];
 
 const groupByKind: Record<AccountKind, AssetGroup> = {

@@ -7,7 +7,7 @@ import type { balanceSheet } from "@/lib/portfolio";
 
 /**
  * The home page's balance sheet, laid out like the private-bank portfolio
- * view: PNC assets, PNC liabilities, external accounts and net value in one
+ * view: PNC assets, PNC debts, external accounts and net value in one
  * row. `children` sits underneath (the "all accounts" dropdown).
  */
 export function PortfolioSummary({
@@ -21,7 +21,7 @@ export function PortfolioSummary({
 }) {
   const figures = [
     { label: "PNC Assets", value: sheet.assets },
-    { label: "PNC Liabilities", value: sheet.liabilities },
+    { label: "PNC Debts", value: sheet.liabilities },
     { label: "External Accounts", value: sheet.external },
     { label: "Net Value", value: sheet.net, net: true },
   ];

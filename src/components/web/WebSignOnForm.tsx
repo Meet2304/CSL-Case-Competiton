@@ -29,17 +29,6 @@ export function WebSignOnForm() {
         aria-describedby="web-sign-on-help"
         className="mt-1 w-full rounded-md border border-pnc-line px-3 py-2.5 outline-none focus:border-pnc-link aria-invalid:border-pnc-negative"
       />
-      <label className="mt-4 block text-sm font-semibold text-pnc-muted" htmlFor="web-password">
-        Password
-      </label>
-      <input
-        id="web-password"
-        name="password"
-        type="password"
-        placeholder="Any value works in this demo"
-        autoComplete="off"
-        className="mt-1 w-full rounded-md border border-pnc-line px-3 py-2.5 outline-none focus:border-pnc-link"
-      />
       {state.error && (
         <p role="alert" className="mt-3 text-sm text-pnc-negative">
           {state.error}
@@ -56,7 +45,7 @@ export function WebSignOnForm() {
         id="web-sign-on-help"
         className="mt-4 rounded-md bg-pnc-surface px-3 py-2.5 text-xs text-pnc-muted"
       >
-        <p>Demo sign-on — pick a User ID, any password works:</p>
+        <p>Concept demo, no password: pick who to sign on as.</p>
         <p className="mt-1.5 flex flex-wrap gap-2">
           {demoUsers.map((u) => (
             <button

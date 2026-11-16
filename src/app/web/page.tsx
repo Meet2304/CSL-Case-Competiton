@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { FacetBackdrop } from "@/components/brand/FacetBackdrop";
-import { PncLogo } from "@/components/brand/PncLogo";
+import { PrivateBankLogo } from "@/components/brand/PncLogo";
 import { WebSignOnForm } from "@/components/web/WebSignOnForm";
 import { routes } from "@/lib/routes";
 
@@ -16,16 +16,16 @@ export default function WebLoginPage() {
     <main className="relative isolate flex flex-1 flex-col">
       <FacetBackdrop className="-z-10" />
       <header className="mx-auto w-full max-w-6xl px-4 py-5 sm:px-6">
-        <PncLogo tone="light" size="md" />
+        <PrivateBankLogo size="md" />
       </header>
       <div className="mx-auto grid w-full max-w-6xl flex-1 items-center gap-10 px-4 pb-16 sm:px-6 md:grid-cols-2">
         <div className="text-white">
           <h1 className="font-display text-4xl font-medium leading-tight sm:text-5xl">
-            Online Banking
+            Your wealth, in one view
           </h1>
           <p className="mt-4 max-w-md text-white/85">
-            Customers sign on to view accounts, pay bills, and move money. Advisors sign on to see
-            the customers assigned to them. Demo prototype — any password works.
+            Clients sign on to see their portfolio, their family and their plans. Advisors sign on
+            to see the clients assigned to them. A concept prototype for PNC Private Bank.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link href={routes.tour} className={demoLink}>

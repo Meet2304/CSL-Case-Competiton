@@ -1,6 +1,6 @@
 /**
  * A person's money as the home page shows it: a balance sheet (assets and
- * liabilities at PNC, accounts held outside PNC, net value) and a portfolio
+ * debts at PNC, accounts held outside PNC, net value) and a portfolio
  * analysis of the accounts that hold value (allocation, day change and a
  * 12-month value history). Pure functions over the mock returns in
  * src/data/portfolio.ts.
@@ -13,7 +13,7 @@ const sum = (xs: number[]) => xs.reduce((s, x) => s + x, 0);
 const cents = (x: number) => Math.round(x * 100) / 100;
 
 /**
- * PNC assets (positive balances at PNC), PNC liabilities (what is owed, as a
+ * PNC assets (positive balances at PNC), PNC debts (what is owed, as a
  * positive amount), external accounts and net value. Net value counts only
  * PNC balances: an outside life insurance policy's face value isn't money held.
  */

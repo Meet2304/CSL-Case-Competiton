@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
-import { PncLogo } from "@/components/brand/PncLogo";
+import { PrivateBankLogo } from "@/components/brand/PncLogo";
 import { useCustomerNav } from "@/components/customer/useCustomerNav";
 import { SignOffButton } from "@/components/shared/SignOffButton";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
@@ -94,7 +94,9 @@ export function WebHeader({ variant = "customer" }: { variant?: Role }) {
     <header className="bg-pnc-navy text-white">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 px-4 sm:px-6 md:h-16 md:flex-nowrap">
         <Link href={home} className="flex h-14 shrink-0 items-center md:h-auto">
-          <PncLogo tone="light" size="sm" />
+          {/* The product name drops on narrow screens so the lockup fits beside sign-off. */}
+          <PrivateBankLogo product={false} className="sm:hidden" />
+          <PrivateBankLogo className="hidden sm:inline-flex" />
         </Link>
 
         {/* Below md the nav drops to its own full-width row under the logo. */}
