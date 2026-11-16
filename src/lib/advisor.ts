@@ -153,6 +153,8 @@ export function withRecordedLosses(
   const extra = new Map<string, LossEvent[]>();
   for (const r of recorded) {
     for (const { customer, relationship } of assessImpact(customers, r.personName)) {
+      if (customer.lossEvents.some((e) => e.memberName === r.personName && !e.followUpComplete))
+        continue;
       const event: LossEvent = {
         id: `rec-${r.id}-${customer.id}`,
         date: r.date,

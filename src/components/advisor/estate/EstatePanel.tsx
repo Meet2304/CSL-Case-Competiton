@@ -26,8 +26,8 @@ import { beneficiaryAdvisors, custodianFor, deathCertificates, willsOnFile } fro
 import { MOCK_AS_OF } from "@/data/mock";
 import type { AdvisorCustomer } from "@/data/types";
 import { openLoss } from "@/lib/advisor";
-import { bereavementActions, useBereavement } from "@/lib/bereavement";
-import { routeLabels, transferPlan, type BeneficiaryShare } from "@/lib/estate";
+import { bereavementActions, currentBereavement, useBereavement } from "@/lib/bereavement";
+import { beneficiarySteps, routeLabels, transferPlan, type BeneficiaryShare } from "@/lib/estate";
 import { cn, formatDate } from "@/lib/format";
 import { ageOn, currentAccounts, personById } from "@/lib/household";
 import { useHousehold } from "@/lib/householdStore";
@@ -193,6 +193,14 @@ export function EstatePanel({ customer }: { customer: AdvisorCustomer }) {
 
   function initiate() {
     const at = new Date().toISOString();
+    // The family's side learns of the death too, if the bank hadn't recorded it there yet.
+    if (!currentBereavement().losses.some((l) => l.personName === john.name))
+      bereavementActions.recordLoss({
+        personName: john.name,
+        date: loss.date,
+        reportedVia: loss.reportedVia,
+        recordedOn: loss.date,
+      });
     bereavementActions.initiateTransfer(personId, at);
     for (const n of transferNotices(plan))
       messagesActions.add(n.contactId, { from: "advisor", text: n.text, at, notice: true });
@@ -463,9 +471,33 @@ function ShareRow({ share: s, notifiedAt }: { share: BeneficiaryShare; notifiedA
           </li>
         ))}
       </ul>
+      <div>
+        <p className="text-xs font-semibold text-pnc-muted">Next steps for {p.name}</p>
+        <ol className="mt-1.5 space-y-1.5">
+          {beneficiarySteps(s, stepContext).map((step, i) => (
+            <li key={step} className="flex gap-2.5 text-sm text-pnc-ink">
+              <span className="grid size-5 shrink-0 place-items-center rounded-full bg-pnc-blue-50 text-2xs font-bold text-pnc-blue-800">
+                {i + 1}
+              </span>
+              <span className="min-w-0">{step}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
     </li>
   );
 }
+
+/** Names and relationships for the beneficiaries' next steps. */
+const stepContext = {
+  name: (id: string) => personById(id)?.name ?? "",
+  executor: personById(willsOnFile[estateClient.personId].executor)?.name ?? "the executor",
+  custodianOf: (id: string) => {
+    const c = custodianFor[id];
+    return c ? personById(c)?.name : undefined;
+  },
+  isSpouse: (id: string) => personById(id)?.relationship === "Spouse",
+};
 
 /**
  * Who a beneficiary is, for the advisor: their relationship to the deceased,

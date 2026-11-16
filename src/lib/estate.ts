@@ -99,7 +99,8 @@ export function transferPlan(
         p.receives.reduce((s, r) => s + r.amount, 0) - p.takesOn.reduce((s, b) => s + b.amount, 0),
       ),
     }))
-    .sort((a, b) => b.net - a.net);
+    // Largest share first; equal shares (to the dollar) keep their order, e.g. David then Alexis.
+    .sort((a, b) => Math.round(b.net) - Math.round(a.net));
   return {
     decedentId,
     shares,
@@ -113,3 +114,63 @@ export function transferPlan(
 }
 
 export type TransferPlan = ReturnType<typeof transferPlan>;
+
+/** What the advisor's next steps need to know about the people involved. */
+export type StepContext = {
+  name: (personId: string) => string;
+  executor: string;
+  /** The custodian who holds a minor's share, if the person is under 18. */
+  custodianOf: (personId: string) => string | undefined;
+  isSpouse: (personId: string) => boolean;
+};
+
+const money = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD" });
+
+/**
+ * The advisor's next steps to pass one beneficiary's share on, in order: what
+ * passes outside the will first (joint accounts, named beneficiaries), then
+ * what the will gives once the executor has authority, then the debts paid
+ * from it. Worded for the advisor; derived from how each account passes.
+ */
+export function beneficiarySteps(share: BeneficiaryShare, ctx: StepContext): string[] {
+  const name = ctx.name(share.personId);
+  const custodian = ctx.custodianOf(share.personId);
+  const label = (a: BankAccount) => `${a.name}${a.last4 ? ` x${a.last4}` : ""}`;
+  const outside = share.receives.filter((r) => r.route === "joint" || r.route === "beneficiary");
+  const underWill = share.receives.filter((r) => r.route === "gift" || r.route === "residuary");
+  const steps: string[] = [];
+  for (const r of outside) {
+    const a = r.account;
+    if (r.route === "joint")
+      steps.push(
+        `Retitle ${label(a)} into ${name}'s name alone; it needs only the death certificate.`,
+      );
+    else if (a.kind === "ira" || a.kind === "roth")
+      steps.push(
+        ctx.isSpouse(share.personId)
+          ? `Help ${name} claim ${label(a)}: roll it into her own IRA or keep it as an inherited IRA.`
+          : `Open an inherited IRA for ${name} to receive ${label(a)}.`,
+      );
+    else if (a.external)
+      steps.push(
+        `Help ${name} file the claim for the ${a.name} (${money(r.amount)}) with the insurer.`,
+      );
+    else steps.push(`Pay ${label(a)} to ${name} on a beneficiary claim form.`);
+  }
+  if (underWill.length) {
+    const parts = underWill
+      .map((r) => `${r.share < 1 ? `${Math.round(r.share * 100)}% of ` : ""}${label(r.account)}`)
+      .join(" and ");
+    const total = money(underWill.reduce((s, r) => s + r.amount, 0));
+    steps.push(
+      custodian
+        ? `Once ${ctx.executor} has letters testamentary, open a custodial account for ${name} that ${custodian} manages, and move ${parts} into it (${total}).`
+        : `Once ${ctx.executor} has letters testamentary, transfer ${parts} to ${name} (${total}).`,
+    );
+  }
+  if (share.takesOn.length)
+    steps.push(
+      `Before that, ${money(share.takesOn.reduce((s, b) => s + b.amount, 0))} of ${share.takesOn.map((b) => label(b.account)).join(" and ")} is paid from ${name}'s share of the estate.`,
+    );
+  return steps;
+}

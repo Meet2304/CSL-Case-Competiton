@@ -1,4 +1,4 @@
-import { advisorCustomers } from "@/data/advisor";
+import { advisorCustomers, exampleLosses } from "@/data/advisor";
 import { profileFor } from "@/data/clients";
 import { MOCK_AS_OF } from "@/data/mock";
 import { factsFor } from "@/lib/assistant";
@@ -7,7 +7,9 @@ import { settlementPlan, type SettlementInput } from "../engine";
 
 /** Client facts exactly as the advisor app builds them. */
 export function clientFacts(customerId: string) {
-  const c = advisorCustomers.find((x) => x.id === customerId)!;
+  const book = advisorCustomers.find((x) => x.id === customerId)!;
+  // The rulebook's example deaths aren't in the demo's book; add them back here.
+  const c = { ...book, lossEvents: [...book.lossEvents, ...(exampleLosses[customerId] ?? [])] };
   const p = profileFor(customerId)!;
   return factsFor(c, p, MOCK_AS_OF);
 }
