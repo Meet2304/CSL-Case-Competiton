@@ -5,7 +5,7 @@
  * 12-month value history). Pure functions over the mock returns in
  * src/data/portfolio.ts.
  */
-import { dayChange, monthlyReturns } from "@/data/portfolio";
+import { dayChange, monthlyReturns, scenarioReturns } from "@/data/portfolio";
 import type { BankAccount } from "@/data/types";
 import { assetGroupOf, assetGroups } from "@/lib/household";
 
@@ -39,14 +39,40 @@ const portfolioGroups = assetGroups.filter((g): g is { id: PortfolioGroup; label
 
 const isPortfolioGroup = (g: string): g is PortfolioGroup => Object.hasOwn(monthlyReturns, g);
 
+/** "Oct '26" for the month `offset` months from `asOfIso`'s month (negative is earlier). */
+export function monthLabel(asOfIso: string, offset: number): string {
+  const [y, m] = asOfIso.split("-").map(Number);
+  const d = new Date(Date.UTC(y, m - 1 + offset, 15));
+  const month = d.toLocaleDateString("en-US", { month: "short", timeZone: "UTC" });
+  return `${month} '${String(d.getUTCFullYear()).slice(2)}`;
+}
+
 /** Month labels ("Oct '25", ... "Oct '26") for each point of a history ending in `asOfIso`'s month. */
 export function historyMonths(asOfIso: string, points: number): string[] {
-  const [y, m] = asOfIso.split("-").map(Number);
-  return Array.from({ length: points }, (_, i) => {
-    const d = new Date(Date.UTC(y, m - 1 - (points - 1 - i), 15));
-    const month = d.toLocaleDateString("en-US", { month: "short", timeZone: "UTC" });
-    return `${month} '${String(d.getUTCFullYear()).slice(2)}`;
-  });
+  return Array.from({ length: points }, (_, i) => monthLabel(asOfIso, i - (points - 1)));
+}
+
+export type Scenario = keyof typeof scenarioReturns;
+export const scenarios: { id: Scenario; label: string }[] = [
+  { id: "strong", label: "Strong" },
+  { id: "expected", label: "Expected" },
+  { id: "weak", label: "Weak" },
+];
+
+/**
+ * The portfolio's value over the next `months` months under each scenario,
+ * starting at today's total (index 0): each group compounds monthly at its
+ * scenario's yearly return. Illustrative only.
+ */
+export function projectPortfolio(
+  holdings: { group: PortfolioGroup; value: number }[],
+  months: number,
+): Record<Scenario, number[]> {
+  const path = (s: Scenario) =>
+    Array.from({ length: months + 1 }, (_, i) =>
+      cents(sum(holdings.map((h) => h.value * (1 + scenarioReturns[s][h.group]) ** (i / 12)))),
+    );
+  return { weak: path("weak"), expected: path("expected"), strong: path("strong") };
 }
 
 /**

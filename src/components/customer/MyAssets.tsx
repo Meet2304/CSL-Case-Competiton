@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useId, useState } from "react";
-import { Plus, Search, SlidersHorizontal, Users, X } from "lucide-react";
+import { ListFilter, Plus, Search, X } from "lucide-react";
 import { AccountList } from "@/components/customer/AccountList";
 import { ManageAsset } from "@/components/customer/ManageAsset";
 import { RelationBadge, useAssetDetail } from "@/components/customer/assetDetail";
@@ -11,6 +11,7 @@ import { UnclaimedAssets, useWaitingClaims } from "@/components/customer/Unclaim
 import { useViewer } from "@/components/customer/Viewer";
 import { useHash } from "@/components/shared/useHashTab";
 import { Money } from "@/components/ui/Money";
+import { SelectMenu } from "@/components/ui/SelectMenu";
 import { cn } from "@/lib/format";
 import {
   accountsOf,
@@ -20,18 +21,19 @@ import {
   assetsFor,
   assetSummary,
   canManage,
-  type AssetRelation,
   type PersonAsset,
 } from "@/lib/household";
 import { routes } from "@/lib/routes";
 
-type Group = "personal" | "shared";
+type Group = "personal" | "joint" | "shared";
 type Filter = "all" | Group;
 
-const filters: { id: Filter; label: string }[] = [
-  { id: "all", label: "All" },
-  { id: "personal", label: "Personal" },
-  { id: "shared", label: "Shared" },
+/** Whose an account is; every account falls into exactly one group. */
+const filters: { id: Filter; label: string; hint: string }[] = [
+  { id: "all", label: "All", hint: "Everything you can see" },
+  { id: "personal", label: "Personal", hint: "Yours alone, or held for your child" },
+  { id: "joint", label: "Joint", hint: "Owned with someone else" },
+  { id: "shared", label: "Shared with me", hint: "Shared by your family" },
 ];
 
 /** The list's two tabs: what you own, and what you owe (cards). */
@@ -42,8 +44,12 @@ const kinds: { id: Kind; label: string }[] = [
 ];
 const kindOf = (i: PersonAsset): Kind => (assetGroupOf(i.account) === "owed" ? "debts" : "assets");
 
-/** Personal: accounts you own, or hold for your child. Shared: what family shares with you. */
-const groupOf = (r: AssetRelation): Group => (r === "shared" ? "shared" : "personal");
+const groupOf = (i: PersonAsset): Group =>
+  i.relation === "shared"
+    ? "shared"
+    : i.relation === "owned" && i.account.owners.length > 1
+      ? "joint"
+      : "personal";
 
 const MANAGE = "manage-";
 const UNCLAIMED = "unclaimed";
@@ -52,8 +58,8 @@ const CLAIM = "claim-";
 /**
  * Assets and Debts: a summary of what the person owns, then every account they can
  * see — their own, ones they manage for a child, and ones family shares with
- * them — in two tabs, Assets and Debts, each grouped by type, with the
- * All / Personal / Shared filters and search folded under one Filters button.
+ * them — in two tabs, Assets and Debts, each grouped by type, with one line
+ * to narrow it: whose (All / Personal / Joint / Shared with me) and a search.
  * Owners name beneficiaries from each
  * account's Manage panel (`#manage-<id>`), so other pages can link straight
  * to it.
@@ -70,7 +76,6 @@ export function MyAssets() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
   const [kind, setKind] = useState<Kind>("assets");
-  const [filtersOpen, setFiltersOpen] = useState(false);
   const listId = useId();
   const [hash, setHash] = useHash();
   const searchId = useId();
@@ -94,29 +99,28 @@ export function MyAssets() {
     : undefined;
 
   const summary = assetSummary(accountsOf(accounts, person.id).owned);
-  // Filters and search apply within the open tab; the summary's tiles count every account.
+  // Filters and search apply within the open tab; the summary's tiles (in "What you own")
+  // count assets only, so their numbers match the Assets tab.
   const inKind = items.filter((i) => kindOf(i) === kind);
   const kindCount = (k: Kind) => items.filter((i) => kindOf(i) === k).length;
   const count = (list: PersonAsset[], f: Filter) =>
-    f === "all" ? list.length : list.filter((i) => groupOf(i.relation) === f).length;
-  const counts = (f: Filter) => count(items, f);
-  const activeFilters = (filter !== "all" ? 1 : 0) + (query.trim() ? 1 : 0);
+    f === "all" ? list.length : list.filter((i) => groupOf(i) === f).length;
+  const owned = items.filter((i) => kindOf(i) === "assets");
+  const counts = (f: Filter) => count(owned, f);
   const totalOf = (g: Group) =>
-    items
-      .filter((i) => groupOf(i.relation) === g && !i.account.external)
+    owned
+      .filter((i) => groupOf(i) === g && !i.account.external)
       .reduce((s, i) => s + i.account.balance, 0);
 
   const shown = inKind.filter(
-    (i) => (filter === "all" || groupOf(i.relation) === filter) && assetMatches(i, query),
+    (i) => (filter === "all" || groupOf(i) === filter) && assetMatches(i, query),
   );
   const byId = new Map(shown.map((i) => [i.account.id, i]));
   const sections = assetGroups
     .map((g) => ({ ...g, items: shown.filter((i) => assetGroupOf(i.account) === g.id) }))
     .filter((g) => g.items.length > 0);
 
-  const tiles = (["personal", "shared"] as const).filter((g) => counts(g) > 0);
-
-  const sharedCount = count(inKind, "shared");
+  const tiles = (["personal", "joint", "shared"] as const).filter((g) => counts(g) > 0);
 
   // Wide: the summary is a column beside the list, so the accounts start at the top of the page.
   return (
@@ -162,13 +166,21 @@ export function MyAssets() {
         <div className="grid items-start gap-5 @3xl:grid-cols-[18rem_minmax(0,1fr)] @6xl:grid-cols-[22rem_minmax(0,1fr)]">
           <AssetSummary summary={summary} title="What you own" className="@3xl:sticky @3xl:top-4">
             {tiles.length > 1 && (
-              <div className="grid border-t border-pnc-line @xl:grid-cols-2">
+              <div
+                className={cn(
+                  "grid border-t border-pnc-line",
+                  tiles.length === 3 ? "@xl:grid-cols-3" : "@xl:grid-cols-2",
+                )}
+              >
                 {tiles.map((r) => (
                   <button
                     key={r}
                     type="button"
-                    aria-pressed={filter === r}
-                    onClick={() => setFilter(filter === r ? "all" : r)}
+                    aria-pressed={kind === "assets" && filter === r}
+                    onClick={() => {
+                      setKind("assets");
+                      setFilter(filter === r && kind === "assets" ? "all" : r);
+                    }}
                     className="flex items-center justify-between gap-3 border-pnc-line px-5 py-3.5 text-left not-last:border-b hover:bg-pnc-surface/60 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-pnc-link aria-pressed:bg-pnc-blue-50 @xl:not-last:border-b-0 @xl:not-last:border-r @2xl:px-6"
                   >
                     <span>
@@ -234,110 +246,44 @@ export function MyAssets() {
                 </Link>
               </div>
 
-              <div className="border-b border-pnc-line px-5 py-2.5 @2xl:px-6">
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                  <button
-                    type="button"
-                    aria-expanded={filtersOpen}
-                    aria-controls={`${listId}-filters`}
-                    onClick={() => setFiltersOpen(!filtersOpen)}
-                    className={cn(
-                      "inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold ring-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pnc-link",
-                      filtersOpen || activeFilters
-                        ? "bg-pnc-blue-50 text-pnc-link ring-pnc-link/40"
-                        : "bg-white text-pnc-ink ring-pnc-line hover:ring-pnc-muted",
-                    )}
-                  >
-                    <SlidersHorizontal className="size-4" aria-hidden="true" />
-                    Filters
-                    {activeFilters > 0 && (
-                      <span className="grid size-5 place-items-center rounded-full bg-pnc-link text-2xs font-bold text-white">
-                        {activeFilters}
-                        <span className="sr-only"> active</span>
-                      </span>
-                    )}
-                  </button>
-                  {activeFilters > 0 && (
+              {/* One line to narrow the list: whose accounts, then a search. */}
+              <div className="flex items-center gap-2 border-b border-pnc-line px-5 py-2.5 @2xl:px-6">
+                <SelectMenu
+                  label="Show"
+                  icon={<ListFilter className="size-4 text-pnc-muted" aria-hidden="true" />}
+                  value={filter}
+                  onChange={setFilter}
+                  options={filters
+                    .filter((f) => f.id === "all" || f.id === filter || count(inKind, f.id) > 0)
+                    .map((f) => ({ ...f, count: count(inKind, f.id) }))}
+                />
+                <label
+                  htmlFor={searchId}
+                  className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-full border border-pnc-line bg-white px-3.5 focus-within:border-pnc-link focus-within:ring-2 focus-within:ring-pnc-link/15"
+                >
+                  <Search className="size-4 shrink-0 text-pnc-muted" aria-hidden="true" />
+                  <span className="sr-only">Search your {kind}</span>
+                  <input
+                    id={searchId}
+                    type="search"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === "Escape" && setQuery("")}
+                    placeholder={`Search ${kind}`}
+                    title="Search by name, number, type, owner or family"
+                    className="min-w-0 flex-1 bg-transparent text-sm text-pnc-ink outline-none placeholder:text-pnc-muted [&::-webkit-search-cancel-button]:hidden"
+                  />
+                  {query && (
                     <button
                       type="button"
-                      onClick={() => {
-                        setQuery("");
-                        setFilter("all");
-                      }}
-                      className="text-sm font-semibold text-pnc-link hover:underline"
+                      onClick={() => setQuery("")}
+                      aria-label="Clear search"
+                      className="grid size-6 place-items-center rounded-full text-pnc-muted hover:bg-pnc-surface hover:text-pnc-ink"
                     >
-                      Clear
+                      <X className="size-3.5" aria-hidden="true" />
                     </button>
                   )}
-                  {sharedCount > 0 && (
-                    <p className="ml-auto flex items-center gap-1.5 text-xs text-pnc-muted">
-                      <Users className="size-3.5 text-pnc-blue-700" aria-hidden="true" />
-                      Includes {sharedCount} shared with you
-                    </p>
-                  )}
-                </div>
-
-                <div
-                  id={`${listId}-filters`}
-                  hidden={!filtersOpen}
-                  className="mt-2.5 flex flex-wrap items-center gap-3"
-                >
-                  <div role="group" aria-label="Show" className="flex flex-wrap gap-1.5">
-                    {filters
-                      .filter((f) => f.id === "all" || count(inKind, f.id) > 0)
-                      .map((f) => (
-                        <button
-                          key={f.id}
-                          type="button"
-                          aria-pressed={filter === f.id}
-                          onClick={() => setFilter(f.id)}
-                          className={cn(
-                            "rounded-full px-3 py-1.5 text-sm font-semibold ring-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pnc-link",
-                            filter === f.id
-                              ? "bg-pnc-ink text-white ring-pnc-ink"
-                              : "bg-white text-pnc-ink ring-pnc-line hover:ring-pnc-muted",
-                          )}
-                        >
-                          {f.label}
-                          <span
-                            className={cn(
-                              "ml-1.5 tabular-nums",
-                              filter === f.id ? "text-white/75" : "text-pnc-muted",
-                            )}
-                          >
-                            {count(inKind, f.id)}
-                          </span>
-                        </button>
-                      ))}
-                  </div>
-                  <label
-                    htmlFor={searchId}
-                    className="flex min-w-0 flex-1 basis-56 items-center gap-2 rounded-full border border-pnc-line bg-white px-3.5 py-1.5 focus-within:border-pnc-link focus-within:ring-2 focus-within:ring-pnc-link/15"
-                  >
-                    <Search className="size-4 shrink-0 text-pnc-muted" aria-hidden="true" />
-                    <span className="sr-only">Search your {kind}</span>
-                    <input
-                      id={searchId}
-                      type="search"
-                      value={query}
-                      onChange={(e) => setQuery(e.target.value)}
-                      onKeyDown={(e) => e.key === "Escape" && setQuery("")}
-                      placeholder={`Search ${kind}`}
-                      title="Search by name, number, type, owner or family"
-                      className="min-w-0 flex-1 bg-transparent text-sm text-pnc-ink outline-none placeholder:text-pnc-muted [&::-webkit-search-cancel-button]:hidden"
-                    />
-                    {query && (
-                      <button
-                        type="button"
-                        onClick={() => setQuery("")}
-                        aria-label="Clear search"
-                        className="grid size-6 place-items-center rounded-full text-pnc-muted hover:bg-pnc-surface hover:text-pnc-ink"
-                      >
-                        <X className="size-3.5" aria-hidden="true" />
-                      </button>
-                    )}
-                  </label>
-                </div>
+                </label>
               </div>
             </header>
 

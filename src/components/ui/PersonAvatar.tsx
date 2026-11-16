@@ -16,6 +16,8 @@ type Look = {
   collar?: boolean;
   /** Drawstrings, as on a hoodie. */
   hoodie?: boolean;
+  /** A phone headset, for someone on a support line. */
+  headset?: boolean;
   /** Scale of the figure: under 1 reads as a younger, smaller person. */
   size?: number;
 };
@@ -55,6 +57,23 @@ const looks: Record<AvatarLook, Look> = {
     bg: "fill-pnc-blue-50",
     style: "fringe",
     size: 0.88,
+  },
+  service: {
+    skin: "fill-avatar-skin-3",
+    hair: "fill-avatar-hair-1",
+    shirt: "fill-pnc-blue-600",
+    bg: "fill-pnc-chip",
+    style: "curly",
+    earrings: true,
+    collar: true,
+  },
+  support: {
+    skin: "fill-avatar-skin-4",
+    hair: "fill-avatar-hair-4",
+    shirt: "fill-pnc-navy",
+    bg: "fill-pnc-positive-bg",
+    style: "short",
+    headset: true,
   },
 };
 
@@ -98,8 +117,9 @@ function seeded(seed: string): Look {
 
 /**
  * A flat vector portrait of a person (head, hair, shoulders) in a circle,
- * used for profiles. `look` draws a household role (husband, wife, teen,
- * child); otherwise the portrait is picked from `seed`. Decorative: give the
+ * used for profiles. `look` draws a fixed role (the household's husband,
+ * wife, teen and child; the bank team's service associate and support line);
+ * otherwise the portrait is picked from `seed`. Decorative: give the
  * surrounding control its own label.
  */
 export function PersonAvatar({
@@ -179,6 +199,26 @@ export function PersonAvatar({
               d="M12.5 16c0-5 3.4-8.6 7.5-8.6s7.5 3.6 7.5 8.6c-1.6-2.7-4.2-4.2-7.5-4.2s-5.9 1.5-7.5 4.2z"
               className={l.hair}
             />
+          )}
+          {l.headset && (
+            <>
+              <path
+                d="M11.8 17.5c0-5.4 3.7-9.3 8.2-9.3s8.2 3.9 8.2 9.3"
+                fill="none"
+                strokeWidth="1.3"
+                className="stroke-pnc-ink"
+              />
+              <rect x="10.6" y="15.6" width="2.6" height="4.4" rx="1.2" className="fill-pnc-ink" />
+              <rect x="26.8" y="15.6" width="2.6" height="4.4" rx="1.2" className="fill-pnc-ink" />
+              <path
+                d="M12 19.6c.4 2.6 2.4 4.2 5.2 4.4"
+                fill="none"
+                strokeWidth="0.9"
+                strokeLinecap="round"
+                className="stroke-pnc-ink"
+              />
+              <circle cx="17.6" cy="24" r="0.9" className="fill-pnc-ink" />
+            </>
           )}
           {/* A quiet face: eyes and a small smile. */}
           <circle cx="17.3" cy="17.2" r="0.9" className="fill-pnc-ink" />

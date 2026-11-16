@@ -8,7 +8,12 @@ import { Money } from "@/components/ui/Money";
 import { MOCK_AS_OF } from "@/data/mock";
 import { cn, formatCompactMoney, formatDate } from "@/lib/format";
 import { accountLabel } from "@/lib/household";
-import { historyMonths, type PortfolioAnalysis, type PortfolioGroup } from "@/lib/portfolio";
+import {
+  monthLabel,
+  projectPortfolio,
+  type PortfolioAnalysis,
+  type PortfolioGroup,
+} from "@/lib/portfolio";
 import { routes } from "@/lib/routes";
 
 /** Series colors, in the validated fixed order (see the chart tokens in globals.css). */
@@ -90,9 +95,9 @@ export function PortfolioAnalysisCard({
         <p className="px-5 py-6 text-sm text-pnc-muted @2xl:px-6">No accounts yet.</p>
       ) : (
         <>
-          <div className="grid items-center gap-6 px-5 py-5 @2xl:grid-cols-[13rem_minmax(0,1fr)] @2xl:px-6">
+          <div className="grid grid-cols-1 items-center gap-6 px-5 py-5 @2xl:grid-cols-[13rem_minmax(0,1fr)] @2xl:px-6">
             <Allocation groups={p.groups} />
-            <ValueChart series={p.series} />
+            <ValueChart series={p.series} holdings={p.holdings} />
           </div>
 
           {/* High-level analysis: three figures, then the full breakdown on request. */}
@@ -242,21 +247,46 @@ function ticks(min: number, max: number): number[] {
   return out;
 }
 
-function ValueChart({ series: all }: { series: number[] }) {
+/**
+ * The portfolio's value over the chosen range, then the same span ahead: the
+ * expected path as a dashed line and the strong-to-weak range as a faint band
+ * around it, from today's point. One color throughout; hover any month.
+ */
+function ValueChart({
+  series: all,
+  holdings,
+}: {
+  series: number[];
+  holdings: PortfolioAnalysis["holdings"];
+}) {
   const [range, setRange] = useState<(typeof ranges)[number]["id"]>("1Y");
   const [hover, setHover] = useState<number | null>(null);
   const months = ranges.find((r) => r.id === range)!.months;
-  const series = all.slice(-(months + 1));
-  const labels = historyMonths(MOCK_AS_OF, all.length).slice(-(months + 1));
-  const ys = ticks(Math.min(...series), Math.max(...series));
+  const past = all.slice(-(months + 1));
+  const ahead = projectPortfolio(holdings, months);
+  const today = months;
+  const n = 2 * months + 1;
+  const labels = Array.from({ length: n }, (_, i) => monthLabel(MOCK_AS_OF, i - today));
+  const ys = ticks(Math.min(...past, ...ahead.weak), Math.max(...past, ...ahead.strong));
   const lo = ys[0];
   const hi = ys.at(-1)!;
-  const n = series.length;
   const x = (i: number) => (i / (n - 1)) * 100;
   const y = (v: number) => (1 - (v - lo) / (hi - lo)) * 100;
-  const line = series.map((v, i) => `${i ? "L" : "M"}${x(i)},${y(v)}`).join(" ");
-  const point = hover ?? n - 1;
-  const every = n > 7 ? 3 : 1;
+  const path = (values: number[], from: number) =>
+    values.map((v, i) => `${i ? "L" : "M"}${x(from + i)},${y(v)}`).join(" ");
+  const pastLine = path(past, 0);
+  const expectedLine = path(ahead.expected, today);
+  const band = `${path(ahead.strong, today)} ${[...ahead.weak]
+    .reverse()
+    .map((v, i) => `L${x(n - 1 - i)},${y(v)}`)
+    .join(" ")} Z`;
+
+  const point = hover ?? today;
+  const future = point > today;
+  const valueAt = (i: number) => (i > today ? ahead.expected[i - today] : past[i]);
+  // Axis labels: the start, halfway back, today, halfway ahead and the end.
+  const half = months / 2;
+  const marks = [0, today - half, today, today + half, n - 1].filter((i) => Number.isInteger(i));
 
   const pick = (e: PointerEvent<HTMLDivElement>) => {
     const r = e.currentTarget.getBoundingClientRect();
@@ -266,7 +296,7 @@ function ValueChart({ series: all }: { series: number[] }) {
   const step = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
     e.preventDefault();
-    const from = hover ?? n - 1;
+    const from = hover ?? today;
     setHover(Math.min(Math.max(from + (e.key === "ArrowLeft" ? -1 : 1), 0), n - 1));
   };
 
@@ -310,15 +340,21 @@ function ValueChart({ series: all }: { series: number[] }) {
         ))}
 
         <div className="relative h-full">
+          {/* Today: where the record ends and the projection begins. */}
+          <div
+            className="pointer-events-none absolute inset-y-0 border-l border-pnc-muted/30"
+            style={{ left: `${x(today)}%` }}
+          />
           <svg
             viewBox="0 0 100 100"
             preserveAspectRatio="none"
             className="absolute inset-0 size-full overflow-visible"
             aria-hidden="true"
           >
-            <path d={`${line} L100,100 L0,100 Z`} className="fill-chart-cash/10" />
+            <path d={`${pastLine} L${x(today)},100 L0,100 Z`} className="fill-chart-cash/10" />
+            <path d={band} className="fill-chart-cash/[0.07]" />
             <path
-              d={line}
+              d={pastLine}
               fill="none"
               strokeWidth="2"
               strokeLinejoin="round"
@@ -326,9 +362,18 @@ function ValueChart({ series: all }: { series: number[] }) {
               vectorEffect="non-scaling-stroke"
               className="stroke-chart-cash"
             />
+            <path
+              d={expectedLine}
+              fill="none"
+              strokeWidth="2"
+              strokeDasharray="5 4"
+              strokeLinecap="round"
+              vectorEffect="non-scaling-stroke"
+              className="stroke-chart-cash"
+            />
           </svg>
 
-          {hover !== null && (
+          {hover !== null && hover !== today && (
             <div
               className="pointer-events-none absolute inset-y-0 border-l border-pnc-muted/50"
               style={{ left: `${x(point)}%` }}
@@ -336,27 +381,36 @@ function ValueChart({ series: all }: { series: number[] }) {
           )}
           <span
             className="pointer-events-none absolute size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-chart-cash ring-2 ring-white"
-            style={{ left: `${x(point)}%`, top: `${y(series[point])}%` }}
+            style={{ left: `${x(point)}%`, top: `${y(valueAt(point))}%` }}
           />
           {hover !== null && (
             <div
               className={cn(
                 // Beside the point: above it, or below when the point is near the top.
                 "pointer-events-none absolute z-10 whitespace-nowrap rounded-md bg-pnc-navy px-2.5 py-1.5 text-xs text-white shadow-raised",
-                y(series[point]) > 40 ? "-mt-3 -translate-y-full" : "mt-3",
+                y(valueAt(point)) > 40 ? "-mt-3 -translate-y-full" : "mt-3",
                 point === 0 ? "" : point === n - 1 ? "-translate-x-full" : "-translate-x-1/2",
               )}
-              style={{ left: `${x(point)}%`, top: `${y(series[point])}%` }}
+              style={{ left: `${x(point)}%`, top: `${y(valueAt(point))}%` }}
             >
-              <span className="block text-white/75">{labels[point]}</span>
-              <Money value={series[point]} className="font-semibold" />
+              <span className="block text-white/75">
+                {point === today ? "Today" : labels[point]}
+                {future && " · projected"}
+              </span>
+              <Money value={valueAt(point)} className="font-semibold" />
+              {future && (
+                <span className="mt-0.5 block text-white/75">
+                  <Money value={ahead.strong[point - today]} compact /> strong ·{" "}
+                  <Money value={ahead.weak[point - today]} compact /> weak
+                </span>
+              )}
             </div>
           )}
 
           <div
             role="img"
             tabIndex={0}
-            aria-label={`Portfolio value over the last ${months} months, from ${formatCompactMoney(series[0])} to ${formatCompactMoney(series[n - 1])}. Use the arrow keys to read each month.`}
+            aria-label={`Portfolio value over the last ${months} months, from ${formatCompactMoney(past[0])} to ${formatCompactMoney(past[today])}, and projected ${months} months ahead: ${formatCompactMoney(ahead.expected[months])} expected, between ${formatCompactMoney(ahead.weak[months])} and ${formatCompactMoney(ahead.strong[months])}. Use the arrow keys to read each month.`}
             onPointerMove={pick}
             onPointerLeave={() => setHover(null)}
             onKeyDown={step}
@@ -367,31 +421,67 @@ function ValueChart({ series: all }: { series: number[] }) {
       </div>
 
       <div className="relative mr-14 mt-1.5 h-4 text-2xs text-pnc-muted">
-        {labels.map((l, i) =>
-          i % every === 0 || i === n - 1 ? (
-            <span
-              key={i}
-              className={cn(
-                "absolute",
-                i === 0 ? "" : i === n - 1 ? "-translate-x-full" : "-translate-x-1/2",
-              )}
-              style={{ left: `${x(i)}%` }}
-            >
-              {l}
-            </span>
-          ) : null,
-        )}
+        {marks.map((i) => (
+          <span
+            key={i}
+            className={cn(
+              "absolute whitespace-nowrap",
+              i === 0 ? "" : i === n - 1 ? "-translate-x-full" : "-translate-x-1/2",
+              i === today && "font-semibold text-pnc-ink",
+            )}
+            style={{ left: `${x(i)}%` }}
+          >
+            {i === today ? "Today" : labels[i]}
+          </span>
+        ))}
       </div>
 
+      {/* Legend: what each mark means. Values are on hover and in the table below. */}
+      <ul className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-2xs text-pnc-muted">
+        <li className="flex items-center gap-1.5">
+          <svg viewBox="0 0 16 4" className="h-1 w-4" aria-hidden="true">
+            <path d="M1 2h14" strokeWidth="2" strokeLinecap="round" className="stroke-chart-cash" />
+          </svg>
+          Actual
+        </li>
+        <li className="flex items-center gap-1.5">
+          <svg viewBox="0 0 16 4" className="h-1 w-4" aria-hidden="true">
+            <path
+              d="M1 2h14"
+              strokeWidth="2"
+              strokeDasharray="4 3"
+              strokeLinecap="round"
+              className="stroke-chart-cash"
+            />
+          </svg>
+          Expected
+        </li>
+        <li className="flex items-center gap-1.5">
+          <span className="h-2.5 w-4 rounded-sm bg-chart-cash/15" aria-hidden="true" />
+          Strong to weak markets
+        </li>
+        <li className="ml-auto">Illustrative, not a forecast</li>
+      </ul>
+
       <table className="sr-only">
-        <caption>Portfolio value by month</caption>
+        <caption>Portfolio value by month, then projected</caption>
+        <thead>
+          <tr>
+            <th scope="col">Month</th>
+            <th scope="col">Value or expected</th>
+            <th scope="col">Strong</th>
+            <th scope="col">Weak</th>
+          </tr>
+        </thead>
         <tbody>
-          {series.map((v, i) => (
+          {labels.map((l, i) => (
             <tr key={i}>
-              <th scope="row">{labels[i]}</th>
+              <th scope="row">{i === today ? `${l} (today)` : l}</th>
               <td>
-                <Money value={v} />
+                <Money value={valueAt(i)} />
               </td>
+              <td>{i > today && <Money value={ahead.strong[i - today]} />}</td>
+              <td>{i > today && <Money value={ahead.weak[i - today]} />}</td>
             </tr>
           ))}
         </tbody>

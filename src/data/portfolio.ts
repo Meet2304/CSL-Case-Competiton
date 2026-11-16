@@ -25,6 +25,16 @@ export const dayChange = {
   investments: 0.0038,
 } as const;
 
+/**
+ * Yearly returns for the chart's look ahead, by scenario and group. Illustrative
+ * only: a projection, not a forecast or advice. 0.06 = +6% a year.
+ */
+export const scenarioReturns = {
+  weak: { cash: 0.025, retirement: -0.06, investments: -0.1 },
+  expected: { cash: 0.036, retirement: 0.06, investments: 0.07 },
+  strong: { cash: 0.042, retirement: 0.12, investments: 0.15 },
+} as const;
+
 /** The people who look after the household's relationship at the bank, named by role. */
 export const relationshipTeam: TeamContact[] = [
   {
@@ -33,6 +43,8 @@ export const relationshipTeam: TeamContact[] = [
     title: "Wealth Advisor",
     phone: "(412) 555-0142",
     email: "bank.advisor@example.com",
+    // The same portrait the advisor has in their own view of the app.
+    avatarSeed: "advisor",
   },
   {
     id: "team-service",
@@ -40,6 +52,8 @@ export const relationshipTeam: TeamContact[] = [
     title: "Client Service",
     phone: "(412) 555-0178",
     email: "client.service@example.com",
+    avatar: "service",
+    avatarSeed: "team-service",
   },
   {
     id: "team-support",
@@ -47,5 +61,7 @@ export const relationshipTeam: TeamContact[] = [
     title: "Client Support",
     phone: "(800) 555-0199",
     email: "support@example.com",
+    avatar: "support",
+    avatarSeed: "team-support",
   },
 ];

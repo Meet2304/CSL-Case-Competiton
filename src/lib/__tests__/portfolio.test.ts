@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { seedFamilies } from "@/data/household";
 import { accountsOf, currentAccounts, type HouseholdState } from "@/lib/household";
-import { balanceSheet, historyMonths, portfolioAnalysis } from "@/lib/portfolio";
+import {
+  balanceSheet,
+  historyMonths,
+  monthLabel,
+  portfolioAnalysis,
+  projectPortfolio,
+} from "@/lib/portfolio";
 
 const seed: HouseholdState = { families: seedFamilies, designations: {} };
 const owned = (id: string) => accountsOf(currentAccounts(seed), id).owned;
@@ -65,5 +71,30 @@ describe("portfolio analysis", () => {
       "Sep '26",
       "Oct '26",
     ]);
+  });
+});
+
+describe("projection", () => {
+  const p = portfolioAnalysis(owned("p-jordan"));
+  const ahead = projectPortfolio(p.holdings, 12);
+
+  it("starts every scenario at today's total", () => {
+    for (const s of [ahead.weak, ahead.expected, ahead.strong]) {
+      expect(s).toHaveLength(13);
+      expect(s[0]).toBeCloseTo(p.total, 2);
+    }
+  });
+
+  it("keeps the scenarios in order: weak below expected below strong", () => {
+    for (let i = 1; i <= 12; i++) {
+      expect(ahead.weak[i]).toBeLessThan(ahead.expected[i]);
+      expect(ahead.expected[i]).toBeLessThan(ahead.strong[i]);
+    }
+  });
+
+  it("labels months ahead of the as-of date", () => {
+    expect(monthLabel("2026-10-25", 0)).toBe("Oct '26");
+    expect(monthLabel("2026-10-25", 3)).toBe("Jan '27");
+    expect(monthLabel("2026-10-25", -12)).toBe("Oct '25");
   });
 });

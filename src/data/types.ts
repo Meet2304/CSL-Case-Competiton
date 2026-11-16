@@ -127,7 +127,8 @@ export type DemoUser = {
 // read by every customer login and by the advisor.
 
 /** How a household member's illustrated profile picture is drawn (see PersonAvatar). */
-export type AvatarLook = "husband" | "wife" | "teen" | "child";
+/** Fixed portraits: the household's roles, and the bank team on the home page. */
+export type AvatarLook = "husband" | "wife" | "teen" | "child" | "service" | "support";
 
 export type HouseholdPerson = {
   id: string;
@@ -183,6 +184,9 @@ export type TeamContact = {
   title: string;
   phone: string;
   email: string;
+  /** Their portrait: a fixed look, or one picked from `avatarSeed`. */
+  avatar?: AvatarLook;
+  avatarSeed: string;
 };
 
 export type FamilyRelationship = "Spouse" | "Parent" | "Child" | "Sibling";

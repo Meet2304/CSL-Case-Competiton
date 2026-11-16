@@ -78,8 +78,9 @@ and mobile views stay in one design language.
   **Assets and Debts** dropdown in the web navigation (`NavMenu` in `WebHeader.tsx`) and from
   More on the phone. Assets can be added at `routes.addAsset` (`AddAsset.tsx`, demo flows only;
   options are data in `src/data/addAsset.ts`). Beneficiaries are named in each account's Manage
-  panel (`routes.manageAsset(id)`). The page filters by All / Personal (owned or custodial) /
-  Shared.
+  panel (`routes.manageAsset(id)`). The list has Assets and Debts tabs and one line to narrow
+  it: a `SelectMenu` (All / Personal: yours alone or custodial / Joint / Shared with me) and a
+  search.
   While a death in the household is being settled it gains an **Unclaimed assets** tab
   (`routes.unclaimedAssets`, `UnclaimedAssets.tsx`): the deceased's accounts that pass to the
   viewer (from `survivorPlan`), each with a guided claim (`TransferFlowView`,
