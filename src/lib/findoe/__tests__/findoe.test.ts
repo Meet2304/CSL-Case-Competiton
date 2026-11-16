@@ -182,8 +182,9 @@ describe("Findoe for advisors", () => {
 
   it("puts the most recent loss first and links to the client", () => {
     const r = advisorReply(ctx, "Who needs my attention today?");
-    expect(r.text).toContain("**Morgan Placeholder**");
-    expect(r.actions[0].href).toBe(routes.advisorClient("c-placeholder"));
+    // The demo's one incident: the bank has recorded John's death.
+    expect(r.text).toContain("**John**");
+    expect(r.actions[0].href).toBe(routes.advisorClient("c-sample"));
     expect(r.sources.map((s) => s.key)).toContain("treas-210");
   });
 

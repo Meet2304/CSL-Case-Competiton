@@ -195,13 +195,13 @@ export const filmShots: FilmShot[] = [
     id: "notified",
     chapter: "day",
     scene: "advisor-home",
-    title: "The Bank Advisor knows what to do first",
-    body: "Call Maya. Lead with condolences, not paperwork.",
+    title: "John's advisor knows what to do next",
+    body: "Review the certificate, process the will, write to the family.",
     actions: [
       { do: "click", on: { css: "dialog[open] button", text: "Record and notify" } },
-      { do: "wait", for: { css: 'section[aria-label="Death recorded: John"]' } },
+      { do: "wait", for: { text: "Review death certificate" } },
     ],
-    focus: { css: 'section[aria-label="Death recorded: John"]' },
+    focus: { text: "Review death certificate", closest: "tr" },
   },
   {
     id: "standing",

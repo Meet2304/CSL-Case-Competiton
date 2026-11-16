@@ -6,13 +6,40 @@
  * surface at the top. Customers without a `will` have none on file; the
  * advisor assistant recommends one based on relationship value and household.
  */
-import type { Advisor, AdvisorCustomer, AdvisorNotification } from "./types";
+import type { Advisor, AdvisorCustomer, AdvisorNotification, LossEvent } from "./types";
 
 export const advisor: Advisor = {
   firstName: "Alex",
   lastName: "Example",
   title: "Senior Wealth Advisor",
   team: "PNC Private Bank · Pittsburgh",
+};
+
+/**
+ * Deaths the settlement rulebook is tested against (src/lib/settlement/__tests__).
+ * Not in the advisor's book: the demo's only incident is John's death.
+ */
+export const exampleLosses: Record<string, LossEvent[]> = {
+  "c-placeholder": [
+    {
+      id: "l-1",
+      date: "2026-10-23",
+      relationship: "Spouse",
+      memberName: "Riley Placeholder",
+      reportedVia: "Phone call",
+      followUpComplete: false,
+    },
+  ],
+  "c-example": [
+    {
+      id: "l-2",
+      date: "2026-10-19",
+      relationship: "Parent",
+      memberName: "Drew Example",
+      reportedVia: "Estate attorney",
+      followUpComplete: false,
+    },
+  ],
 };
 
 type Seed = Omit<AdvisorCustomer, "lossEvents" | "will"> &
@@ -33,6 +60,18 @@ const seeds: Seed[] = [
     relationshipValue: 49_092.3,
     accountCount: 5,
     will: { status: "on-file", updated: "2024-03-12" },
+    // The demo's one incident: the bank has recorded John's death, so his advisor's
+    // dashboard opens on it. (Recording it again from the ⋮ menu changes nothing.)
+    lossEvents: [
+      {
+        id: "l-john",
+        date: "2026-10-24",
+        relationship: "Self",
+        memberName: "John",
+        reportedVia: "Phone call",
+        followUpComplete: false,
+      },
+    ],
     lastContact: "2026-09-18",
     nextReview: "2027-01-12",
   },
@@ -48,16 +87,6 @@ const seeds: Seed[] = [
     accountCount: 9,
     lastContact: "2026-08-30",
     nextReview: "2026-11-04",
-    lossEvents: [
-      {
-        id: "l-1",
-        date: "2026-10-23",
-        relationship: "Spouse",
-        memberName: "Riley Placeholder",
-        reportedVia: "Phone call",
-        followUpComplete: false,
-      },
-    ],
   },
   {
     id: "c-example",
@@ -68,16 +97,6 @@ const seeds: Seed[] = [
     accountCount: 6,
     lastContact: "2026-10-02",
     nextReview: "2026-12-09",
-    lossEvents: [
-      {
-        id: "l-2",
-        date: "2026-10-19",
-        relationship: "Parent",
-        memberName: "Drew Example",
-        reportedVia: "Estate attorney",
-        followUpComplete: false,
-      },
-    ],
   },
   {
     id: "c-demo",
