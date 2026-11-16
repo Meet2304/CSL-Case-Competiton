@@ -3,8 +3,8 @@
  * account, ticker price and estimate is invented, and nothing a customer adds
  * is saved: each flow is a demo that ends on a confirmation.
  *
- * Three classifications: accounts already inside PNC, accounts at other
- * institutions, and assets the customer enters themselves.
+ * Three classes, each a tab with its own categories: accounts already inside
+ * PNC, accounts at other institutions, and assets the customer adds manually.
  */
 
 /** How a kind of asset is added; each kind has its own short demo flow. */
@@ -12,6 +12,8 @@ export type AddFlow = "pnc" | "connect" | "ticker" | "estimate" | "manual" | "im
 
 export type AddOption = {
   id: string;
+  /** The kind of asset within its class, for the class's filter (e.g. "Property"). */
+  category: string;
   label: string;
   description: string;
   flow: AddFlow;
@@ -31,6 +33,7 @@ export const addAssetGroups: AddGroup[] = [
     options: [
       {
         id: "pnc-deposit",
+        category: "Banking",
         label: "Checking, savings and CDs",
         description: "PNC deposit accounts in your name, added in one step.",
         flow: "pnc",
@@ -38,6 +41,7 @@ export const addAssetGroups: AddGroup[] = [
       },
       {
         id: "pnc-investments",
+        category: "Investing",
         label: "PNC investments",
         description: "Brokerage and managed portfolios with PNC Investments.",
         flow: "pnc",
@@ -45,6 +49,7 @@ export const addAssetGroups: AddGroup[] = [
       },
       {
         id: "pnc-retirement",
+        category: "Retirement",
         label: "PNC retirement",
         description: "IRAs and rollovers held at PNC.",
         flow: "pnc",
@@ -52,6 +57,7 @@ export const addAssetGroups: AddGroup[] = [
       },
       {
         id: "pnc-trust",
+        category: "Trust",
         label: "Trust and custody",
         description: "Trust, custody and estate accounts at PNC Private Bank.",
         flow: "pnc",
@@ -66,6 +72,7 @@ export const addAssetGroups: AddGroup[] = [
     options: [
       {
         id: "banks",
+        category: "Banking",
         label: "Banks and brokerages",
         description: "Link a checking, savings or brokerage account elsewhere.",
         flow: "connect",
@@ -73,6 +80,7 @@ export const addAssetGroups: AddGroup[] = [
       },
       {
         id: "joint-external",
+        category: "Banking",
         label: "Joint account elsewhere",
         description: "An account you share with someone at another bank.",
         flow: "connect",
@@ -80,6 +88,7 @@ export const addAssetGroups: AddGroup[] = [
       },
       {
         id: "workplace",
+        category: "Retirement",
         label: "Retirement plan at work",
         description: "A 401(k), 403(b) or pension with your employer's provider.",
         flow: "connect",
@@ -87,6 +96,7 @@ export const addAssetGroups: AddGroup[] = [
       },
       {
         id: "crypto-wallets",
+        category: "Crypto",
         label: "Crypto wallets and exchanges",
         description: "Connect a wallet address or an exchange account.",
         flow: "connect",
@@ -94,6 +104,7 @@ export const addAssetGroups: AddGroup[] = [
       },
       {
         id: "insurance",
+        category: "Insurance",
         label: "Insurance and annuities",
         description: "Life policies and annuities held with an insurer.",
         flow: "connect",
@@ -101,6 +112,7 @@ export const addAssetGroups: AddGroup[] = [
       },
       {
         id: "web-sync",
+        category: "Other",
         label: "Sync from a website",
         description: "For a bank or exchange that can't connect directly.",
         flow: "connect",
@@ -110,11 +122,12 @@ export const addAssetGroups: AddGroup[] = [
   },
   {
     id: "manual",
-    label: "Added by you",
+    label: "Add manually",
     intro: "Property, valuables and anything else you enter yourself",
     options: [
       {
         id: "real-estate",
+        category: "Property",
         label: "Real estate",
         description: "A home, rental or land, valued from its address.",
         flow: "estimate",
@@ -126,6 +139,7 @@ export const addAssetGroups: AddGroup[] = [
       },
       {
         id: "vehicles",
+        category: "Property",
         label: "Vehicles",
         description: "A car, boat or motorcycle, valued from its make and model.",
         flow: "estimate",
@@ -140,6 +154,7 @@ export const addAssetGroups: AddGroup[] = [
       },
       {
         id: "jewelry",
+        category: "Valuables",
         label: "Jewelry and watches",
         description: "Rings, necklaces and watches, valued from a description.",
         flow: "estimate",
@@ -157,6 +172,7 @@ export const addAssetGroups: AddGroup[] = [
       },
       {
         id: "art",
+        category: "Valuables",
         label: "Art and collectibles",
         description: "Paintings, prints, wine and other collections.",
         flow: "estimate",
@@ -174,6 +190,7 @@ export const addAssetGroups: AddGroup[] = [
       },
       {
         id: "metals",
+        category: "Valuables",
         label: "Precious metals",
         description: "Gold, silver and other bullion, priced by weight.",
         flow: "estimate",
@@ -188,6 +205,7 @@ export const addAssetGroups: AddGroup[] = [
       },
       {
         id: "appraise",
+        category: "Valuables",
         label: "Estimate with Findoe",
         description: "No market price? Findoe estimates its value and keeps it current.",
         flow: "estimate",
@@ -205,6 +223,7 @@ export const addAssetGroups: AddGroup[] = [
       },
       {
         id: "stocks",
+        category: "Investments",
         label: "Stocks and funds",
         description: "Track holdings by ticker. Prices update every day.",
         flow: "ticker",
@@ -219,6 +238,7 @@ export const addAssetGroups: AddGroup[] = [
       },
       {
         id: "crypto-tickers",
+        category: "Investments",
         label: "Crypto by ticker",
         description: "Track coins by ticker, like BTC or ETH.",
         flow: "ticker",
@@ -233,6 +253,7 @@ export const addAssetGroups: AddGroup[] = [
       },
       {
         id: "qty-price",
+        category: "Investments",
         label: "Quantity and price",
         description: "Private shares or stakes: units you own and a price you update.",
         flow: "manual",
@@ -248,6 +269,7 @@ export const addAssetGroups: AddGroup[] = [
       },
       {
         id: "value",
+        category: "Other",
         label: "Asset value",
         description: "Anything else: enter a value and update it when it changes.",
         flow: "manual",
@@ -262,6 +284,7 @@ export const addAssetGroups: AddGroup[] = [
       },
       {
         id: "import",
+        category: "Other",
         label: "Import a file",
         description: "Add many assets at once from a spreadsheet.",
         flow: "import",
@@ -269,6 +292,7 @@ export const addAssetGroups: AddGroup[] = [
       },
       {
         id: "portfolio",
+        category: "Other",
         label: "Trusts and LLCs",
         description: "Group assets held by a trust, LLC or partnership.",
         flow: "portfolio",
