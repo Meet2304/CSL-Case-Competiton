@@ -55,8 +55,8 @@ describe("my assets", () => {
 
   it("totals balances at PNC and keeps outside policies apart", () => {
     const s = assetSummary(accountsOf(all, "p-jordan").owned);
-    expect(s.net).toBeCloseTo(12_480.55 + 18_250 + 184_000 + 96_500 - 1_284.19, 2);
-    expect(s.owed).toBeCloseTo(-1_284.19, 2);
+    expect(s.net).toBeCloseTo(84_620.55 + 246_250 + 1_284_000 + 1_126_500 - 12_846.19, 2);
+    expect(s.owed).toBeCloseTo(-12_846.19, 2);
     expect(s.outside.map((a) => a.id)).toEqual(["acct-jordan-life"]);
     expect(s.holdings.map((g) => g.id)).toEqual(["cash", "retirement", "investments"]);
   });
@@ -101,7 +101,7 @@ describe("family at a glance", () => {
     const s = familySummary(family, "p-avery", all, []);
     expect(s.isAdmin).toBe(false);
     expect(s.visible.map((a) => a.id)).toEqual(["acct-joint-checking"]);
-    expect(s.total).toBeCloseTo(12_480.55, 2);
+    expect(s.total).toBeCloseTo(84_620.55, 2);
   });
 
   it("tells admins about pending invites and a child turning 18", () => {

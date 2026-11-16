@@ -13,18 +13,18 @@ const seed: HouseholdState = { families: seedFamilies, designations: {} };
 const owned = (id: string) => accountsOf(currentAccounts(seed), id).owned;
 
 describe("balance sheet", () => {
-  it("splits PNC assets, PNC liabilities and outside accounts; net counts PNC only", () => {
+  it("splits PNC assets, PNC debts and outside accounts; net counts PNC only", () => {
     const s = balanceSheet(owned("p-jordan"));
-    expect(s.assets).toBe(12_480.55 + 18_250 + 184_000 + 96_500);
-    expect(s.liabilities).toBe(1_284.19);
-    expect(s.external).toBe(500_000);
+    expect(s.assets).toBe(84_620.55 + 246_250 + 1_284_000 + 1_126_500);
+    expect(s.liabilities).toBe(12_846.19);
+    expect(s.external).toBe(2_000_000);
     expect(s.externalCount).toBe(1);
     expect(s.net).toBeCloseTo(s.assets - s.liabilities, 2);
   });
 
   it("works for a child with one account and nothing owed", () => {
     const s = balanceSheet(owned("p-riley"));
-    expect(s).toMatchObject({ assets: 860, liabilities: 0, external: 0, net: 860 });
+    expect(s).toMatchObject({ assets: 5_860, liabilities: 0, external: 0, net: 5_860 });
   });
 });
 
@@ -34,7 +34,7 @@ describe("portfolio analysis", () => {
     expect(p.holdings.map((h) => h.account.id)).not.toContain("acct-jordan-card");
     expect(p.holdings.map((h) => h.account.id)).not.toContain("acct-jordan-life");
     expect(p.groups.map((g) => g.id)).toEqual(["cash", "retirement", "investments"]);
-    expect(p.total).toBeCloseTo(311_230.55, 2);
+    expect(p.total).toBeCloseTo(2_741_370.55, 2);
     expect(p.groups.reduce((s, g) => s + g.share, 0)).toBeCloseTo(1, 6);
     expect(p.investmentCount).toBe(2);
     expect(p.largest?.id).toBe("retirement");

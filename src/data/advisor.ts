@@ -27,9 +27,10 @@ const seeds: Seed[] = [
       { name: "Child 1", relationship: "Child" },
       { name: "Child 2", relationship: "Child" },
     ],
-    segment: "Preferred Banking",
-    relationshipValue: 49_092.3,
-    accountCount: 5,
+    segment: "Private Bank",
+    // Matches the Sample household's accounts at PNC (src/data/household.ts).
+    relationshipValue: 3_393_724.96,
+    accountCount: 9,
     lastContact: "2026-09-18",
     nextReview: "2027-01-12",
   },
