@@ -10,6 +10,7 @@ import {
   MessageSquare,
   ScrollText,
   Send,
+  UserRound,
 } from "lucide-react";
 import {
   beneficiaryDetail,
@@ -22,12 +23,13 @@ import { Money } from "@/components/ui/Money";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
 import { buttonClass } from "@/components/will/ui";
 import { beneficiaryAdvisors, custodianFor, deathCertificates, willsOnFile } from "@/data/estate";
+import { MOCK_AS_OF } from "@/data/mock";
 import type { AdvisorCustomer } from "@/data/types";
 import { openLoss } from "@/lib/advisor";
 import { bereavementActions, useBereavement } from "@/lib/bereavement";
 import { routeLabels, transferPlan, type BeneficiaryShare } from "@/lib/estate";
 import { cn, formatDate } from "@/lib/format";
-import { currentAccounts, personById } from "@/lib/household";
+import { ageOn, currentAccounts, personById } from "@/lib/household";
 import { useHousehold } from "@/lib/householdStore";
 import { messagesActions, threadOf, useMessages } from "@/lib/messages";
 import { routes } from "@/lib/routes";
@@ -394,8 +396,15 @@ function ShareRow({ share: s, notifiedAt }: { share: BeneficiaryShare; notifiedA
   const custodian = custodianFor[s.personId];
   const reach = reachable(s.personId);
   const adv = beneficiaryAdvisors[reach];
+  const [open, setOpen] = useState(false);
   return (
     <li className="space-y-3 px-4 py-4">
+      <PersonDetails
+        personId={s.personId}
+        notifiedAt={notifiedAt}
+        open={open}
+        onClose={() => setOpen(false)}
+      />
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <div className="flex min-w-0 flex-1 basis-56 items-center gap-3">
           <PersonAvatar seed={p.id} look={p.avatar} className="size-10 ring-pnc-line" />
@@ -416,16 +425,9 @@ function ShareRow({ share: s, notifiedAt }: { share: BeneficiaryShare; notifiedA
             )}
           </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Link href={routes.advisorMessage(reach)} className={chip}>
-            <MessageSquare className="size-3.5" aria-hidden="true" />
-            {custodian ? `Message ${personById(custodian)?.name}` : `Message ${p.name}`}
-          </Link>
-          <Link href={routes.advisorMessage(adv.id)} className={chip} title={adv.team}>
-            <MessageSquare className="size-3.5" aria-hidden="true" />
-            {adv.name}
-          </Link>
-        </div>
+        <button type="button" onClick={() => setOpen(true)} className={chip}>
+          <UserRound className="size-3.5" aria-hidden="true" /> View details
+        </button>
         <div className="w-full text-right @3xl:w-32">
           <p className="text-xs text-pnc-muted">Net to {p.name}</p>
           <Money value={s.net} className="font-semibold text-pnc-ink" />
@@ -462,5 +464,109 @@ function ShareRow({ share: s, notifiedAt }: { share: BeneficiaryShare; notifiedA
         ))}
       </ul>
     </li>
+  );
+}
+
+/**
+ * Who a beneficiary is, for the advisor: their relationship to the deceased,
+ * age, role in the estate, how to reach them and who their advisor is, then
+ * the two ways to get in touch, worded alike. A minor is reached through
+ * their custodian, so both actions go to the custodian and their advisor.
+ */
+function PersonDetails({
+  personId,
+  notifiedAt,
+  open,
+  onClose,
+}: {
+  personId: string;
+  notifiedAt?: string;
+  open: boolean;
+  onClose: () => void;
+}) {
+  const p = personById(personId)!;
+  const will = willsOnFile[estateClient.personId];
+  const custodianId = custodianFor[personId];
+  const custodian = custodianId ? personById(custodianId) : undefined;
+  const reach = personById(reachable(personId))!;
+  const adv = beneficiaryAdvisors[reach.id];
+  const age = ageOn(p.birthdate, MOCK_AS_OF);
+  const wards = Object.entries(custodianFor)
+    .filter(([, c]) => c === personId)
+    .map(([w]) => personById(w)?.name);
+  const adulthood = `${Number(p.birthdate.slice(0, 4)) + 18}${p.birthdate.slice(4)}`;
+  const roles = [
+    will.executor === personId && "Executor of the will",
+    wards.length > 0 && `Custodian for ${wards.join(" and ")}`,
+    custodian &&
+      `Under 18: ${custodian.name} holds their share until ${formatDate(adulthood, "medium")}`,
+  ].filter(Boolean) as string[];
+  const rows: [string, string][] = [
+    ["Relationship", beneficiaryDetail(personId).replace(" · beneficiary", "")],
+    ["Age", String(age)],
+    ...roles.map((r) => ["Role", r] as [string, string]),
+    ["Contact", custodian ? `Through ${custodian.name}, ${custodian.email}` : p.email],
+    [custodian ? `${custodian.name}'s advisor` : "Their advisor", `${adv.name}, ${adv.team}`],
+    [
+      "Notified",
+      notifiedAt
+        ? `${custodian ? `Through ${custodian.name}, ` : ""}${when(notifiedAt)}; ${adv.name} too`
+        : "Not yet. They're told when you start the transfer.",
+    ],
+  ];
+  const action =
+    "flex w-full items-center justify-between gap-3 rounded-lg px-4 py-3 text-left text-sm font-semibold ring-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pnc-link";
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      title={p.name}
+      description="Beneficiary · not your client"
+    >
+      <div className="px-5 py-5">
+        <div className="flex items-center gap-3">
+          <PersonAvatar seed={p.id} look={p.avatar} className="size-14 ring-pnc-line" />
+          <div>
+            <p className="font-display text-lg font-medium text-pnc-ink">{p.name}</p>
+            <p className="text-sm text-pnc-muted">
+              {beneficiaryDetail(personId).replace(" · beneficiary", "")}
+            </p>
+          </div>
+        </div>
+        <dl className="mt-4 divide-y divide-pnc-line rounded-lg border border-pnc-line text-sm">
+          {rows.map(([k, v], i) => (
+            <div key={`${k}-${i}`} className="grid grid-cols-[7.5rem_1fr] gap-3 px-4 py-2.5">
+              <dt className="text-pnc-muted">{k}</dt>
+              <dd className="text-pnc-ink">{v}</dd>
+            </div>
+          ))}
+        </dl>
+        <div className="mt-4 space-y-2">
+          <Link
+            href={routes.advisorMessage(reach.id)}
+            className={cn(
+              action,
+              "bg-pnc-blue-700 text-white ring-pnc-blue-700 hover:bg-pnc-blue-800",
+            )}
+          >
+            <span className="flex items-center gap-2">
+              <MessageSquare className="size-4" aria-hidden="true" /> Message {reach.name}
+            </span>
+            <span className="text-xs font-normal text-white/80">
+              {custodian ? `${p.name}'s custodian` : "Beneficiary"}
+            </span>
+          </Link>
+          <Link
+            href={routes.advisorMessage(adv.id)}
+            className={cn(action, "bg-white text-pnc-link ring-pnc-line hover:ring-pnc-link")}
+          >
+            <span className="flex items-center gap-2">
+              <MessageSquare className="size-4" aria-hidden="true" /> Message {adv.name}
+            </span>
+            <span className="text-xs font-normal text-pnc-muted">{reach.name}&apos;s advisor</span>
+          </Link>
+        </div>
+      </div>
+    </Dialog>
   );
 }
