@@ -4,24 +4,62 @@ import { NO_ACCESS } from "@/data/family";
 import { assetCategories, type AssetAccess, type FamilyAsset } from "@/data/types";
 import { cn } from "@/lib/format";
 
-type Level = "hidden" | "balance" | "activity";
+type Column = { key: "view" | "activity"; label: string; hint: string };
 
-const levels: { id: Level; label: string }[] = [
-  { id: "hidden", label: "Hidden" },
-  { id: "balance", label: "Balance" },
-  { id: "activity", label: "Balance and activity" },
+const columns: Column[] = [
+  { key: "view", label: "View balance", hint: "See the asset and its balance" },
+  {
+    key: "activity",
+    label: "View activity",
+    hint: "See the balance plus transactions, statements and documents",
+  },
 ];
 
-const levelOf = (a: AssetAccess): Level =>
-  a.activity ? "activity" : a.view ? "balance" : "hidden";
+/** The one option picked for an asset: activity includes the balance; null is hidden. */
+const levelOf = (a: AssetAccess): Column["key"] | null =>
+  a.activity ? "activity" : a.view ? "view" : null;
 
-const accessFor = (level: Level): AssetAccess =>
-  level === "hidden" ? NO_ACCESS : { ...NO_ACCESS, view: true, activity: level === "activity" };
+const accessFor = (level: Column["key"] | null): AssetAccess =>
+  level ? { ...NO_ACCESS, view: true, activity: level === "activity" } : NO_ACCESS;
 
 /**
- * What a role can see, asset by asset: hidden, the balance, or the balance
- * and its activity. Roles only decide visibility; moving money or changing an
- * account is for its owners alone, so there is nothing else to set here.
+ * One round radio button. Picking it sets the asset's visibility; clicking it
+ * again when it's already picked clears it, hiding the asset from the role.
+ */
+function Radio({
+  name,
+  picked,
+  disabled,
+  label,
+  onPick,
+}: {
+  name: string;
+  picked: boolean;
+  disabled?: boolean;
+  label?: string;
+  onPick: (on: boolean) => void;
+}) {
+  return (
+    <input
+      type="radio"
+      name={name}
+      aria-label={label}
+      checked={picked}
+      disabled={disabled}
+      onChange={() => onPick(true)}
+      onClick={() => picked && onPick(false)}
+      className="size-4 cursor-pointer accent-pnc-blue-700 disabled:cursor-default disabled:opacity-60"
+    />
+  );
+}
+
+/**
+ * What a role can see, asset by asset: one radio button per asset for the
+ * balance or the balance and activity (neither picked: hidden), grouped by
+ * category. Roles never grant control, since
+ * only an account's owners can move money or change it. Table layout when the
+ * container is wide, stacked rows when narrow (container queries, so it adapts
+ * inside the phone too).
  */
 export function AccessMatrix({
   assets,
@@ -37,59 +75,104 @@ export function AccessMatrix({
   const groups = assetCategories
     .map((category) => ({ category, items: assets.filter((a) => a.category === category) }))
     .filter((g) => g.items.length > 0);
+
   const label = (asset: FamilyAsset) => `${asset.name}${asset.last4 ? ` x${asset.last4}` : ""}`;
 
   return (
-    <div className="space-y-5">
-      {groups.map(({ category, items }) => (
-        <section key={category}>
-          <h4 className="mb-2 text-xs font-semibold text-pnc-muted">{category}</h4>
-          <ul className="divide-y divide-pnc-line rounded-md border border-pnc-line">
-            {items.map((asset) => {
-              const current = levelOf(value(asset.id));
-              return (
-                <li
-                  key={asset.id}
-                  className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3"
+    <div className="@container">
+      {/* Wide: one table per category, like a permissions matrix. */}
+      <div className="hidden space-y-5 @xl:block">
+        {groups.map(({ category, items }) => (
+          <table key={category} className="w-full table-fixed text-sm">
+            <colgroup>
+              <col />
+              {columns.map((c) => (
+                <col key={c.key} className="w-[6.5rem]" />
+              ))}
+            </colgroup>
+            <thead>
+              <tr className="border-b border-pnc-line bg-pnc-surface">
+                <th
+                  scope="col"
+                  className="rounded-tl-md px-4 py-2 text-left font-semibold text-pnc-ink"
                 >
-                  <span className="min-w-0 flex-1 basis-40 text-sm font-semibold text-pnc-ink">
-                    {label(asset)}
-                  </span>
-                  <div
-                    role="radiogroup"
-                    aria-label={`What this role sees of ${label(asset)}`}
-                    className="flex shrink-0 rounded-full bg-pnc-chip p-0.5"
+                  {category}
+                </th>
+                {columns.map((c, i) => (
+                  <th
+                    key={c.key}
+                    scope="col"
+                    title={c.hint}
+                    className={cn(
+                      "border-l border-pnc-line px-2 py-2 text-center text-xs font-semibold text-pnc-muted",
+                      i === columns.length - 1 && "rounded-tr-md",
+                    )}
                   >
-                    {levels.map((l) => {
-                      const on = current === l.id;
-                      return (
-                        <button
-                          key={l.id}
-                          type="button"
-                          role="radio"
-                          aria-checked={on}
+                    {c.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((asset) => {
+                const level = levelOf(value(asset.id));
+                return (
+                  <tr key={asset.id} className="border-b border-pnc-line last:border-b-0">
+                    <th scope="row" className="px-4 py-2.5 text-left font-normal">
+                      <span className="block truncate text-pnc-ink" title={label(asset)}>
+                        {label(asset)}
+                      </span>
+                    </th>
+                    {columns.map((c) => (
+                      <td key={c.key} className="border-l border-pnc-line px-2 py-2.5 text-center">
+                        <Radio
+                          name={`see-${asset.id}`}
+                          label={`${c.label}: ${label(asset)}`}
+                          picked={level === c.key}
                           disabled={readOnly}
-                          onClick={() => onChange?.(asset.id, accessFor(l.id))}
-                          className={cn(
-                            "rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-pnc-link disabled:cursor-default",
-                            on
-                              ? l.id === "hidden"
-                                ? "bg-white text-pnc-ink shadow-card"
-                                : "bg-pnc-blue-700 text-white shadow-card"
-                              : "text-pnc-muted enabled:hover:text-pnc-ink",
-                          )}
-                        >
-                          {l.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      ))}
+                          onPick={(on) => onChange?.(asset.id, accessFor(on ? c.key : null))}
+                        />
+                      </td>
+                    ))}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        ))}
+      </div>
+
+      {/* Narrow: one row per asset with its two options underneath. */}
+      <div className="space-y-5 @xl:hidden">
+        {groups.map(({ category, items }) => (
+          <section key={category}>
+            <h4 className="mb-2 text-xs font-semibold text-pnc-muted">{category}</h4>
+            <ul className="divide-y divide-pnc-line overflow-hidden rounded-md border border-pnc-line">
+              {items.map((asset) => {
+                const level = levelOf(value(asset.id));
+                return (
+                  <li key={asset.id} className="px-3 py-3">
+                    <p className="text-sm font-semibold text-pnc-ink">{label(asset)}</p>
+                    <div className="mt-2 flex flex-wrap gap-x-5 gap-y-2">
+                      {columns.map((c) => (
+                        <label key={c.key} className="flex items-center gap-2 text-sm text-pnc-ink">
+                          <Radio
+                            name={`see-narrow-${asset.id}`}
+                            picked={level === c.key}
+                            disabled={readOnly}
+                            onPick={(on) => onChange?.(asset.id, accessFor(on ? c.key : null))}
+                          />
+                          {c.label}
+                        </label>
+                      ))}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        ))}
+      </div>
     </div>
   );
 }
