@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, type MouseEvent } from "react";
+import { Fragment, useEffect, useState, type MouseEvent } from "react";
 import { ChevronRight } from "lucide-react";
 import { AttentionIcon } from "@/components/advisor/AttentionIcon";
 import { Pagination, usePagination } from "@/components/advisor/Pagination";
 import { useCustomerJump } from "@/components/advisor/useCustomerJump";
 import { WillStatus } from "@/components/advisor/WillStatus";
+import { EstateActions, hasEstate } from "@/components/advisor/estate/EstatePanel";
 import { Money } from "@/components/ui/Money";
 import { MOCK_AS_OF } from "@/data/mock";
 import type { AdvisorCustomer } from "@/data/types";
@@ -48,7 +49,7 @@ export function CustomerTable({ customers }: { customers: AdvisorCustomer[] }) {
   const pager = usePagination(shown, PAGE_SIZE);
   useCustomerJump(shown, PAGE_SIZE, pager.setPage);
 
-  // A link to one customer's row (from the outreach banner) shows everyone, so the row exists.
+  // A link to one customer's row (e.g. from a notification) shows everyone, so the row exists.
   useEffect(() => {
     const show = () => {
       if (customers.some((c) => `#${customerAnchor(c.id)}` === window.location.hash))
@@ -109,7 +110,7 @@ export function CustomerTable({ customers }: { customers: AdvisorCustomer[] }) {
         {/* Fixed layout keeps columns from shifting between pages. */}
         <table className="w-full min-w-[48rem] table-fixed text-left text-sm">
           <colgroup>
-            <col className="w-12" />
+            <col className="w-14" />
             <col />
             <col className="w-28" />
             <col className="w-28" />
@@ -147,77 +148,86 @@ export function CustomerTable({ customers }: { customers: AdvisorCustomer[] }) {
               const loss = openLoss(c);
               const sinceContact = daysBetween(c.lastContact, MOCK_AS_OF);
               const untilReview = daysBetween(MOCK_AS_OF, c.nextReview);
+              const estate = hasEstate(c);
               return (
-                <tr
-                  key={c.id}
-                  id={customerAnchor(c.id)}
-                  onClick={(e) => openRow(e, c.id)}
-                  className={cn(
-                    "group cursor-pointer scroll-mt-24 border-b border-pnc-line align-top transition-colors last:border-b-0 target:bg-pnc-blue-50",
-                    loss ? "bg-attention-bg/60 hover:bg-attention-bg" : "hover:bg-pnc-blue-50/60",
-                  )}
-                >
-                  <td className="py-4 pl-4 pr-2">
-                    {loss && (
-                      <AttentionIcon label={`Needs attention: ${lossTag(loss).toLowerCase()}`} />
+                <Fragment key={c.id}>
+                  <tr
+                    id={customerAnchor(c.id)}
+                    onClick={(e) => openRow(e, c.id)}
+                    className={cn(
+                      "group cursor-pointer scroll-mt-24 align-top transition-colors target:bg-pnc-blue-50",
+                      !estate && "border-b border-pnc-line last:border-b-0",
+                      loss ? "bg-attention-bg/60 hover:bg-attention-bg" : "hover:bg-pnc-blue-50/60",
                     )}
-                  </td>
-                  <td className="py-4 pr-4">
-                    <Link
-                      href={routes.advisorClient(c.id)}
-                      className="block truncate font-semibold text-pnc-link underline decoration-pnc-link/30 underline-offset-4 group-hover:decoration-pnc-link focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pnc-link"
-                      title={`Open ${c.name}`}
-                    >
-                      {c.name}
-                    </Link>
-                    <span className="block text-xs leading-snug text-pnc-muted">
-                      {[
-                        c.segment,
-                        ...c.household.map((m) => `${m.name} (${m.relationship.toLowerCase()})`),
-                      ].join(" · ")}
-                    </span>
-                    {loss && (
-                      <span className="mt-1.5 inline-flex items-center whitespace-nowrap rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-attention ring-1 ring-attention-line">
-                        {lossTag(loss)} · {formatDate(loss.date, "monthDay")}
-                      </span>
-                    )}
-                  </td>
-                  <td className="py-4 pr-4 text-right">
-                    <Money value={c.relationshipValue} compact className="font-semibold" />
-                    <span className="block text-xs text-pnc-muted">{c.accountCount} accounts</span>
-                  </td>
-                  <td className="py-4 pr-4">
-                    <time dateTime={c.lastContact} className="block text-pnc-ink">
-                      {formatDate(c.lastContact, "monthDay")}
-                    </time>
-                    <span
-                      className={cn(
-                        "block text-xs",
-                        sinceContact > STALE_CONTACT_DAYS
-                          ? "font-semibold text-pnc-orange-600"
-                          : "text-pnc-muted",
+                  >
+                    <td className="py-4 pl-4 pr-2">
+                      {loss && (
+                        <AttentionIcon label={`Needs attention: ${lossTag(loss).toLowerCase()}`} />
                       )}
-                    >
-                      {relativeDay(c.lastContact, MOCK_AS_OF)}
-                    </span>
-                  </td>
-                  <td className="py-4 pr-4">
-                    <time dateTime={c.nextReview} className="block text-pnc-ink">
-                      {formatDate(c.nextReview, "medium")}
-                    </time>
-                    {untilReview >= 0 && untilReview <= REVIEW_SOON_DAYS && (
-                      <span className="block text-xs font-semibold text-pnc-orange-600">
-                        {relativeDay(c.nextReview, MOCK_AS_OF)}
+                    </td>
+                    <td className="py-4 pr-4">
+                      <Link
+                        href={routes.advisorClient(c.id)}
+                        className="block truncate font-semibold text-pnc-link underline decoration-pnc-link/30 underline-offset-4 group-hover:decoration-pnc-link focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pnc-link"
+                        title={`Open ${c.name}`}
+                      >
+                        {c.name}
+                      </Link>
+                      <span className="block text-xs leading-snug text-pnc-muted">{c.segment}</span>
+                      {loss && (
+                        <span className="mt-1.5 inline-flex items-center whitespace-nowrap rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-attention ring-1 ring-attention-line">
+                          {lossTag(loss)} · {formatDate(loss.date, "monthDay")}
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-4 pr-4 text-right">
+                      <Money value={c.relationshipValue} compact className="font-semibold" />
+                      <span className="block text-xs text-pnc-muted">
+                        {c.accountCount} accounts
                       </span>
-                    )}
-                  </td>
-                  <td className="py-4 pr-4">
-                    <WillStatus customer={c} />
-                  </td>
-                  <td className="py-4 pr-4 text-right" aria-hidden="true">
-                    <ChevronRight className="ml-auto size-5 text-pnc-muted transition-transform group-hover:translate-x-0.5 group-hover:text-pnc-link" />
-                  </td>
-                </tr>
+                    </td>
+                    <td className="py-4 pr-4">
+                      <time dateTime={c.lastContact} className="block text-pnc-ink">
+                        {formatDate(c.lastContact, "monthDay")}
+                      </time>
+                      <span
+                        className={cn(
+                          "block text-xs",
+                          sinceContact > STALE_CONTACT_DAYS
+                            ? "font-semibold text-pnc-orange-600"
+                            : "text-pnc-muted",
+                        )}
+                      >
+                        {relativeDay(c.lastContact, MOCK_AS_OF)}
+                      </span>
+                    </td>
+                    <td className="py-4 pr-4">
+                      <time dateTime={c.nextReview} className="block text-pnc-ink">
+                        {formatDate(c.nextReview, "medium")}
+                      </time>
+                      {untilReview >= 0 && untilReview <= REVIEW_SOON_DAYS && (
+                        <span className="block text-xs font-semibold text-pnc-orange-600">
+                          {relativeDay(c.nextReview, MOCK_AS_OF)}
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-4 pr-4">
+                      <WillStatus customer={c} />
+                    </td>
+                    <td className="py-4 pr-4 text-right" aria-hidden="true">
+                      <ChevronRight className="ml-auto size-5 text-pnc-muted transition-transform group-hover:translate-x-0.5 group-hover:text-pnc-link" />
+                    </td>
+                  </tr>
+                  {/* A deceased client's next actions, across the row beneath them. */}
+                  {estate && (
+                    <tr className="border-b border-pnc-line bg-attention-bg/60">
+                      <td />
+                      <td colSpan={6} className="pb-4 pr-4">
+                        <EstateActions customer={c} />
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
               );
             })}
           </tbody>

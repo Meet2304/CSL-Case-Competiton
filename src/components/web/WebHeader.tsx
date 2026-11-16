@@ -9,6 +9,7 @@ import { useCustomerNav } from "@/components/customer/useCustomerNav";
 import { SignOffButton } from "@/components/shared/SignOffButton";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
 import { useWillProgress } from "@/components/will/useWillProgress";
+import { unreadCount, useMessages } from "@/lib/messages";
 import type { Role } from "@/data/types";
 import { cn } from "@/lib/format";
 import { routes, toPublicPath } from "@/lib/routes";
@@ -18,6 +19,8 @@ type NavItem = {
   href: string;
   /** A count shown beside the label (e.g. reminders). */
   badge?: number;
+  /** What the count is of, for screen readers (default "reminder"). */
+  badgeNoun?: string;
   /** Pages under this entry: it opens a menu of them instead of linking. */
   menu?: MenuItem[];
 };
@@ -31,21 +34,30 @@ const linkClass = (active: boolean) =>
       "text-white after:absolute after:inset-x-2.5 after:bottom-0 after:h-[3px] after:rounded-t after:bg-pnc-orange sm:after:inset-x-4",
   );
 
-function Badge({ count }: { count?: number }) {
+function Badge({ count, noun = "reminder" }: { count?: number; noun?: string }) {
   if (!count) return null;
   return (
     <span className="grid h-5 min-w-5 place-items-center rounded-full bg-pnc-orange px-1.5 text-2xs font-bold text-white">
       {count}
-      <span className="sr-only"> {count === 1 ? "reminder" : "reminders"}</span>
+      <span className="sr-only"> {count === 1 ? noun : `${noun}s`}</span>
     </span>
   );
 }
 
-const advisorNav: NavItem[] = [{ label: "Home", href: routes.advisor }];
-
 export function WebHeader({ variant = "customer" }: { variant?: Role }) {
   const nav = useCustomerNav();
   const will = useWillProgress();
+  const unread = unreadCount(useMessages());
+  // Advisors: their book, and their conversations with clients and the people around them.
+  const advisorNav: NavItem[] = [
+    { label: "Home", href: routes.advisor },
+    {
+      label: "Messages",
+      href: routes.advisorMessages,
+      badge: unread,
+      badgeNoun: "unread conversation",
+    },
+  ];
   // Customers: Home, their assets (with the will under them), then people.
   const navItems: NavItem[] =
     variant === "advisor"
@@ -113,7 +125,7 @@ export function WebHeader({ variant = "customer" }: { variant?: Role }) {
                 className={linkClass(active)}
               >
                 {item.label}
-                <Badge count={item.badge} />
+                <Badge count={item.badge} noun={item.badgeNoun} />
               </Link>
             );
           })}

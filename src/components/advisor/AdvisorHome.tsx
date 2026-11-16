@@ -14,7 +14,6 @@ import { ClientSearch } from "./ClientSearch";
 import { CustomerList } from "./CustomerList";
 import { CustomerTable } from "./CustomerTable";
 import { NotificationList } from "./NotificationList";
-import { OutreachBanner } from "./OutreachBanner";
 import { BookActions } from "./RecordDeathDialog";
 import { useAdvisorBook } from "./useAdvisorBook";
 
@@ -42,8 +41,6 @@ export function WebAdvisorHome() {
       <div className="@container mx-auto max-w-7xl space-y-6 px-4 pb-10 sm:px-6">
         {/* Headline numbers first, lifted onto the hero band. */}
         <AdvisorStats stats={stats} className="relative -mt-10" />
-
-        <OutreachBanner />
 
         {/* Like the customer home: the main list, with a slimmer notifications card beside it. */}
         <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_21rem]">
@@ -119,7 +116,6 @@ export function MobileAdvisorHome() {
 
       <div className="@container space-y-4 px-3 pt-4">
         <ClientSearch customers={customers} />
-        <OutreachBanner />
         <MobileCard>
           <h2 className="flex items-center justify-between border-b border-pnc-line px-4 py-3 font-semibold">
             <span>

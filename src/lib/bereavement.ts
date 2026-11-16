@@ -38,6 +38,10 @@ export type BereavementState = {
   flows: Record<string, FlowProgress>;
   /** Who has opened the condolence banner, by person id: the loss they saw. It then stays hidden. */
   seenBy?: Record<string, string>;
+  /** Wealth transfers the advisor has started, by the deceased person's id. */
+  transfers?: Record<string, { initiatedOn: string }>;
+  /** When the advisor opened the death certificate, by the deceased person's id. */
+  certificateReviewed?: Record<string, string>;
 };
 
 const STORAGE_KEY = "pnc-bereavement-demo-v2";
@@ -114,9 +118,26 @@ export const bereavementActions = {
   acknowledgeLoss(personId: string, lossId: string) {
     update((s) => ({ ...s, seenBy: { ...s.seenBy, [personId]: lossId } }));
   },
+  /** The advisor started passing a deceased customer's estate to the beneficiaries. */
+  initiateTransfer(personId: string, at: string) {
+    update((s) => ({ ...s, transfers: { ...s.transfers, [personId]: { initiatedOn: at } } }));
+  },
+  /** The advisor opened the death certificate (the first step of processing the will). */
+  reviewCertificate(personId: string, at: string) {
+    const done = read().certificateReviewed?.[personId];
+    if (done) return;
+    update((s) => ({ ...s, certificateReviewed: { ...s.certificateReviewed, [personId]: at } }));
+  },
   /** Clears the survivor's progress but keeps the recorded loss, for the demo. */
   resetProgress() {
-    update((s) => ({ ...s, deathCertificate: undefined, flows: {}, seenBy: {} }));
+    update((s) => ({
+      ...s,
+      deathCertificate: undefined,
+      flows: {},
+      seenBy: {},
+      transfers: {},
+      certificateReviewed: {},
+    }));
   },
   /** Clears everything, for the demo. */
   reset() {

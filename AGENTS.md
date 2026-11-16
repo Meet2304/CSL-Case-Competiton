@@ -66,6 +66,17 @@ and mobile views stay in one design language.
   entry (`rulebook.sources`) through `Citations`, and ends with actions. Build the customer context
   from the same permission-filtered data the pages use, never the raw household. Add a question by
   adding an intent there with a test in `src/lib/findoe/__tests__`.
+- **A deceased client's estate (advisor):** each family member has their own advisor; this book's
+  advisor serves John alone (`c-sample`, his own accounts). When John's death is recorded, his row
+  shows next actions and his client page gains an **Estate** tab (`EstatePanel.tsx`,
+  `routes.advisorEstate(id)`): the death certificate, the will on file and how every account passes
+  (`transferPlan` in `src/lib/estate.ts`, mock will and certificate in `src/data/estate.ts`), and
+  "Initiate wealth transfer", which notifies the beneficiaries (minors through their custodian) and
+  their own advisors. Beneficiaries aren't the advisor's clients: message them, never manage them.
+- **Messages (advisor):** `routes.advisorMessages`, a two-pane inbox (`Messages.tsx`). Seeded
+  conversations are mock data in `src/data/messages.ts`; new ones live in the browser
+  (`src/lib/messages.ts`); replies are simulated. Never read the clock while rendering a page that
+  is built ahead of time (use a hook that returns nothing on the server).
 - **Advisor attention logic** lives in `src/lib/advisor.ts`; drive UI from
   `openLoss` / `needsAttention` / `sortByAttention` / `buildNotifications` rather
   than re-implementing the rules in components.

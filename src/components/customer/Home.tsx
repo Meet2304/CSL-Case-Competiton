@@ -16,9 +16,19 @@ import { useNudges } from "@/components/customer/useNudges";
 import { useViewer } from "@/components/customer/Viewer";
 import { FamiliesCard } from "@/components/family/FamiliesCard";
 import { Money } from "@/components/ui/Money";
+import { custodianFor, willsOnFile } from "@/data/estate";
 import { MOCK_AS_OF } from "@/data/mock";
-import { cn } from "@/lib/format";
-import { accountsOf, assetsFor, familiesOf, firstName, type PersonAsset } from "@/lib/household";
+import { useBereavement } from "@/lib/bereavement";
+import { transferPlan } from "@/lib/estate";
+import { cn, formatMoney } from "@/lib/format";
+import {
+  accountsOf,
+  assetsFor,
+  familiesOf,
+  firstName,
+  personById,
+  type PersonAsset,
+} from "@/lib/household";
 import { familyNudges } from "@/lib/nudges";
 import { balanceSheet, portfolioAnalysis } from "@/lib/portfolio";
 import { routes } from "@/lib/routes";
@@ -35,6 +45,7 @@ export function Home() {
   const nudges = useNudges();
   const items = assetsFor(household, person.id, accounts, deceasedIds);
   const owned = accountsOf(accounts, person.id).owned;
+  const estate = useEstateNotice();
 
   const notices: CustomerNotice[] = [
     ...(loss && !isMinor
@@ -49,6 +60,7 @@ export function Home() {
           },
         ]
       : []),
+    ...estate,
     ...nudges,
     ...familyNudges({
       person,
@@ -157,4 +169,40 @@ function AllAccounts({ items }: { items: PersonAsset[] }) {
       </div>
     </div>
   );
+}
+
+/**
+ * Once an advisor starts passing a deceased family member's estate on, each
+ * adult beneficiary is told what reaches them (a custodian also hears about
+ * the child's share they'll hold). Minors are never shown the estate.
+ */
+function useEstateNotice(): CustomerNotice[] {
+  const { person, isMinor, accounts } = useViewer();
+  const { transfers } = useBereavement();
+  if (isMinor) return [];
+  return Object.keys(transfers ?? {}).flatMap((decedentId) => {
+    const will = willsOnFile[decedentId];
+    if (!will) return [];
+    const plan = transferPlan(accounts, decedentId, will);
+    const mine = plan.shares.find((s) => s.personId === person.id);
+    const held = plan.shares.filter((s) => custodianFor[s.personId] === person.id);
+    if (!mine && held.length === 0) return [];
+    const name = firstName(personById(decedentId)?.name ?? "");
+    const forWards = held
+      .map(
+        (s) =>
+          ` You'll also hold ${formatMoney(s.net)} for ${personById(s.personId)?.name} until they turn 18.`,
+      )
+      .join("");
+    return [
+      {
+        id: `estate-${decedentId}`,
+        kind: "loss" as const,
+        tone: "info" as const,
+        title: `${name}'s estate is being passed on`,
+        body: `${name}'s advisor has started the transfer his will sets out.${mine ? ` ${formatMoney(mine.net)} passes to you, after your share of his debts.` : ""}${forWards} There's nothing to do today.`,
+        action: { label: "See what passes to you", href: routes.unclaimedAssets },
+      },
+    ];
+  });
 }

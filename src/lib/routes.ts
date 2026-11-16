@@ -39,6 +39,12 @@ export const routes = {
   advisor: "/advisor",
   /** Advisor: one client's summary, family, loss guide and assistant. */
   advisorClient: (id: string) => `/advisor/clients/${id}`,
+  /** Advisor: a deceased client's estate — death certificate, will and wealth transfer. */
+  advisorEstate: (id: string) => `/advisor/clients/${id}#estate`,
+  /** Advisor: conversations with clients, beneficiaries and other advisors. */
+  advisorMessages: "/advisor/messages",
+  /** Advisor: one conversation, by contact id. */
+  advisorMessage: (contactId: string) => `/advisor/messages#${contactId}`,
 } as const;
 
 export type View = "web" | "mobile";
