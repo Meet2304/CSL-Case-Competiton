@@ -6,6 +6,7 @@ import { PncLogo } from "@/components/brand/PncLogo";
 import { useCustomerNav } from "@/components/customer/useCustomerNav";
 import { SignOffButton } from "@/components/shared/SignOffButton";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
+import { unreadCount, useMessages } from "@/lib/messages";
 import type { Role } from "@/data/types";
 import { cn } from "@/lib/format";
 import { routes, toPublicPath } from "@/lib/routes";
@@ -17,10 +18,14 @@ type NavItem = {
   badge?: number;
 };
 
-const advisorNav: NavItem[] = [{ label: "Home", href: routes.advisor }];
 
 export function WebHeader({ variant = "customer" }: { variant?: Role }) {
   const nav = useCustomerNav();
+  const unread = unreadCount(useMessages());
+  const advisorNav: NavItem[] = [
+    { label: "Home", href: routes.advisor },
+    { label: "Messages", href: routes.advisorMessages, badge: unread },
+  ];
   // Customers: Home, their assets (beneficiaries live there), their will, then people.
   const navItems: NavItem[] =
     variant === "advisor"

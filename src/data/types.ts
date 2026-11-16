@@ -318,6 +318,8 @@ export type AdvisorNotification = {
   steps?: string[];
   /** Suggested wording for a humane first call (loss notifications). */
   outreach?: string;
+  /** Where the notification leads, when not the client's page (e.g. the Estate tab). */
+  action?: { label: string; href: string };
 };
 
 // ---------------------------------------------------------------------------

@@ -10,6 +10,7 @@ import type { LossEvent } from "@/data/types";
 import { customerDirectory } from "@/lib/advisor";
 import { bereavementActions, type RecordedLoss } from "@/lib/bereavement";
 import { householdActions } from "@/lib/householdStore";
+import { messagesActions } from "@/lib/messages";
 import { caseworkActions, useHasCasework } from "@/lib/settlement/casework";
 import { reviewActions, useReviews } from "@/lib/settlement/reviews";
 import { resetAllWills } from "@/lib/will/storage";
@@ -63,6 +64,7 @@ export function resetDemo() {
   reviewActions.reset();
   caseworkActions.reset();
   householdActions.reset();
+  messagesActions.reset();
   resetAllWills();
 }
 
@@ -70,7 +72,7 @@ export function resetDemo() {
  * Bank-side intake, opened from the Next Steps menu: record that a customer
  * has died. Only the person, date and source are taken here — the impact on
  * their family is assessed afterwards from the household records (see the
- * outreach banner).
+ * notification).
  */
 export function RecordDeathDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { recorded } = useAdvisorBook();

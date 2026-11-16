@@ -1,6 +1,7 @@
 import type { AdvisorCustomer, AdvisorNotification, LossEvent } from "@/data/types";
 import { outreachGuide } from "@/data/bereavement";
 import { daysBetween, firstName, formatDate } from "@/lib/format";
+import { routes } from "@/lib/routes";
 
 /** The most recent loss event the advisor has not finished following up on. */
 export function openLoss(customer: AdvisorCustomer): LossEvent | undefined {
@@ -28,6 +29,13 @@ export function sortByAttention(customers: AdvisorCustomer[]): AdvisorCustomer[]
     return lastName(a).localeCompare(lastName(b));
   });
 }
+
+/** When the client themselves has died: the estate work, from the Estate tab. */
+export const estateSteps = [
+  "Review the death certificate the family sent",
+  "Start the wealth transfer the will sets out",
+  "Message the beneficiaries; their own advisors are told too",
+];
 
 export const lossFollowUpSteps = [
   "Call to offer condolences and introduce yourself to the surviving family",
@@ -68,11 +76,12 @@ export function buildNotifications(
           ? `${c.name} · passed away`
           : `${c.name} · ${loss.relationship.toLowerCase()} passed away`,
         body: self
-          ? `${c.name} ${died} ${contact ? `Reach out to ${contact.name} (${contact.relationship.toLowerCase()}) and take the next steps below.` : "Work with the estate's executor on the next steps below."}`
+          ? `${c.name} ${died} ${c.will?.status === "on-file" ? "A will is on file, so the estate can pass as it directs." : contact ? `Reach out to ${contact.name} (${contact.relationship.toLowerCase()}) and take the next steps below.` : "Work with the estate's executor on the next steps below."}`
           : `${loss.memberName}, ${firstName(c.name)}'s ${loss.relationship.toLowerCase()}, ${died} Reach out to ${firstName(c.name)} and take the next steps below.`,
         date: loss.date,
         urgent: true,
-        steps: lossFollowUpSteps,
+        steps: self ? estateSteps : lossFollowUpSteps,
+        action: self ? { label: "Open estate", href: routes.advisorEstate(c.id) } : undefined,
         outreach: contact ? outreachGuide(contact.name, loss.memberName).script : undefined,
       },
     ];

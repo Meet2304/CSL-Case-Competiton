@@ -128,10 +128,10 @@ export function NotificationList({
                 </>
               )}
               <a
-                href={routes.advisorClient(n.customerId)}
+                href={n.action?.href ?? routes.advisorClient(n.customerId)}
                 className="mt-3 inline-flex items-center gap-1 font-semibold text-pnc-link hover:underline"
               >
-                {n.kind === "loss" ? "Open loss guide" : "View client"}{" "}
+                {n.action?.label ?? (n.kind === "loss" ? "Open loss guide" : "View client")}{" "}
                 <ArrowRight className="size-3.5" aria-hidden="true" />
               </a>
             </div>

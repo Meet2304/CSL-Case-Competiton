@@ -11,6 +11,7 @@ import {
   type FindoeMode,
 } from "@/components/advisor/client/FindoePanel";
 import { NextStepsView } from "@/components/advisor/client/NextStepsView";
+import { EstatePanel, hasEstate } from "@/components/advisor/estate/EstatePanel";
 import { ClientPanel } from "@/components/advisor/client/panels";
 import { useAdvisorBook } from "@/components/advisor/useAdvisorBook";
 import { MockBadge } from "@/components/mock/Mock";
@@ -31,6 +32,7 @@ import { useFitToViewport } from "@/components/shared/useFitToViewport";
 const allTabs = [
   { id: "next", label: "Next steps" },
   { id: "client", label: "Client" },
+  { id: "estate", label: "Estate" },
 ] as const;
 type TabId = (typeof allTabs)[number]["id"];
 const tabIds = allTabs.map((t) => t.id);
@@ -276,11 +278,16 @@ export function ClientWorkspace({ customerId }: { customerId: string }) {
     setBusy(false);
   }
 
+  const estate = hasEstate(customer);
+  const tabs = estate
+    ? [allTabs[2], allTabs[0], allTabs[1]]
+    : allTabs.filter((t) => t.id !== "estate");
+  const open: TabId = tab === "estate" && !estate ? "next" : tab;
+
   function onTabKey(e: KeyboardEvent<HTMLButtonElement>, index: number) {
     if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
     e.preventDefault();
-    const next =
-      allTabs[(index + (e.key === "ArrowRight" ? 1 : allTabs.length - 1)) % allTabs.length];
+    const next = tabs[(index + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
     setTab(next.id);
     document.getElementById(`${baseId}-tab-${next.id}`)?.focus();
   }
@@ -304,18 +311,18 @@ export function ClientWorkspace({ customerId }: { customerId: string }) {
             aria-label={`${customer.name}`}
             className="no-scrollbar flex overflow-x-auto border-b border-pnc-line px-3"
           >
-            {allTabs.map((t, i) => (
+            {tabs.map((t, i) => (
               <button
                 key={t.id}
                 id={`${baseId}-tab-${t.id}`}
                 type="button"
                 role="tab"
-                aria-selected={tab === t.id}
+                aria-selected={open === t.id}
                 aria-controls={`${baseId}-panel`}
-                tabIndex={tab === t.id ? 0 : -1}
+                tabIndex={open === t.id ? 0 : -1}
                 onClick={() => setTab(t.id)}
                 onKeyDown={(e) => onTabKey(e, i)}
-                className={tabButton(tab === t.id)}
+                className={tabButton(open === t.id)}
               >
                 {t.label}
                 {t.id === "next" && guidance.steps.length > 0 && (
@@ -330,10 +337,11 @@ export function ClientWorkspace({ customerId }: { customerId: string }) {
           <div
             id={`${baseId}-panel`}
             role="tabpanel"
-            aria-labelledby={`${baseId}-tab-${tab}`}
+            aria-labelledby={`${baseId}-tab-${open}`}
             className="@container min-w-0 p-5 @3xl:p-7"
           >
-            {tab === "next" && (
+            {open === "estate" && <EstatePanel customer={customer} />}
+            {open === "next" && (
               <NextStepsView
                 facts={facts}
                 guidance={guidance}
@@ -347,7 +355,7 @@ export function ClientWorkspace({ customerId }: { customerId: string }) {
                 onAsk={(q) => ask(q)}
               />
             )}
-            {tab === "client" && <ClientPanel facts={facts} />}
+            {open === "client" && <ClientPanel facts={facts} />}
           </div>
         </section>
 

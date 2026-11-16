@@ -27,9 +27,12 @@ const seeds: Seed[] = [
       { name: "David", relationship: "Child" },
       { name: "Alexis", relationship: "Child" },
     ],
-    segment: "Preferred Banking",
+    segment: "Private Bank",
+    // The advisor looks after John alone: his own accounts at PNC (src/data/household.ts).
+    // Maya, David and Alexis are his family and beneficiaries, not this advisor's clients.
     relationshipValue: 49_092.3,
     accountCount: 5,
+    will: { status: "on-file", updated: "2024-03-12" },
     lastContact: "2026-09-18",
     nextReview: "2027-01-12",
   },
