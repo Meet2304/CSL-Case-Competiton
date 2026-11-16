@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { House, Menu, ScrollText, Users, Wallet, type LucideIcon } from "lucide-react";
+import { House, Menu, Users, Wallet, type LucideIcon } from "lucide-react";
 import { useCustomerNav } from "@/components/customer/useCustomerNav";
 import { cn } from "@/lib/format";
 import { routes, toPublicPath } from "@/lib/routes";
@@ -15,10 +15,7 @@ export function BottomTabBar() {
   const nav = useCustomerNav();
   const tabs: Tab[] = [
     { label: "Home", href: routes.home, icon: House },
-    { label: "My Assets", href: routes.assets, icon: Wallet, badge: nav.assetReminders },
-    ...(nav.showWill
-      ? [{ label: "Will", href: routes.will, icon: ScrollText, badge: nav.willReminders }]
-      : []),
+    { label: "Assets and Debts", href: routes.assets, icon: Wallet, badge: nav.assetReminders },
     { label: "Family", href: routes.family, icon: Users },
     // Everyday banking (pay, cards, rewards, deposit) lives under More.
     {

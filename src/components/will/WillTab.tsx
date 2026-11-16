@@ -64,7 +64,7 @@ function prefillFromHousehold(state: FamilyState) {
 }
 
 /**
- * The signed-in person's will (the Will page, `routes.will`): a short start
+ * The signed-in person's will (Assets and Debts › Your will, `routes.will`): a short start
  * page, the step-by-step planner, or the will on file. While editing, one
  * breadcrumb leads back to the start page, so there's never a second "back"
  * link.
@@ -394,8 +394,8 @@ function WillOnFile({
             <IconChip icon={ScrollText} size="sm" />
             <p>
               When the time comes, {executor ? firstName(executor.member.name) : "your executor"}{" "}
-              will see your will on My Assets, under Unclaimed assets, and can begin settling your
-              estate with PNC.
+              will see your will on Assets and Debts, under Unclaimed assets, and can begin settling
+              your estate with PNC.
             </p>
           </section>
         </aside>

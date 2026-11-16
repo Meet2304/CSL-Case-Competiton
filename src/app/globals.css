@@ -34,6 +34,13 @@
   --color-law: #5b3a9e;
   --color-law-bg: #f2eefa;
   --color-law-line: #ddd3f1;
+  /*
+   * Portfolio chart series, in this fixed order (cash, retirement, investments).
+   * Checked as a set for color-vision-deficiency separation; keep them together.
+   */
+  --color-chart-cash: #0f6bd0;
+  --color-chart-retirement: #1d9a8a;
+  --color-chart-investments: #ef6a00;
   --color-mock: #8a5a00; /* mock-data labelling */
   --color-mock-bg: #fff4d6;
   --color-mock-line: #f0c75e;

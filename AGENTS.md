@@ -70,12 +70,16 @@ and mobile views stay in one design language.
   `openLoss` / `needsAttention` / `sortByAttention` / `buildNotifications` rather
   than re-implementing the rules in components.
 - **Customer pages:** `/home` (money at a glance, notifications, families) is where customers
-  land; `/assets` (My Assets) lists everything they own, manage or have shared with them.
+  land; `/assets` (Assets and Debts) lists everything they own, manage or have shared with them.
   Derive these from `assetsFor` / `assetSummary` / `familySummary` in `src/lib/household.ts`.
   The Family page opens one family in place via the hash (`routes.familyDetail(id)`).
-  There is no Planning page: adults write their will on the Will page (`routes.will`, its own nav
-  entry), and beneficiaries are named in each account's Manage panel on My Assets
-  (`routes.manageAsset(id)`). My Assets filters by All / Personal (owned or custodial) / Shared.
+  The will is the plan for what you own, so it sits under Assets and Debts: adults write it at
+  `routes.will` (`/assets/will`; `/will` and `/plan` redirect there), reached from the
+  **Assets and Debts** dropdown in the web navigation (`NavMenu` in `WebHeader.tsx`) and from
+  More on the phone. Assets can be added at `routes.addAsset` (`AddAsset.tsx`, demo flows only;
+  options are data in `src/data/addAsset.ts`). Beneficiaries are named in each account's Manage
+  panel (`routes.manageAsset(id)`). The page filters by All / Personal (owned or custodial) /
+  Shared.
   While a death in the household is being settled it gains an **Unclaimed assets** tab
   (`routes.unclaimedAssets`, `UnclaimedAssets.tsx`): the deceased's accounts that pass to the
   viewer (from `survivorPlan`), each with a guided claim (`TransferFlowView`,

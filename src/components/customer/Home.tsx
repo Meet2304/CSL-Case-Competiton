@@ -5,7 +5,9 @@ import { useId, useState } from "react";
 import { ArrowRight, ChevronDown } from "lucide-react";
 import { AccountList } from "@/components/customer/AccountList";
 import { relationLabels, useAssetDetail } from "@/components/customer/assetDetail";
-import { AssetSummary } from "@/components/customer/AssetSummary";
+import { MyTeam } from "@/components/customer/MyTeam";
+import { PortfolioAnalysisCard } from "@/components/customer/PortfolioAnalysis";
+import { PortfolioSummary } from "@/components/customer/PortfolioSummary";
 import {
   CustomerNotifications,
   type CustomerNotice,
@@ -16,27 +18,23 @@ import { FamiliesCard } from "@/components/family/FamiliesCard";
 import { Money } from "@/components/ui/Money";
 import { MOCK_AS_OF } from "@/data/mock";
 import { cn } from "@/lib/format";
-import {
-  accountsOf,
-  assetsFor,
-  assetSummary,
-  familiesOf,
-  firstName,
-  type PersonAsset,
-} from "@/lib/household";
+import { accountsOf, assetsFor, familiesOf, firstName, type PersonAsset } from "@/lib/household";
 import { familyNudges } from "@/lib/nudges";
+import { balanceSheet, portfolioAnalysis } from "@/lib/portfolio";
 import { routes } from "@/lib/routes";
 
 /**
- * A household member's home. Top row: their money at a glance (every account
- * one click away) beside their notifications. Below: the families they
- * belong to and their role in each. Responsive with container queries.
+ * A household member's home, laid out like the private-bank portfolio view.
+ * Main column: the portfolio summary (every account one click away), the
+ * families they belong to, and the portfolio analysis. Side column: their
+ * notifications and their team at the bank. On narrow screens the two columns
+ * interleave into one (summary, notifications, families, analysis, team).
  */
 export function Home() {
   const { person, isMinor, accounts, household, deceasedIds, loss } = useViewer();
   const nudges = useNudges();
   const items = assetsFor(household, person.id, accounts, deceasedIds);
-  const summary = assetSummary(accountsOf(accounts, person.id).owned);
+  const owned = accountsOf(accounts, person.id).owned;
 
   const notices: CustomerNotice[] = [
     ...(loss && !isMinor
@@ -46,7 +44,7 @@ export function Home() {
             kind: "loss" as const,
             tone: "important" as const,
             title: `Looking after ${firstName(loss.personName)}'s accounts`,
-            body: "Their accounts that pass to you are on My Assets, each with a short guided claim. Nothing is urgent today.",
+            body: "Their accounts that pass to you are on Assets and Debts, each with a short guided claim. Nothing is urgent today.",
             action: { label: "See what passes to you", href: routes.unclaimedAssets },
           },
         ]
@@ -61,14 +59,22 @@ export function Home() {
   ];
 
   return (
-    <div className="@container space-y-5">
-      <div className="grid items-start gap-5 @4xl:grid-cols-[minmax(0,1fr)_23rem]">
-        <AssetSummary summary={summary} className="@4xl:min-h-[26rem]">
-          <AllAccounts items={items} />
-        </AssetSummary>
-        <CustomerNotifications notices={notices} className="h-[26rem]" />
+    <div className="@container">
+      <div className="flex flex-col gap-5 @4xl:flex-row @4xl:items-start">
+        <div className="contents @4xl:flex @4xl:min-w-0 @4xl:flex-1 @4xl:flex-col @4xl:gap-5">
+          <PortfolioSummary sheet={balanceSheet(owned)} className="order-1">
+            <AllAccounts items={items} />
+          </PortfolioSummary>
+          <div className="order-3">
+            <FamiliesCard />
+          </div>
+          <PortfolioAnalysisCard analysis={portfolioAnalysis(owned)} className="order-4" />
+        </div>
+        <div className="contents @4xl:flex @4xl:w-[23rem] @4xl:shrink-0 @4xl:flex-col @4xl:gap-5">
+          <CustomerNotifications notices={notices} className="order-2 h-[26rem]" />
+          <MyTeam className="order-5" />
+        </div>
       </div>
-      <FamiliesCard />
     </div>
   );
 }
@@ -133,7 +139,7 @@ function AllAccounts({ items }: { items: PersonAsset[] }) {
           href={routes.assets}
           className="inline-flex items-center gap-1 px-3 py-2 text-sm font-semibold text-pnc-link hover:underline"
         >
-          Open My Assets <ArrowRight className="size-3.5" aria-hidden="true" />
+          Open Assets and Debts <ArrowRight className="size-3.5" aria-hidden="true" />
         </Link>
       </div>
       <div id={panelId} hidden={!open} className="border-t border-pnc-line">

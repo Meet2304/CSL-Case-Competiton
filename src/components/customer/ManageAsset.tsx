@@ -40,7 +40,7 @@ const actionLink =
   "inline-flex items-center gap-1.5 rounded-full border border-pnc-line bg-white px-4 py-2 text-sm font-semibold text-pnc-ink hover:border-pnc-link hover:text-pnc-link focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pnc-link";
 
 /**
- * Managing one account from My Assets: what it is, quick actions, who
+ * Managing one account from Assets and Debts: what it is, quick actions, who
  * inherits it (owners name or change the beneficiary here), which families it's shared with (owners who are a family's
  * admin can share or stop sharing here), and recent activity. Only opened for
  * accounts the person may manage (see `canManage`).

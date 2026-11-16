@@ -12,7 +12,7 @@ import { useHouseholdLoss } from "./useHouseholdLoss";
 /**
  * Soft red condolence strip shown to the household after the bank records a
  * death. Laptop: under the top navigation. Phone: just above the tab bar.
- * Adults follow it to My Assets › Unclaimed assets; children can close it.
+ * Adults follow it to Assets and Debts › Unclaimed assets; children can close it.
  * Either way it goes away for that person once they've acted on it.
  */
 export function LossStrip({ variant }: { variant: "web" | "mobile" }) {
@@ -51,7 +51,7 @@ export function LossStrip({ variant }: { variant: "web" | "mobile" }) {
       </div>
     );
 
-  /** Opens the Unclaimed assets tab, even from My Assets itself (where the URL only changes its hash). */
+  /** Opens the Unclaimed assets tab, even from Assets and Debts itself (where the URL only changes its hash). */
   function open(e: MouseEvent<HTMLAnchorElement>) {
     seen();
     if (window.location.pathname === routes.assets) {

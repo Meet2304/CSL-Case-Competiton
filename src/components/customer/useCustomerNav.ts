@@ -11,11 +11,13 @@ export function useCustomerNav() {
     personId: person.id,
     avatar: person.avatar,
     first,
-    /** Beneficiaries to name or update, fixed from My Assets. */
-    assetReminders: due.filter((n) => n.kind === "beneficiary").length,
-    /** Writing or finishing a will, done on the Will page. */
+    /** Everything to do under Assets and Debts: beneficiaries to name and the will. */
+    assetReminders: due.filter((n) => n.kind === "beneficiary" || n.kind === "will").length,
+    /** Beneficiaries to name or update, from each account's Manage panel. */
+    beneficiaryReminders: due.filter((n) => n.kind === "beneficiary").length,
+    /** Writing or finishing a will, on Your will (under Assets and Debts). */
     willReminders: due.filter((n) => n.kind === "will").length,
-    /** Wills start at 18, so minors get no Will page. */
+    /** Wills start at 18, so minors get no Your will page. */
     showWill: !isMinor,
   };
 }

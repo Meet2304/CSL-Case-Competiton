@@ -176,6 +176,15 @@ export type Advisor = {
   team: string;
 };
 
+/** Someone on the customer's relationship team ("My Team" on the home page). */
+export type TeamContact = {
+  id: string;
+  name: string;
+  title: string;
+  phone: string;
+  email: string;
+};
+
 export type FamilyRelationship = "Spouse" | "Parent" | "Child" | "Sibling";
 
 /** Who died, relative to the household's primary customer ("Self" = the primary customer). */

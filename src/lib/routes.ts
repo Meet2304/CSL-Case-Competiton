@@ -10,9 +10,9 @@ export const routes = {
   tour: "/tour",
   /** Product film: a movie-style walk through the working app. Open to everyone. */
   film: "/film",
-  /** Customer home: money at a glance, notifications and families. */
+  /** Customer home: portfolio summary and analysis, notifications, families and team. */
   home: "/home",
-  /** My Assets: everything the customer owns, manages, or family shares with them. */
+  /** Assets and Debts: everything the customer owns, manages, or family shares with them, and their will. */
   assets: "/assets",
   payTransfer: "/pay-transfer",
   rewards: "/rewards",
@@ -25,13 +25,15 @@ export const routes = {
   family: "/family",
   /** One family's assets, and (for admins) the way to manage it. */
   familyDetail: (id: string) => `/family#${id}`,
-  /** Your will: write it, see it on file (adults only). */
-  will: "/will",
-  /** Manage one account on My Assets, e.g. to name its beneficiary. */
+  /** Your will, under Assets and Debts: write it, see it on file (adults only). */
+  will: "/assets/will",
+  /** Add an asset to Assets and Debts: connect an account, track a ticker, value property, or enter one. */
+  addAsset: "/assets/add",
+  /** Manage one account on Assets and Debts, e.g. to name its beneficiary. */
   manageAsset: (accountId: string) => `/assets#manage-${accountId}`,
   /** After a death in the household: the deceased's accounts that can pass to the viewer. */
   unclaimedAssets: "/assets#unclaimed",
-  /** One claim on My Assets › Unclaimed assets, by survivor-plan item id. */
+  /** One claim on Assets and Debts › Unclaimed assets, by survivor-plan item id. */
   claimAsset: (itemId: string) => `/assets#claim-${encodeURIComponent(itemId)}`,
   /** Advisor (bank representative) home dashboard. */
   advisor: "/advisor",

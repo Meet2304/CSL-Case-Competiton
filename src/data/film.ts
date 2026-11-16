@@ -26,7 +26,7 @@ export const filmScenes: Record<string, FilmScene> = {
     as: "husband",
     world: "before",
     path: "/home",
-    ready: { text: "Your money at a glance" },
+    ready: { text: "Portfolio Summary" },
   },
   "husband-family": {
     as: "husband",
@@ -56,7 +56,7 @@ export const filmScenes: Record<string, FilmScene> = {
     as: "wife",
     world: "after",
     path: "/home",
-    ready: { text: "Your money at a glance" },
+    ready: { text: "Portfolio Summary" },
   },
   "wife-family": { as: "wife", world: "after", path: FAMILY, ready: { text: "Shared assets" } },
   "wife-assets": {
@@ -69,7 +69,7 @@ export const filmScenes: Record<string, FilmScene> = {
     as: "child1",
     world: "after",
     path: "/home",
-    ready: { text: "Your money at a glance" },
+    ready: { text: "Portfolio Summary" },
   },
 };
 
@@ -97,8 +97,8 @@ export const filmShots: FilmShot[] = [
     scene: "husband-home",
     title: "Every asset in one view",
     body: "It includes the life policy he holds outside PNC.",
-    focus: card("Your money at a glance"),
-    mark: { text: "term life policy held outside PNC" },
+    focus: card("Portfolio Summary"),
+    mark: { text: "External Accounts" },
   },
   {
     id: "gaps",

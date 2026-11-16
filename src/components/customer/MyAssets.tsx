@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useId, useState } from "react";
-import { Search, Users, X } from "lucide-react";
+import { Plus, Search, Users, X } from "lucide-react";
 import { AccountList } from "@/components/customer/AccountList";
 import { ManageAsset } from "@/components/customer/ManageAsset";
 import { RelationBadge, useAssetDetail } from "@/components/customer/assetDetail";
@@ -21,6 +22,7 @@ import {
   canManage,
   type AssetRelation,
 } from "@/lib/household";
+import { routes } from "@/lib/routes";
 
 type Group = "personal" | "shared";
 type Filter = "all" | Group;
@@ -39,13 +41,16 @@ const UNCLAIMED = "unclaimed";
 const CLAIM = "claim-";
 
 /**
- * My Assets: a summary of what the person owns, then every account they can
+ * Assets and Debts: a summary of what the person owns, then every account they can
  * see — their own, ones they manage for a child, and ones family shares with
  * them — searchable and grouped by type. Owners name beneficiaries from each
  * account's Manage panel (`#manage-<id>`), so other pages can link straight
  * to it.
  *
- * While a death in the household is being settled, a second tab, Unclaimed
+ * Adults' will lives under the same navigation entry (`routes.will`, in the
+ * Assets and Debts menu), since the will is the plan for what they own.
+ *
+ * While a death in the household is being settled, another tab, Unclaimed
  * assets (`#unclaimed`), lists the deceased's accounts that can pass to this
  * person, each with a guided claim opened in place (`#claim-<id>`).
  */
@@ -59,7 +64,7 @@ export function MyAssets() {
   const waitingClaims = useWaitingClaims();
   const unclaimed = Boolean(loss) && (hash === UNCLAIMED || hash.startsWith(CLAIM));
   const tabs = [
-    { id: "mine", label: "My assets", badge: 0, selected: !unclaimed, hash: null },
+    { id: "mine", label: "Assets and Debts", badge: 0, selected: !unclaimed, hash: null },
     {
       id: UNCLAIMED,
       label: "Unclaimed assets",
@@ -100,8 +105,8 @@ export function MyAssets() {
       {loss && (
         <div
           role="tablist"
-          aria-label="My Assets"
-          className="mb-5 flex gap-2 border-b border-pnc-line"
+          aria-label="Assets and Debts"
+          className="no-scrollbar mb-5 flex gap-2 overflow-x-auto border-b border-pnc-line"
         >
           {tabs.map((t) => (
             <button
@@ -111,14 +116,14 @@ export function MyAssets() {
               aria-selected={t.selected}
               onClick={() => setHash(t.hash)}
               className={cn(
-                "relative flex items-center gap-2 px-3 py-3 text-md font-semibold focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-pnc-link",
+                "relative flex shrink-0 items-center gap-2 px-3 py-3 text-md font-semibold focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-pnc-link",
                 t.selected
                   ? "text-pnc-ink after:absolute after:inset-x-2 after:bottom-0 after:h-[3px] after:rounded-t after:bg-pnc-orange"
                   : "text-pnc-muted hover:text-pnc-ink",
               )}
             >
               {t.label}
-              {t.badge > 0 && (
+              {!!t.badge && (
                 <span className="grid h-5 min-w-5 place-items-center rounded-full bg-pnc-orange px-1.5 text-2xs font-bold text-white">
                   {t.badge}
                   <span className="sr-only"> waiting</span>
@@ -181,6 +186,12 @@ export function MyAssets() {
                 )}
               </div>
               <div className="flex flex-wrap items-center gap-3">
+                <Link
+                  href={routes.addAsset}
+                  className="order-first inline-flex items-center gap-1.5 rounded-full bg-pnc-blue-700 px-3.5 py-1.5 text-sm font-semibold text-white hover:bg-pnc-blue-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pnc-link @3xl:order-[1000]"
+                >
+                  <Plus className="size-4" aria-hidden="true" /> Add asset
+                </Link>
                 <label
                   htmlFor={searchId}
                   className="order-last flex w-full @3xl:w-40 @6xl:w-52 min-w-0 items-center gap-2 rounded-full border border-pnc-line bg-white px-3.5 py-1.5 focus-within:border-pnc-link focus-within:ring-2 focus-within:ring-pnc-link/15"
