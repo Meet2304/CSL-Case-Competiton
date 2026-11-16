@@ -160,7 +160,7 @@ The will sits under **Assets and Debts**, the accounts it covers: open the Asset
 dropdown in the navigation (More on the phone). The old `/plan` and `/will` URLs redirect to it.
 
 - **Your will** (`/assets/will`): an 8-step planner,
-  pre-filled with your household, saved per person as you go. Progress shows as
+  started blank (nothing is filled in from the household), saved per person as you go. Progress shows as
   numbered steps across the top, each with a dropdown of its steps. Adults only;
   under-18s see a short note instead.
 - **Beneficiaries** (`/assets#manage-<accountId>`): in each account's
