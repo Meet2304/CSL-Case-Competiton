@@ -4,7 +4,8 @@
  * is saved: each flow is a demo that ends on a confirmation.
  *
  * Three classes, each a tab with its own categories: accounts already inside
- * PNC, accounts at other institutions, and assets the customer adds manually.
+ * PNC, accounts at other institutions, and assets the customer adds themselves
+ * ("Add your own asset" always comes first there).
  */
 
 /** How a kind of asset is added; each kind has its own short demo flow. */
@@ -122,9 +123,24 @@ export const addAssetGroups: AddGroup[] = [
   },
   {
     id: "manual",
-    label: "Add manually",
+    label: "Add your own",
     intro: "Property, valuables and anything else you enter yourself",
     options: [
+      {
+        id: "value",
+        category: "Other",
+        label: "Add your own asset",
+        description: "Enter any asset and its value, and update it when it changes.",
+        flow: "manual",
+        keywords: "manual value private fund other",
+        ask: {
+          title: "What is it worth?",
+          fields: [
+            { id: "name", label: "Name", placeholder: "e.g. Private fund" },
+            { id: "value", label: "Value", placeholder: "e.g. 25,000 or EUR 100" },
+          ],
+        },
+      },
       {
         id: "real-estate",
         category: "Property",
@@ -264,21 +280,6 @@ export const addAssetGroups: AddGroup[] = [
             { id: "name", label: "Name", placeholder: "e.g. Sample Startup shares" },
             { id: "quantity", label: "Units", placeholder: "e.g. 1,000" },
             { id: "price", label: "Price per unit", placeholder: "e.g. 12.50" },
-          ],
-        },
-      },
-      {
-        id: "value",
-        category: "Other",
-        label: "Asset value",
-        description: "Anything else: enter a value and update it when it changes.",
-        flow: "manual",
-        keywords: "manual value private fund other",
-        ask: {
-          title: "What is it worth?",
-          fields: [
-            { id: "name", label: "Name", placeholder: "e.g. Private fund" },
-            { id: "value", label: "Value", placeholder: "e.g. 25,000 or EUR 100" },
           ],
         },
       },
