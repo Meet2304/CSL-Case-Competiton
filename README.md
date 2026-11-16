@@ -142,7 +142,8 @@ and Child 2 sees nothing. Families are just family: no outside advisors.
 - **Members**: add people from your household in one tap, or invite someone
   by email.
 - **Roles & access**: roles only decide what each member can **see** of each
-  account: hidden, the balance, or the balance and activity. Nobody but an
+  account: hidden, the account only, or the account and its balance (no role
+  shows transactions). Nobody but an
   account's owners can move money or change it, admins included
   (`effectiveAccess` in `src/lib/family.ts`). The last admin can't be removed.
 - **Access limits are confidential to admins.** Members only see what they
