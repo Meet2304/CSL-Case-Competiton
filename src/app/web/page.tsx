@@ -9,7 +9,7 @@ import { routes } from "@/lib/routes";
 export const metadata: Metadata = { title: "Sign On" };
 
 const demoLink =
-  "inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-semibold text-white ring-1 ring-white/30 hover:bg-white/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white";
+  "mt-6 inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-pnc-blue-900 shadow-raised hover:bg-pnc-blue-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white";
 
 export default function WebLoginPage() {
   return (
@@ -27,14 +27,9 @@ export default function WebLoginPage() {
             Clients sign on to see their portfolio, their family and their plans. Advisors sign on
             to see the clients assigned to them. A concept prototype for PNC Private Bank.
           </p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Link href={routes.tour} className={demoLink}>
-              New here? Take the guided tour <ArrowRight className="size-4" aria-hidden="true" />
-            </Link>
-            <Link href={routes.film} className={demoLink}>
-              Watch the product film <ArrowRight className="size-4" aria-hidden="true" />
-            </Link>
-          </div>
+          <Link href={routes.tour} className={demoLink}>
+            Take the guided tour <ArrowRight className="size-4" aria-hidden="true" />
+          </Link>
         </div>
         <WebSignOnForm />
       </div>

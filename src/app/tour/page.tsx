@@ -4,7 +4,7 @@ import { GuidedTour } from "@/components/tour/GuidedTour";
 export const metadata: Metadata = {
   title: "Guided tour",
   description:
-    "A step-by-step walk through Findoe: the family dashboard, advisor guidance, simple next steps after a loss, and cited AI answers. All data shown is mock data.",
+    "A presenter-led walk through Findoe: two people's dashboards, one family view, what changes after a loss, the advisor's next steps and guided, cited claims. All data shown is mock data.",
 };
 
 // One layout for every device and open to everyone: src/proxy.ts lets /tour through untouched.

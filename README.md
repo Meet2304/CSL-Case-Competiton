@@ -40,36 +40,44 @@ it). A pinned mobile view on a wide screen is shown inside an iPhone frame.
 
 ## Guided tour — `/tour`
 
-A short, clickable walk through the concept, made to be talked over in customer discovery and
-presentations. It needs no sign-on. Open it from the link on the sign-on page or go straight to
-`/tour`.
+A presenter-led walk through one family's story, made to be talked over in a pitch or a customer
+conversation. It needs no sign-on. Open it with **Take the guided tour** on the sign-on page or go
+straight to `/tour`.
 
-Each of the 16 steps is one headline, one sentence and one visual; the presenter says the rest.
-The chapters are **The problem**, **Before a loss** (every asset in one view, gaps, family
-sharing), **The day it happens** (the Bank Advisor's alert, plan and transfer plan), **After the
-loss** (Maya's condolence screen, her list and a guided claim), **Findoe AI** (cited answers, the
-fixed rules, the question it asks) and **Summary**.
+The stage is dark and shows people's screens side by side. Each person's screen has its own
+glowing border and name tag, in the same color every time they appear: John green, Maya violet,
+David amber, the Bank Advisor blue. The shared family dashboard has no border, because it belongs
+to no one person.
 
-- **Move** with Back / Next, the ← and → keys, or the chapter names in the header. Each step has
-  its own link (`/tour#sharing`, `/tour#claim`, …).
-- **Nothing scrolls on a laptop or projector.** Each visual is laid out at a fixed width and
-  scaled to fit the space (`FitCanvas`), so text also grows on a bigger screen. On a phone the
-  page scrolls as a whole.
-- **The family is John, Maya, David and Alexis**, plus the Bank Advisor; no other names appear.
-- **Some steps are clickable, and choices carry forward**: naming Maya as the beneficiary of
-  Savings x0002 before the loss moves that account out of probate in the transfer plan, in Maya's
-  list and in Findoe's answer.
-- The visuals are drawn for the tour; they are not the working pages. The script and mock data
-  are in `src/data/tour.ts` (balances come from `src/data/household.ts`), the rules in
-  `src/lib/tour.ts` (tested in `src/lib/__tests__/tour.test.ts`), and the visuals in
-  `src/components/tour`. Nothing is saved; reloading starts the tour again.
+- **Nothing moves by itself.** Each press of → (or Next, Page Down or the space bar) plays one
+  step and then waits: a pointer moves and clicks, a page opens, the camera closes in. ← steps
+  back a whole stop and Home starts again. Holding a key counts as one press. The current stop is
+  kept in the URL (`/tour#23`), so a refresh or a shared link opens at the same place.
+- **Six chapters, 32 stops:** **Two views** (John and Maya sign on and land on two different
+  Assets and Debts pages), **One family** (the two screens merge into the Smith Family dashboard,
+  then close in on the shared list and on the children), **Access** (John opens Manage family and
+  switches on two assets and a debt, which appear on David's screen as he does it), **A loss** (a
+  quiet memorial for John, then three lines flow out to his closed sign-in, Maya's condolence and
+  the advisor's alert), **The advisor** (John's row, readiness score, approved death certificate,
+  Next steps, a question to Findoe with its working, and Initiate claim) and **Maya's claims**
+  (the list of what she can claim, a claim for Joint Checking that ends as Processing, then the
+  life policy's instructions with a cited Findoe answer).
+- **Made for a laptop or a projector.** Screens fill the window at any aspect ratio and text
+  scales with them. On a phone-sized window the tour asks for a larger screen.
+- **The family is John, Maya, David and Alexa**, plus the Bank Advisor; the tour's own words
+  introduce no other names.
+- The screens are drawn for the tour; they are not the working pages. People, accounts and words
+  are in `src/data/tour.ts` (balances come from `src/data/household.ts`), the script of beats and
+  the stage layout in `src/lib/tour.ts` (tested in `src/lib/__tests__/tour.test.ts`), and the
+  stage and screens in `src/components/tour`. Nothing is saved; reloading returns to the stop in
+  the URL.
 
 ## Product film — `/film`
 
 The same story as the tour, told on the working software instead of drawn visuals. The real pages
 run in a frame on a dark stage; each of the 25 shots signs in as the right person, clicks the
 real controls with a visible cursor, and a camera zooms and cuts between parts of the page. It
-needs no sign-on. Open it from the link on the sign-on page or go straight to `/film`.
+needs no sign-on. Go straight to `/film`; the sign-on page links only to the guided tour.
 
 The chapters are **Before a loss** (John's home page, the family dashboard, roles and
 account-by-account access, what David sees), **The day it happens** (the Bank Advisor records
