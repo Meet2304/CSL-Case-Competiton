@@ -27,9 +27,15 @@ import { MOCK_AS_OF } from "@/data/mock";
 import type { AdvisorCustomer } from "@/data/types";
 import { openLoss } from "@/lib/advisor";
 import { bereavementActions, currentBereavement, useBereavement } from "@/lib/bereavement";
-import { beneficiarySteps, routeLabels, transferPlan, type BeneficiaryShare } from "@/lib/estate";
+import {
+  beneficiarySteps,
+  estateReadiness,
+  routeLabels,
+  transferPlan,
+  type BeneficiaryShare,
+} from "@/lib/estate";
 import { cn, formatDate } from "@/lib/format";
-import { ageOn, currentAccounts, personById } from "@/lib/household";
+import { ageOn, currentAccounts, familiesOf, personById, takesBeneficiary } from "@/lib/household";
 import { useHousehold } from "@/lib/householdStore";
 import { messagesActions, threadOf, useMessages } from "@/lib/messages";
 import { routes } from "@/lib/routes";
@@ -189,6 +195,14 @@ export function EstatePanel({ customer }: { customer: AdvisorCustomer }) {
   const [viewing, setViewing] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const executor = personById(will.executor)?.name;
+  const readiness = estateReadiness({
+    accounts: currentAccounts(household),
+    personId,
+    will,
+    familyMembers: familiesOf(household, personId)[0]?.members.length ?? 0,
+    executorName: executor,
+    takesBeneficiary,
+  });
   const sender = personById(deathCertificates[personId].receivedFrom.personId)?.name;
 
   function initiate() {
@@ -295,6 +309,48 @@ export function EstatePanel({ customer }: { customer: AdvisorCustomer }) {
           )}
         </span>
       </header>
+
+      {/* How ready John's affairs were: what he put in place before he died. */}
+      <section
+        aria-labelledby="estate-readiness-title"
+        className="flex flex-wrap items-center gap-x-6 gap-y-4 rounded-lg border border-pnc-line p-4"
+      >
+        <div className="flex items-center gap-4">
+          <span
+            className="grid size-16 shrink-0 place-items-center rounded-full"
+            style={{
+              background: `conic-gradient(var(--color-pnc-positive) ${readiness.score}%, var(--color-pnc-chip) 0)`,
+            }}
+          >
+            <span className="grid size-12 place-items-center rounded-full bg-white font-display text-lg font-semibold tabular-nums text-pnc-ink">
+              {readiness.score}
+            </span>
+          </span>
+          <div>
+            <h3 id="estate-readiness-title" className="font-semibold text-pnc-ink">
+              How ready {john.name.split(" ")[0]} was
+            </h3>
+            <p className="text-sm font-semibold text-pnc-positive">{readiness.label}</p>
+          </div>
+        </div>
+        <ul className="grid min-w-0 flex-1 basis-80 gap-x-5 gap-y-1.5 text-sm @2xl:grid-cols-2">
+          {readiness.checks.map((c) => (
+            <li key={c.label} className="flex items-start gap-2">
+              <CircleCheck
+                className={cn(
+                  "mt-0.5 size-4 shrink-0",
+                  c.done ? "text-pnc-positive" : "text-pnc-orange-600",
+                )}
+                aria-label={c.done ? "Done" : "Partly done"}
+              />
+              <span className="min-w-0">
+                <span className="block font-semibold text-pnc-ink">{c.label}</span>
+                <span className="block text-xs text-pnc-muted">{c.detail}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
 
       {/* Processing the will, in order. */}
       <section aria-labelledby="estate-steps-title">

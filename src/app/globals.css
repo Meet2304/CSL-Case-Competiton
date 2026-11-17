@@ -194,205 +194,165 @@ html[data-scale] {
 }
 
 /*
- * Guided tour (/tour). The stage is dark so each person's screen can glow in
- * their own color: the same color every time that person appears.
+ * Guided tour (/tour). The stage is plain white. Each person's screen is a
+ * white card with one color glowing softly behind it: the same color every
+ * time that person appears.
  */
 .tour-stage {
-  --tour-ink: #060a13;
-  --tour-ink-2: #131f38;
-  --tour-husband: #34d399;
-  --tour-husband-2: #a3e635;
-  --tour-wife: #a78bfa;
-  --tour-wife-2: #f0abfc;
-  --tour-child1: #fbbf24;
-  --tour-child1-2: #fb7185;
-  --tour-advisor: #38bdf8;
-  --tour-advisor-2: #818cf8;
-  background: radial-gradient(120% 90% at 50% -10%, var(--tour-ink-2), var(--tour-ink) 64%);
+  --tour-husband: #2fbf8f;
+  --tour-wife: #9b7bf7;
+  --tour-child1: #f5a524;
+  --tour-child2: #f0619a;
+  --tour-advisor: #3b9eff;
+  /* The notes that explain Findoe's answer: customer data, the law, citations, and the accent. */
+  --tour-note-data: var(--color-pnc-blue-700);
+  --tour-note-law: #7a4fd6;
+  --tour-note-cited: var(--color-pnc-positive);
+  --tour-note-accent: var(--color-pnc-orange);
 }
 
-/*
- * In development Next.js floats a badge in the bottom-left corner, over the tour's caption.
- * Keep it off the stage while presenting; errors still show in the terminal.
- */
+/* In development Next.js floats a badge in the corner. Keep it off the stage while presenting. */
 html:has(.tour-stage) nextjs-portal {
   display: none;
 }
 
-/* Screens are scaled as a whole, so presentation zoom must not resize their text as well. */
-.tour-screen {
-  --text-3xs: 0.625rem;
-  --text-2xs: 0.6875rem;
-  --text-xs: 0.75rem;
-  --text-xs--line-height: calc(1 / 0.75);
-  --text-sm: 0.875rem;
-  --text-sm--line-height: calc(1.25 / 0.875);
-  --text-md: 0.9375rem;
-}
-
-/* The glowing border: a slow sweep of the person's two colors, and a soft halo that breathes. */
-@property --tour-angle {
-  syntax: "<angle>";
-  initial-value: 0deg;
-  inherits: false;
-}
-.tour-ring {
+/* The color behind a card: close and soft, a little heavier below, as light falls. */
+.tour-glow {
   position: absolute;
-  inset: -3px;
-  padding: 3px;
-  border-radius: 19px;
-  background: conic-gradient(
-    from var(--tour-angle),
-    var(--glow),
-    var(--glow-2),
-    var(--glow),
-    var(--glow-2),
-    var(--glow)
-  );
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  animation: tour-spin 7s linear infinite;
-}
-.tour-halo {
-  position: absolute;
-  inset: -3px;
-  border-radius: 19px;
+  inset: 0;
+  border-radius: 1.125rem;
   box-shadow:
-    0 0 22px 1px color-mix(in srgb, var(--glow) 60%, transparent),
-    0 0 90px 6px color-mix(in srgb, var(--glow-2) 26%, transparent);
-  animation: tour-breathe 4.2s ease-in-out infinite;
+    0 0 0 1px color-mix(in srgb, var(--glow) 26%, white),
+    0 0 34px 2px color-mix(in srgb, var(--glow) 30%, transparent),
+    0 22px 80px -6px color-mix(in srgb, var(--glow) 42%, transparent);
+  transition: opacity 2.4s ease;
 }
-@keyframes tour-spin {
-  to {
-    --tour-angle: 360deg;
-  }
+.tour-card {
+  box-shadow: 0 1px 2px rgb(16 24 40 / 0.05);
+  transition: filter 2.4s ease;
 }
-@keyframes tour-breathe {
-  0%,
-  100% {
-    opacity: 0.72;
-  }
-  50% {
-    opacity: 1;
-  }
+.tour-name {
+  transition: opacity 2.4s ease;
 }
-
-/* One page giving way to the next inside a screen. */
-.tour-page-in {
-  animation: tour-page-in 0.6s cubic-bezier(0.22, 0.8, 0.3, 1) both;
-}
-.tour-page-out {
-  animation: tour-page-out 0.5s ease-out 0.1s both;
-}
-/* On a screen that is also moving, the old page rides along first and the new one settles in. */
-.tour-page-in.tour-page-glide {
-  animation-duration: 0.7s;
-  animation-delay: 0.42s;
-}
-.tour-page-out.tour-page-glide {
-  animation-duration: 0.55s;
-  animation-delay: 0.6s;
-}
-@keyframes tour-page-in {
-  from {
-    opacity: 0;
-  }
-}
-@keyframes tour-page-out {
-  to {
-    opacity: 0;
-  }
-}
-
-/* A click: the pointer dips and a ring spreads from its tip. */
-.tour-ripple {
-  animation: tour-ripple 0.7s ease-out both;
-}
+/* Where a click lands: a soft disc of the person's color. */
 .tour-press {
-  animation: tour-press 0.36s ease-out both;
+  background: color-mix(in srgb, var(--glow) 38%, transparent);
 }
-@keyframes tour-ripple {
-  from {
-    opacity: 0.75;
-    transform: translate(-50%, -50%) scale(0.2);
-  }
-  to {
+/*
+ * The spotlight: a clear window over what matters, with the rest of the page
+ * washed back towards white, so a newcomer sees one thing at a time.
+ */
+.tour-spot {
+  border-radius: 14px;
+  box-shadow:
+    0 0 0 1.5px color-mix(in srgb, var(--glow) 55%, transparent),
+    0 0 0 100vmax rgb(255 255 255 / 0.74);
+  transition:
+    left 900ms cubic-bezier(0.65, 0, 0.35, 1),
+    top 900ms cubic-bezier(0.65, 0, 0.35, 1),
+    width 900ms cubic-bezier(0.65, 0, 0.35, 1),
+    height 900ms cubic-bezier(0.65, 0, 0.35, 1),
+    opacity 700ms ease;
+}
+
+/* The family, between acts: people glide to their places; John's accounts drift in around him. */
+.tour-person {
+  transition:
+    left 1200ms cubic-bezier(0.65, 0, 0.35, 1),
+    top 1200ms cubic-bezier(0.65, 0, 0.35, 1),
+    transform 1200ms cubic-bezier(0.65, 0, 0.35, 1),
+    opacity 1400ms ease,
+    filter 1800ms ease;
+}
+.tour-face {
+  box-shadow:
+    0 0 0 4px white,
+    0 0 0 6px color-mix(in srgb, var(--glow) 45%, white),
+    0 14px 40px -8px color-mix(in srgb, var(--glow) 55%, transparent);
+  transition: filter 2s ease;
+}
+.tour-chip {
+  transition:
+    opacity 700ms ease,
+    transform 900ms cubic-bezier(0.22, 0.8, 0.3, 1);
+}
+
+/* The family behind John: there, but quieter. */
+.tour-back .tour-face {
+  filter: saturate(0.35);
+}
+
+/* The name on a person's pointer, in their color. */
+.tour-hand {
+  background: color-mix(in srgb, var(--glow) 72%, var(--color-pnc-navy));
+  box-shadow: 0 4px 12px -4px rgb(11 35 64 / 0.45);
+}
+
+/* The advisor's ties: drawn in, and John's snaps then fades when he dies. */
+.tour-tie {
+  transition:
+    stroke-dashoffset 1100ms cubic-bezier(0.65, 0, 0.35, 1),
+    opacity 600ms ease;
+}
+.tour-tie-broken {
+  transition: opacity 1800ms ease 900ms;
+}
+
+/* John's accounts gathering into one family view. */
+.tour-gather {
+  animation: tour-gather 1500ms cubic-bezier(0.6, 0, 0.2, 1) both;
+}
+@keyframes tour-gather {
+  0% {
     opacity: 0;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+  25% {
+    opacity: 1;
     transform: translate(-50%, -50%) scale(1);
   }
-}
-@keyframes tour-press {
-  40% {
-    transform: scale(0.82);
-  }
-}
-
-.tour-caret {
-  animation: tour-caret 1s steps(1) infinite;
-}
-@keyframes tour-caret {
-  50% {
-    opacity: 0;
-  }
-}
-
-/* Something new arriving on a screen: a wash of color that settles. */
-.tour-arrive {
-  animation: tour-arrive 2.2s ease-out both;
-}
-@keyframes tour-arrive {
-  0% {
-    background-color: color-mix(in srgb, var(--glow) 34%, white);
-  }
   100% {
-    background-color: transparent;
+    opacity: 0;
+    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.4);
   }
 }
 
-/* A caption replacing the one before it. */
-.tour-caption {
-  animation: tour-caption 0.55s cubic-bezier(0.22, 0.8, 0.3, 1) both;
+/* Notes that explain Findoe's answer, and what each is about. */
+.tour-note {
+  animation: tour-note 700ms cubic-bezier(0.22, 0.8, 0.3, 1) both;
 }
-@keyframes tour-caption {
+.tour-note-step {
+  animation: tour-note 600ms cubic-bezier(0.22, 0.8, 0.3, 1) both;
+}
+@keyframes tour-note {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateX(-10px);
+  }
+}
+.tour-note-tie {
+  animation: tour-fade 600ms ease both;
+}
+.tour-note-ring {
+  box-shadow:
+    0 0 0 2.5px var(--tour-note-accent),
+    0 0 26px 2px color-mix(in srgb, var(--tour-note-accent) 45%, transparent);
+  animation: tour-fade 600ms ease both;
+}
+@keyframes tour-fade {
+  from {
+    opacity: 0;
   }
 }
 
-/* Word going out from the bank's record to each screen. */
-.tour-flow {
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-  transition:
-    stroke-dashoffset 1.1s cubic-bezier(0.5, 0, 0.2, 1),
-    opacity 0.6s ease;
+/* A person who has died: the color drains from their screen and the glow behind it goes out. */
+.tour-frame[data-quiet="true"] .tour-glow {
+  opacity: 0;
 }
-.tour-flow[data-on="true"] {
-  stroke-dashoffset: 0;
+.tour-frame[data-quiet="true"] .tour-card {
+  filter: grayscale(1) opacity(0.62);
+  box-shadow: 0 0 0 1px var(--color-pnc-line);
 }
-.tour-ember {
-  animation: tour-ember 5s ease-in-out infinite;
-}
-@keyframes tour-ember {
-  0%,
-  100% {
-    opacity: 0.75;
-    transform: scale(0.96);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.04);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .tour-ring,
-  .tour-halo,
-  .tour-ember {
-    animation: none;
-  }
+.tour-frame[data-quiet="true"] .tour-name {
+  opacity: 0.7;
 }

@@ -40,41 +40,47 @@ it). A pinned mobile view on a wide screen is shown inside an iPhone frame.
 
 ## Guided tour — `/tour`
 
-A presenter-led walk through one family's story, made to be talked over in a pitch or a customer
-conversation. It needs no sign-on. Open it with **Take the guided tour** on the sign-on page or go
-straight to `/tour`.
+A presenter-led walk through one family's story, told on the working app and made to be talked
+over in a pitch or a customer conversation. It needs no sign-on. Open it with **Take the guided
+tour** on the sign-on page or go straight to `/tour`.
 
-The stage is dark and shows people's screens side by side. Each person's screen has its own
-glowing border and name tag, in the same color every time they appear: John green, Maya violet,
-David amber, the Bank Advisor blue. The shared family dashboard has no border, because it belongs
-to no one person.
+The stage is plain white. Between acts it shows the family themselves: the Smiths, John with
+everything he looks after around him, their advisor beside them, John's memorial and the close.
+Within an act it shows the working app: each person's screen is a white card holding the real
+pages, signed in as them, with one soft color glowing behind it and their picture, name and role
+above it (John green, Maya violet, David amber, Alexa pink, the Bank Advisor blue). A spotlight
+washes the rest of the page back to white so only the one thing that matters stays clear, and
+one short line under the stage says what it means. There are no titles, arrows or progress bars.
 
-- **Nothing moves by itself.** Each press of → (or Next, Page Down or the space bar) plays one
-  step and then waits: a pointer moves and clicks, a page opens, the camera closes in. ← steps
-  back a whole stop and Home starts again. Holding a key counts as one press. The current stop is
-  kept in the URL (`/tour#23`), so a refresh or a shared link opens at the same place.
-- **Six chapters, 32 stops:** **Two views** (John and Maya sign on and land on two different
-  Assets and Debts pages), **One family** (the two screens merge into the Smith Family dashboard,
-  then close in on the shared list and on the children), **Access** (John opens Manage family and
-  switches on two assets and a debt, which appear on David's screen as he does it), **A loss** (a
-  quiet memorial for John, then three lines flow out to his closed sign-in, Maya's condolence and
-  the advisor's alert), **The advisor** (John's row, readiness score, approved death certificate,
-  Next steps, a question to Findoe with its working, and Initiate claim) and **Maya's claims**
-  (the list of what she can claim, a claim for Joint Checking that ends as Processing, then the
-  life policy's instructions with a cited Findoe answer).
-- **Made for a laptop or a projector.** Screens fill the window at any aspect ratio and text
-  scales with them. On a phone-sized window the tour asks for a larger screen.
+- **Nothing moves by itself.** Each press of → (or Page Down, the space bar or a click on the
+  stage) plays one stop and then rests: a pointer clicks the app's own controls, the camera and
+  spotlight settle. A press while a stop is still playing is ignored. ← steps back a stop, Home
+  starts again and Esc leaves. The current stop is kept in the URL (`/tour#named`), so a refresh
+  or a shared link opens at the same place.
+- **The story, in 31 stops:** The Smiths, and John carrying the whole picture alone. John's
+  Home and Assets and Debts, including the life policy outside PNC; he adds the family home
+  through **Add asset** and the bank values it; Findoe flags an account with no beneficiary and
+  he names David and Alexa ("A name today. No probate later."); he finishes his will and puts it
+  on file. The Smith Family dashboard; John decides what David sees, and David's screen updates
+  beside his. Their advisor joins them; John's memorial. The advisor's home opens on it; John's
+  estate as his will directs; a question to Findoe with its working shown; a message to Maya
+  ("A person, not a process."); the transfer, and Maya's screen receiving a condolence. Maya's
+  unclaimed assets, a claim with two of three steps already done, and her own question about tax,
+  answered from her records and the law. David and Alexa, told gently. The close.
+- **Made for a laptop or a projector.** Cards fill the window at any aspect ratio. On a
+  phone-sized window the tour asks for a larger screen.
 - **The family is John, Maya, David and Alexa**, plus the Bank Advisor; the tour's own words
   introduce no other names.
-- The screens are drawn for the tour; they are not the working pages. People, accounts and words
-  are in `src/data/tour.ts` (balances come from `src/data/household.ts`), the script of beats and
-  the stage layout in `src/lib/tour.ts` (tested in `src/lib/__tests__/tour.test.ts`), and the
-  stage and screens in `src/components/tour`. Nothing is saved; reloading returns to the stop in
-  the URL.
+- The script is data in `src/data/tour.ts`: a scene puts one or two people on stage, on a page
+  of the app; a stop is a list of steps (`click`, `type`, `wait`, `look`) and what each card's
+  camera frames. Steps find controls by their visible words, so when you rename a label the tour
+  needs the same change. Stop planning and the stage and camera maths are in `src/lib/tour.ts`
+  (tested in `src/lib/__tests__/tour.test.ts`), the player in `src/components/tour`. The tour
+  uses this browser's demo state: it resets it as it plays and leaves you signed off.
 
 ## Product film — `/film`
 
-The same story as the tour, told on the working software instead of drawn visuals. The real pages
+A longer walk through the working software. The real pages
 run in a frame on a dark stage; each of the 25 shots signs in as the right person, clicks the
 real controls with a visible cursor, and a camera zooms and cuts between parts of the page. It
 needs no sign-on. Go straight to `/film`; the sign-on page links only to the guided tour.

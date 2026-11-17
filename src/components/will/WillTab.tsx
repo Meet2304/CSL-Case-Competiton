@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   ArrowRight,
   BadgeCheck,
+  Check,
   ChevronRight,
   Clock,
   CloudCheck,
@@ -21,7 +22,7 @@ import { sectionMeta } from "@/components/will/sections";
 import { WillPlanner } from "@/components/will/WillPlanner";
 import type { FamilyState } from "@/data/types";
 import { firstName } from "@/lib/family";
-import { formatDate } from "@/lib/format";
+import { cn, formatDate } from "@/lib/format";
 import { householdAsFamily } from "@/lib/household";
 import { percentDone, sectionProgress, sections, type SectionProgress } from "@/lib/will/flow";
 import { generateWill } from "@/lib/will/generate";
@@ -261,6 +262,64 @@ function WillStart({
   );
 }
 
+/**
+ * Every section of the will, done: the bar fills from the first section to the
+ * last as the page opens, each section checks off in turn, and the will ends
+ * on file with PNC.
+ */
+function WillJourney() {
+  const [filled, setFilled] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setFilled(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+  const steps = [...sections.map((s) => sectionMeta[s].short), "With PNC"];
+  const last = steps.length - 1;
+  return (
+    <div className="rounded-lg border border-pnc-line px-4 py-5 @2xl:px-6">
+      <ol className="relative flex justify-between" aria-label="Your will, step by step">
+        <span
+          aria-hidden="true"
+          className="absolute top-4 h-[3px] rounded-full bg-pnc-line"
+          style={{ left: `${50 / steps.length}%`, right: `${50 / steps.length}%` }}
+        >
+          <span
+            className="block h-full origin-left rounded-full bg-pnc-blue-700 transition-transform duration-[1600ms] ease-out motion-reduce:transition-none"
+            style={{ transform: `scaleX(${filled ? 1 : 0})` }}
+          />
+        </span>
+        {steps.map((label, i) => (
+          <li key={label} className="relative flex flex-1 flex-col items-center gap-1.5">
+            <span
+              aria-hidden="true"
+              className={cn(
+                "grid size-8 place-items-center rounded-full text-xs font-semibold ring-[3px] transition-colors duration-500 motion-reduce:transition-none",
+                filled
+                  ? i === last
+                    ? "bg-pnc-positive text-white ring-pnc-positive"
+                    : "bg-pnc-blue-700 text-white ring-pnc-blue-700"
+                  : "bg-white text-pnc-muted ring-pnc-line",
+              )}
+              style={{ transitionDelay: filled ? `${150 + (i * 1450) / last}ms` : "0ms" }}
+            >
+              {filled ? <Check className="size-4" strokeWidth={3} /> : i + 1}
+            </span>
+            <span
+              className={cn(
+                "text-center text-xs",
+                i === last ? "font-semibold text-pnc-positive" : "text-pnc-muted",
+              )}
+            >
+              {label}
+              <span className="sr-only">, done</span>
+            </span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
 function WillOnFile({
   draft,
   household,
@@ -306,12 +365,41 @@ function WillOnFile({
         </div>
       </div>
 
+      <WillJourney />
+
       <div className="grid items-start gap-6 @3xl:grid-cols-[minmax(0,1fr)_18rem]">
         <div className="min-w-0 rounded-lg bg-pnc-surface px-3 py-6 @3xl:px-6">
-          <WillDocument text={text} collapsible />
+          <WillDocument text={text} collapsible onFile />
         </div>
 
         <aside className="space-y-4">
+          <section className="rounded-lg border border-pnc-line p-4">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-pnc-positive-bg px-2.5 py-0.5 text-xs font-semibold text-pnc-positive">
+              <Check className="size-3.5" aria-hidden="true" /> Your will is on file
+            </span>
+            <h3 className="mt-3 font-display text-xl font-medium text-pnc-ink">
+              Signed, and with PNC
+            </h3>
+            <dl className="mt-3 space-y-2.5 text-sm">
+              {[
+                ["Signed", updated ? formatDate(updated, "medium") : "On file"],
+                ["Executor", executor?.member.name ?? "Not named"],
+                [
+                  "Who knows it is in place",
+                  `${executor ? `${firstName(executor.member.name)} and ` : ""}your advisor`,
+                ],
+              ].map(([k, v]) => (
+                <div
+                  key={k}
+                  className="flex justify-between gap-3 border-b border-pnc-line pb-2.5 last:border-b-0 last:pb-0"
+                >
+                  <dt className="text-pnc-muted">{k}</dt>
+                  <dd className="text-right font-semibold text-pnc-ink">{v}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+
           <section className="rounded-lg border border-pnc-line p-4">
             <h3 className="font-semibold text-pnc-ink">People your will names</h3>
             {named.length ? (

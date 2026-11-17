@@ -85,10 +85,13 @@ function Sheet({ children, className }: { children: ReactNode; className?: strin
 export function WillDocument({
   text,
   collapsible = false,
+  onFile = false,
 }: {
   text: string;
   /** Show the opening of the will with a "Read the full will" toggle. */
   collapsible?: boolean;
+  /** The copy kept with PNC once the will is signed, rather than a draft. */
+  onFile?: boolean;
 }) {
   const [open, setOpen] = useState(!collapsible);
   const blocks = parse(text);
@@ -102,9 +105,14 @@ export function WillDocument({
               return (
                 <p
                   key={i}
-                  className="mb-8 rounded-md bg-mock-bg px-3 py-2 text-center text-xs font-semibold text-mock"
+                  className={cn(
+                    "mb-8 rounded-md px-3 py-2 text-center text-xs font-semibold",
+                    onFile ? "bg-pnc-positive-bg text-pnc-positive" : "bg-mock-bg text-mock",
+                  )}
                 >
-                  Draft preview. Not a legal document until it&apos;s printed, signed and witnessed.
+                  {onFile
+                    ? "The copy on file with PNC. Your signed original is the legal document."
+                    : "Draft preview. Not a legal document until it's printed, signed and witnessed."}
                 </p>
               );
             case "title":

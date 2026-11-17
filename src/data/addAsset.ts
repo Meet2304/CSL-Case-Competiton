@@ -9,7 +9,8 @@
  */
 
 /** How a kind of asset is added; each kind has its own short demo flow. */
-export type AddFlow = "pnc" | "connect" | "ticker" | "estimate" | "manual" | "import" | "portfolio";
+export type AddFlow =
+  "pnc" | "connect" | "ticker" | "estimate" | "manual" | "import" | "portfolio" | "document";
 
 export type AddOption = {
   id: string;
@@ -22,6 +23,8 @@ export type AddOption = {
   keywords?: string;
   /** The question the flow's first screen asks, and its fields. */
   ask?: { title: string; fields: { id: string; label: string; placeholder?: string }[] };
+  /** The legal document that proves ownership, for a `document` flow. */
+  proof?: { label: string; hint: string };
 };
 
 export type AddGroup = { id: string; label: string; intro: string; options: AddOption[] };
@@ -157,15 +160,19 @@ export const addAssetGroups: AddGroup[] = [
         id: "vehicles",
         category: "Property",
         label: "Vehicles",
-        description: "A car, boat or motorcycle, valued from its make and model.",
-        flow: "estimate",
-        keywords: "car boat motorcycle truck",
+        description: "A car, boat or motorcycle, added with its title as proof.",
+        flow: "document",
+        keywords: "car boat motorcycle truck title registration",
         ask: {
           title: "What is it?",
           fields: [
             { id: "model", label: "Make and model", placeholder: "e.g. Sample Sedan" },
             { id: "year", label: "Year", placeholder: "e.g. 2022" },
           ],
+        },
+        proof: {
+          label: "Upload the certificate of title",
+          hint: "A photo or PDF of the title. We check that it's in your name.",
         },
       },
       {
@@ -344,10 +351,18 @@ export const samplePrices: Record<string, number> = {
 };
 export const defaultPrice = 100;
 
+/** What the document check finds on an uploaded vehicle title. */
+export const sampleTitleCheck = {
+  file: "certificate-of-title.pdf",
+  document: "Pennsylvania Certificate of Title",
+  titleNumber: "x0071",
+  issued: "Mar 2, 2022",
+  liens: "None recorded",
+};
+
 /** Estimates by option id: a value and the range around it. */
 export const sampleEstimates: Record<string, { value: number; low: number; high: number }> = {
   "real-estate": { value: 1_412_000, low: 1_339_000, high: 1_486_000 },
-  vehicles: { value: 68_800, low: 63_500, high: 72_900 },
   jewelry: { value: 18_400, low: 14_900, high: 22_600 },
   art: { value: 42_000, low: 31_000, high: 55_000 },
   metals: { value: 24_600, low: 24_100, high: 25_100 },

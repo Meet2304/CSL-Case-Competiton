@@ -1,387 +1,605 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import Link from "next/link";
-import { ArrowLeft, ArrowRight, RotateCcw, X } from "lucide-react";
+import { useEffect, useEffectEvent, useRef, useState, useSyncExternalStore } from "react";
+import { resetDemo } from "@/components/advisor/RecordDeathDialog";
 import { FindoeLogo } from "@/components/brand/FindoeLogo";
-import { tourCaptions, tourChapters, tourFacts, tourGlow, tourPeople } from "@/data/tour";
-import { cn, formatDate } from "@/lib/format";
+import {
+  FILM_STYLE,
+  find,
+  inView,
+  rectOf,
+  setValue,
+  sleep,
+  waitFor,
+} from "@/components/film/driver";
+import { useHashTab } from "@/components/shared/useHashTab";
+import {
+  savingsBeneficiaries,
+  tourLoss,
+  tourPeople,
+  tourProducts,
+  tourScenes,
+  tourStops,
+  tourWillDraft,
+} from "@/data/tour";
+import { bereavementActions, currentBereavement } from "@/lib/bereavement";
+import { visiblePart, type Rect, type Target } from "@/lib/film";
+import { filmSignIn, filmSignOut } from "@/lib/filmSession";
+import { householdActions } from "@/lib/householdStore";
 import { routes } from "@/lib/routes";
 import {
+  cameraFor,
   frameIds,
-  lastBeat,
-  layoutWidth,
-  nextBeat,
-  previousStop,
+  pageToStage,
+  planStop,
+  productOf,
   stageLayout,
-  stopAt,
-  tourBeats,
-  tourStates,
-  tourStops,
+  viewportFor,
+  type FrameId,
   type StageLayout,
-  type TourState,
+  type TourFocus,
+  type TourStep,
+  type TourStop,
+  type TourWorld,
 } from "@/lib/tour";
-import { Frame } from "./Frame";
+import { REVIEW_SCREEN, screens } from "@/lib/will/flow";
+import { saveWill, setWillStatus } from "@/lib/will/storage";
+import { Cast } from "./Cast";
+import { Frame, GLIDE_MS, hiddenFrame, MOVE_MS, VEIL_MS, type FrameView } from "./Frame";
+import { Memorial } from "./Memorial";
+import { Notes, type PlacedNote } from "./Notes";
+import { Products } from "./Products";
 
-// The stage fills the window; its size (and the root font size, which the
-// presentation zoom changes) is read from the browser rather than kept in state.
+const stopIds = tourStops.map((s) => s.id);
+/** The keys the stage answers to; inside a card they are handed back to it. */
+const stageKeys = new Set(["ArrowRight", "ArrowLeft", "PageDown", "PageUp", " ", "Home", "Escape"]);
+const lastStop = tourStops.length - 1;
+
+// The stage fills the window; its size is read from the browser rather than kept in state.
 function subscribeToStage(onChange: () => void) {
   window.addEventListener("resize", onChange);
-  const zoom = new MutationObserver(onChange);
-  zoom.observe(document.documentElement, { attributes: true, attributeFilter: ["data-scale"] });
-  return () => {
-    window.removeEventListener("resize", onChange);
-    zoom.disconnect();
-  };
+  return () => window.removeEventListener("resize", onChange);
 }
-const readStage = () =>
-  `${window.innerWidth}x${window.innerHeight}x${parseFloat(getComputedStyle(document.documentElement).fontSize) || 16}`;
+const readStage = () => `${window.innerWidth}x${window.innerHeight}`;
 const noStage = () => "";
 
-const focusRing =
-  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white";
-const roundButton = cn(
-  "grid size-10 place-items-center rounded-full bg-white/10 text-white ring-1 ring-white/15 transition-colors hover:bg-white/20 disabled:opacity-30 disabled:hover:bg-white/10",
-  focusRing,
-);
+const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+
+type Views = Record<FrameId, FrameView>;
+const allHidden = Object.fromEntries(frameIds.map((id) => [id, hiddenFrame])) as Views;
+
+/** Puts John's will where the story needs it: every answer given, or already on file. */
+function seedWill(status: "in-progress" | "on-file") {
+  saveWill(tourLoss.personId, {
+    draft: tourWillDraft,
+    progress: {
+      screen: REVIEW_SCREEN,
+      furthest: screens.length - 1,
+      answered: screens.map((s) => s.id),
+      returnToReview: false,
+    },
+  });
+  setWillStatus(tourLoss.personId, status);
+}
 
 /**
- * The guided tour: a stage of people's screens that the presenter moves
- * through with the arrow keys. Nothing plays by itself; each press plays one
- * step of the story (see `src/lib/tour.ts`). The current stop is kept in the
- * URL hash, so a refresh or a shared link opens the tour at the same place.
+ * Puts the demo's saved state where a scene needs it. Before John has put his
+ * affairs in order, everything starts clean. After that, his will is on file
+ * and his Savings names the children. Once he has died the bank has recorded
+ * it and has Maya's copy of the certificate; after that his advisor has begun
+ * the transfer. Moving
+ * forward these are what the people on stage just did, so this only fills in
+ * what is missing; jumping in or stepping back (`fresh`), it rebuilds them.
+ */
+function prepareWorld(world: TourWorld, fresh: boolean) {
+  if (world === "before") {
+    resetDemo();
+    seedWill("in-progress");
+    return;
+  }
+  if (fresh) resetDemo();
+  seedWill("on-file");
+  householdActions.setBeneficiaries(
+    "acct-jordan-savings",
+    savingsBeneficiaries.map((p) => p.id),
+  );
+  if (world === "ready") return;
+  if (!currentBereavement().losses.some((l) => l.personName === tourLoss.personName))
+    bereavementActions.recordLoss({
+      personName: tourLoss.personName,
+      date: tourLoss.date,
+      reportedVia: tourLoss.reportedVia,
+      recordedOn: tourLoss.date,
+    });
+  // Maya sent the bank John's death certificate; the advisor saw it verified.
+  if (!currentBereavement().deathCertificate)
+    bereavementActions.uploadCertificate("death-certificate.pdf", tourLoss.date);
+  if (world === "loss") return;
+  if (!currentBereavement().transfers?.[tourLoss.personId])
+    bereavementActions.initiateTransfer(tourLoss.personId, new Date().toISOString());
+}
+
+/** Scrolls a page so the element can be seen, and waits for the page to come to rest. */
+async function reveal(el: HTMLElement, smooth: boolean) {
+  const view = el.ownerDocument.defaultView;
+  if (!view || inView(el)) return;
+  const fits = el.getBoundingClientRect().height + 48 <= view.innerHeight;
+  el.scrollIntoView({
+    block: fits ? "center" : "start",
+    inline: "nearest",
+    behavior: smooth ? "smooth" : "instant",
+  });
+  let last = Number.NaN;
+  for (let i = 0; i < 16; i++) {
+    await sleep(90);
+    if (view.scrollY === last) break;
+    last = view.scrollY;
+  }
+  // scrollIntoView also scrolls whatever holds the frame, which would shift the picture.
+  const frame = view.frameElement;
+  for (let box = frame?.parentElement; box; box = box.parentElement) box.scrollTo(0, 0);
+  frame?.ownerDocument.defaultView?.scrollTo(0, 0);
+}
+
+/**
+ * The guided tour: one family's story on a plain white stage. Between acts
+ * the stage shows the family themselves; within an act, the working app, one
+ * card per person, with a spotlight on the one thing that matters. Four small
+ * dots at the top say which part of Findoe is on stage. The stop lives in the
+ * URL hash; the arrow keys step through it, and each press plays one stop
+ * (at most one click) and then rests.
  */
 export function GuidedTour() {
-  const [beat, setBeat] = useState(0);
+  const [stopId, setStopId] = useHashTab(stopIds);
+  const index = stopIds.indexOf(stopId);
+  const stop = tourStops[index];
   const stageKey = useSyncExternalStore(subscribeToStage, readStage, noStage);
-
-  const forward = useCallback(() => setBeat(nextBeat), []);
-  const back = useCallback(() => setBeat(previousStop), []);
-  const restart = useCallback(() => setBeat(0), []);
-
-  // Open at the stop named in the URL, if any, and follow the URL when its hash is edited. The
-  // first read happens once, before the first stop rewrites the URL, and is not cancelled: in
-  // development React runs this effect twice.
-  const opened = useRef(false);
-  useEffect(() => {
-    const wanted = () => Number.parseInt(window.location.hash.slice(1), 10);
-    const follow = () => {
-      if (!Number.isNaN(wanted())) setBeat(stopAt(wanted()));
-    };
-    window.addEventListener("hashchange", follow);
-    if (!opened.current) {
-      opened.current = true;
-      const first = wanted();
-      if (first) requestAnimationFrame(() => setBeat(stopAt(first)));
-    }
-    return () => window.removeEventListener("hashchange", follow);
-  }, []);
-
-  // A beat with `auto` runs on into the next; a stop waits, and is remembered in the URL.
-  useEffect(() => {
-    const auto = tourBeats[beat].auto;
-    if (auto === undefined) {
-      window.history.replaceState(null, "", beat ? `#${beat}` : window.location.pathname);
-      return;
-    }
-    const timer = setTimeout(() => setBeat((b) => (b === beat ? beat + 1 : b)), auto);
-    return () => clearTimeout(timer);
-  }, [beat]);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      // A held key counts once: every step of the story is its own press.
-      if (e.altKey || e.ctrlKey || e.metaKey || e.repeat) return;
-      // Space belongs to a focused button or link; everywhere else it moves the tour on.
-      const onControl = e.target instanceof HTMLElement && e.target.closest("button, a") !== null;
-      if (e.key === "ArrowRight" || e.key === "PageDown" || (e.key === " " && !onControl))
-        forward();
-      else if (e.key === "ArrowLeft" || e.key === "PageUp") back();
-      else if (e.key === "Home") restart();
-      else return;
-      e.preventDefault();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [forward, back, restart]);
-
-  const s = tourStates[beat];
-  const caption = tourCaptions[s.caption];
-  const chapterIndex = tourChapters.findIndex((c) => c.id === caption.chapter);
-  const [w, h, rem] = stageKey ? stageKey.split("x").map(Number) : [0, 0, 16];
+  const [w, h] = stageKey ? stageKey.split("x").map(Number) : [0, 0];
   // Side-by-side screens cannot be read on a phone, so the tour asks for more room instead.
-  const cramped = stageKey !== "" && (w < 900 || h < 540);
+  const cramped = stageKey !== "" && (w < 900 || h < 520);
   const layout = stageKey && !cramped ? stageLayout(w, h) : null;
 
+  const [views, setViews] = useState<Views>(allHidden);
+  /** Notes beside a card, placed once the stop has settled. */
+  const [notes, setNotes] = useState<{ at: number; placed: PlacedNote[] } | null>(null);
+  /** The stop that has finished playing; the stage is at rest only while it is the one showing. */
+  const [settledAt, setSettledAt] = useState<number | null>(null);
+  const settled = settledAt === index;
+
+  const iframes = useRef<Partial<Record<FrameId, HTMLIFrameElement | null>>>({});
+  const loaded = useRef<Partial<Record<FrameId, () => void>>>({});
+  /** What each card's camera is framing, and how its page is laid out, as the run last set them. */
+  const live = useRef<Views>(allHidden);
+  const stage = useRef<StageLayout | null>(null);
+  /** Who the browser is signed in as; the app's pages share one session. */
+  const session = useRef<FrameId | "nobody" | null>(null);
+  /** Counts the runs, so a run that has been overtaken by a newer stop stops. */
+  const run = useRef(0);
+  const previous = useRef<number | null>(null);
+  /** Whether the stop on stage finished playing (a ref, so a run can read it as it starts). */
+  const finished = useRef(false);
+
+  useEffect(() => {
+    stage.current = layout;
+  });
+
+  const settle = (done: number | null) => {
+    finished.current = done !== null;
+    setSettledAt(done);
+  };
+
+  const patch = (id: FrameId, change: Partial<FrameView>) => {
+    live.current = { ...live.current, [id]: { ...live.current[id], ...change } };
+    setViews(live.current);
+  };
+
+  const doc = (id: FrameId) => () => iframes.current[id]?.contentDocument;
+
+  /** The size of a card's page, for clipping what the camera frames. */
+  const pageSize = (id: FrameId) => {
+    const view = live.current[id];
+    const rect = stage.current?.slots[view.slot];
+    return rect ? viewportFor(rect, view.width) : { w: view.width, h: 800 };
+  };
+
+  const signInAs = async (id: FrameId | "nobody") => {
+    if (session.current === id) return;
+    if (id === "nobody") await filmSignOut();
+    else await filmSignIn(tourPeople[id].userId);
+    session.current = id;
+  };
+
+  /** Loads a page of the app in a card and waits for it. */
+  const load = (id: FrameId, path: string) =>
+    new Promise<void>((resolve) => {
+      loaded.current[id] = resolve;
+      patch(id, { page: { key: (live.current[id].page?.key ?? 0) + 1, src: path } });
+      setTimeout(resolve, 20_000);
+    });
+
+  /** Points a card's camera at an element, or at the whole page. */
+  const frame = (id: FrameId, el: HTMLElement | null, cut: boolean, focus?: TourFocus) =>
+    patch(id, {
+      focus: el ? visiblePart(rectOf(el), pageSize(id)) : undefined,
+      maxZoom: focus?.maxZoom,
+      fit: focus?.fit,
+      spot: el !== null && focus !== undefined && focus.spot !== false,
+      cut,
+    });
+
+  /** Moves a card's pointer to an element and presses. */
+  const point = async (id: FrameId, el: HTMLElement) => {
+    const r = rectOf(el);
+    // Fields are entered at their start; everything else is pressed in the middle.
+    const field = el.matches("input, textarea");
+    const at = { x: field ? r.x + Math.min(40, r.w / 4) : r.x + r.w / 2, y: r.y + r.h / 2 };
+    patch(id, { pointer: { ...at, shown: true, down: false } });
+    await sleep(720);
+    patch(id, { pointer: { ...at, shown: true, down: true } });
+    await sleep(190);
+    patch(id, { pointer: { ...at, shown: true, down: false } });
+  };
+
+  /** Whether an element is inside what a card's camera is showing. */
+  const inFrame = (id: FrameId, r: Rect) => {
+    const f = live.current[id].focus;
+    return !f || (r.x >= f.x && r.y >= f.y && r.x + r.w <= f.x + f.w && r.y + r.h <= f.y + f.h);
+  };
+
+  /** Runs a stop's steps: played out with the pointer, or at once when `fast`. */
+  const act = async (steps: TourStep[] | undefined, fast: boolean, alive: () => boolean) => {
+    for (const step of steps ?? []) {
+      if (!alive()) return;
+      if (step.do === "pause") {
+        if (!fast) await sleep(step.ms);
+        continue;
+      }
+      const id = step.in;
+      if (step.do === "wait") {
+        await waitFor(doc(id), step.for, 20_000);
+        continue;
+      }
+      if (step.do === "look") {
+        if (fast) continue;
+        const el = await waitFor(doc(id), step.at);
+        if (!el || !alive()) continue;
+        await reveal(el, true);
+        frame(id, el, false, { on: step.at, maxZoom: 1.35 });
+        await sleep(MOVE_MS + 500);
+        continue;
+      }
+      const target: Target = step.do === "click" ? step.on : step.into;
+      const el = await waitFor(doc(id), target, 12_000);
+      if (!alive()) return;
+      if (!el) continue;
+      if (!fast) {
+        await reveal(el, true);
+        // Pull back when the control is outside what the camera is showing.
+        if (!inFrame(id, rectOf(el))) {
+          frame(id, null, false);
+          await sleep(MOVE_MS * 0.7);
+        }
+        await point(id, el);
+        if (!alive()) return;
+      }
+      if (step.do === "click") {
+        // The app's pages share one session, so it must be this person's before they act.
+        await signInAs(id);
+        if (!alive()) return;
+        el.click();
+      } else {
+        el.focus({ preventScroll: true });
+        if (fast) setValue(el, step.text);
+        else
+          for (let i = 1; i <= step.text.length; i++) {
+            setValue(el, step.text.slice(0, i));
+            await sleep(step.text.length > 24 ? 22 : 70);
+            if (!alive()) return;
+          }
+      }
+      await sleep(fast ? 90 : 480);
+    }
+  };
+
+  /** Points every card's camera at what the stop is about. */
+  const aim = async (target: TourStop, cut: boolean, alive: () => boolean) => {
+    const scene = tourScenes[target.scene!];
+    const ids = frameIds.filter((id) => scene.frames[id]);
+    for (const id of ids) patch(id, { dim: target.spot !== undefined && target.spot !== id });
+    // What the notes explain must be on screen before the camera settles.
+    if (target.notes) {
+      const page = doc(target.notes.in)();
+      const el = page ? find(page, target.notes.items[0].at) : null;
+      if (el) await reveal(el, !cut);
+      if (!alive()) return;
+    }
+    const apply = async (id: FrameId, jump: boolean) => {
+      const focus = target.focus?.[id];
+      const view = doc(id)()?.defaultView;
+      if (!focus) {
+        if (!view) return;
+        // The whole page, from the top.
+        if (view.scrollY > 0) view.scrollTo({ top: 0, behavior: jump ? "instant" : "smooth" });
+        frame(id, null, jump);
+        return;
+      }
+      if (focus.top) {
+        const start = await waitFor(doc(id), focus.top, 6000);
+        start?.scrollIntoView({ block: "start", behavior: jump ? "instant" : "smooth" });
+        if (start && !jump) await sleep(500);
+      }
+      const el = await waitFor(doc(id), focus.on, 6000);
+      if (!alive()) return;
+      if (el) await reveal(el, !jump);
+      frame(id, el, jump, focus);
+    };
+    await Promise.all(ids.map((id) => apply(id, cut)));
+    // Follow the page if it is still settling (late content, an answer being written).
+    for (const ms of [450, 900]) {
+      await sleep(ms);
+      if (!alive()) return;
+      for (const id of ids) {
+        const focus = target.focus?.[id];
+        const page = doc(id)();
+        const el = focus && page ? find(page, focus.on) : null;
+        if (el) frame(id, el, false, focus);
+      }
+    }
+  };
+
+  /** Measures what a stop's notes are about and places them on the stage. */
+  const placeNotes = (target: TourStop, to: number) => {
+    const rect = target.notes && stage.current?.slots[live.current[target.notes.in].slot];
+    if (!target.notes || !rect) return;
+    const id = target.notes.in;
+    const view = live.current[id];
+    const page = viewportFor(rect, view.width);
+    const camera = cameraFor(page, view.focus, { maxZoom: view.maxZoom, fit: view.fit });
+    const d = doc(id)();
+    const placed: PlacedNote[] = [];
+    for (const note of target.notes.items) {
+      const el = d ? find(d, note.at) : null;
+      if (!el) continue;
+      const anchor = pageToStage(rect, view.width, camera, rectOf(el));
+      // A note about something the card is not showing would point at nothing.
+      const midY = anchor.y + Math.min(anchor.h / 2, 22);
+      if (midY < rect.y || midY > rect.y + rect.h) continue;
+      placed.push({ note, anchor, card: rect });
+    }
+    setNotes({ at: to, placed });
+  };
+
+  const play = useEffectEvent(async (from: number | null, to: number, alive: () => boolean) => {
+    const target = tourStops[to];
+    setNotes(null);
+    // Leaving a stop before its steps finished: the pages are in an unknown state, so start over.
+    const interrupted = from !== null && !finished.current;
+    const plan = planStop(tourStops, interrupted ? null : from, to);
+    settle(null);
+
+    if (plan.kind === "cast") {
+      for (const id of frameIds)
+        patch(id, { shown: false, pointer: { ...live.current[id].pointer, shown: false } });
+      await sleep(from === null ? 300 : 1300);
+      if (alive()) settle(to);
+      return;
+    }
+    const world = tourScenes[target.scene!].world;
+
+    if (plan.kind === "enter") {
+      const scene = tourScenes[target.scene!];
+      const ids = frameIds.filter((id) => scene.frames[id]);
+      let moves = false;
+      for (const id of frameIds) {
+        const next = scene.frames[id];
+        const was = live.current[id];
+        if (!next) {
+          patch(id, { shown: false, pointer: { ...was.pointer, shown: false } });
+          continue;
+        }
+        const glide = was.shown && was.slot !== next.slot;
+        moves ||= glide;
+        const third = ["third1", "third2", "third3"].indexOf(next.slot);
+        patch(id, {
+          shown: true,
+          slot: next.slot,
+          width: next.width,
+          glide,
+          veil: true,
+          // Once John has died, his own screen has lost its color.
+          quiet: id === "husband" && (world === "loss" || world === "after"),
+          dim: false,
+          // Three screens arrive one by one, once John's name has risen above them.
+          delay: third >= 0 && plan.animate ? 1500 + third * 450 : 0,
+          pointer: { ...was.pointer, shown: false },
+        });
+      }
+      // The page changes behind white, once the card has reached its place.
+      await sleep(from === null ? 0 : moves ? GLIDE_MS : VEIL_MS);
+      if (!alive()) return;
+      for (const id of ids) patch(id, { focus: undefined, spot: false, cut: true });
+      prepareWorld(scene.world, !plan.animate);
+      for (const id of ids) {
+        const next = scene.frames[id]!;
+        await signInAs(id);
+        if (!alive()) return;
+        await load(id, next.path);
+        if (!alive()) return;
+        await waitFor(doc(id), next.ready, 20_000);
+        await doc(id)()?.fonts.ready;
+      }
+      for (const earlier of plan.replay) {
+        if (!alive()) return;
+        await act(tourStops[earlier].steps, true, alive);
+      }
+      if (!alive()) return;
+      const unveil = async () => {
+        await nextFrame();
+        await nextFrame();
+        for (const id of ids) patch(id, { veil: false });
+      };
+      if (plan.animate && target.steps?.length) {
+        // Open on the pages as they are, then play the steps out.
+        if (plan.replay.length) await aim(tourStops[plan.replay.at(-1)!], true, alive);
+        await unveil();
+        await sleep(700);
+        await act(target.steps, false, alive);
+        if (!alive()) return;
+        await aim(target, false, alive);
+      } else {
+        await act(target.steps, true, alive);
+        if (!alive()) return;
+        await aim(target, true, alive);
+        if (!alive()) return;
+        await unveil();
+      }
+    } else {
+      await act(target.steps, false, alive);
+      if (!alive()) return;
+      await aim(target, false, alive);
+    }
+    if (!alive()) return;
+    for (const id of frameIds)
+      if (live.current[id].pointer.shown)
+        patch(id, { pointer: { ...live.current[id].pointer, shown: false } });
+    if (target.notes) {
+      // Notes are placed once the camera has come to rest.
+      await sleep(MOVE_MS);
+      if (!alive()) return;
+      placeNotes(target, to);
+    }
+    // Keys go to the stage, not to a field the app focused inside a card.
+    if (document.activeElement instanceof HTMLIFrameElement) document.activeElement.blur();
+    if (alive()) settle(to);
+  });
+
+  const ready = layout !== null;
+  useEffect(() => {
+    if (!ready) return;
+    const token = ++run.current;
+    const from = previous.current;
+    previous.current = index;
+    void play(from, index, () => run.current === token);
+  }, [index, ready]);
+
+  const go = (n: number) => setStopId(stopIds[Math.min(Math.max(n, 0), lastStop)]);
+  const exit = async () => {
+    run.current++;
+    await filmSignOut();
+    window.location.assign(routes.signOn);
+  };
+
+  const onKey = useEffectEvent((key: string) => {
+    // Every stop is its own press: a press while a stop is still playing is not kept for later.
+    if (key === "ArrowRight" || key === "PageDown" || key === " ") {
+      if (settled) go(index + 1);
+    } else if (key === "ArrowLeft" || key === "PageUp") go(index - 1);
+    else if (key === "Home") go(0);
+    else if (key === "Escape") void exit();
+    else return false;
+    return true;
+  });
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      // A held key counts once.
+      if (e.altKey || e.ctrlKey || e.metaKey || e.repeat) return;
+      // Space belongs to a focused button or link; everywhere else it moves the tour on.
+      if (e.key === " " && (e.target as HTMLElement | null)?.closest?.("button, a")) return;
+      if (onKey(e.key)) e.preventDefault();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  /** Every page a card loads: tidy it for the stage and keep the tour's keys working inside it. */
+  const onPageLoad = (id: FrameId) => {
+    const d = iframes.current[id]?.contentDocument;
+    if (!d?.head) return;
+    if (!d.getElementById("tour-style")) {
+      const style = d.createElement("style");
+      style.id = "tour-style";
+      // The sign-on page links to this tour; inside the tour that link would only be in the way.
+      style.textContent = `${FILM_STYLE}a[href="${routes.tour}"]{visibility:hidden}`;
+      d.head.append(style);
+    }
+    // Nobody types into the app during the tour, so its keys all belong to the stage.
+    d.addEventListener("keydown", (e) => {
+      if (e.altKey || e.ctrlKey || e.metaKey || e.repeat) return;
+      if (!stageKeys.has(e.key)) return;
+      e.preventDefault();
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: e.key }));
+    });
+    loaded.current[id]?.();
+    loaded.current[id] = undefined;
+  };
+
+  const register = (id: FrameId, el: HTMLIFrameElement | null) => {
+    iframes.current[id] = el;
+  };
+
+  const cast = stop.cast ?? null;
+  const years = `${tourLoss.born.slice(0, 4)} – ${tourLoss.date.slice(0, 4)}`;
+  const product = productOf(stop, tourScenes);
+  const memorial = cast === "memorial" ? "center" : stop.memorial ? "top" : "off";
+  const shownNotes = notes && notes.at === index && settled ? notes.placed : [];
+
   return (
-    <div className="tour-stage fixed inset-0 overflow-hidden text-white">
-      <header className="absolute inset-x-0 top-0 z-30 flex h-12 items-center gap-3 px-5">
-        <FindoeLogo className="size-6" />
-        <p className="font-display text-sm font-semibold">
-          Findoe <span className="ml-1.5 font-sans font-normal text-white/50">Guided tour</span>
-        </p>
-        <p className="ml-auto hidden items-center gap-2 text-xs text-white/45 sm:flex">
-          <kbd className="rounded border border-white/20 px-1.5 py-0.5 font-sans">←</kbd>
-          <kbd className="rounded border border-white/20 px-1.5 py-0.5 font-sans">→</kbd>
-          to move through the story
-        </p>
-        <Link
-          href={routes.signOn}
-          aria-label="Exit the tour"
-          className={cn(
-            "grid size-8 place-items-center rounded-full text-white/70 hover:bg-white/10 hover:text-white",
-            focusRing,
-          )}
-        >
-          <X className="size-4.5" aria-hidden="true" />
-        </Link>
-      </header>
+    <div
+      data-settled={settled}
+      data-stop={stop.id}
+      onClick={(e) => {
+        if (settled && !(e.target as HTMLElement).closest("button, a")) go(index + 1);
+      }}
+      onScroll={(e) => e.currentTarget.scrollTo(0, 0)}
+      className="tour-stage fixed inset-0 overflow-hidden bg-white text-pnc-ink"
+    >
+      <p className="sr-only" aria-live="polite">
+        {product ? tourProducts[product].name : ""}
+      </p>
 
       {layout && (
-        <>
-          <Loss s={s} layout={layout} />
-          {frameIds.map((id) => (
-            <Frame
-              key={id}
-              id={id}
-              s={s}
-              beat={beat}
-              rect={layout.slots[s.frames[id].slot]}
-              lw={layoutWidth(s.frames[id]) * rem}
-              stageKey={stageKey}
-            />
-          ))}
-          <Ending show={s.ended} onReplay={restart} />
-        </>
+        <Products
+          active={product}
+          vision={cast === "vision"}
+          dotsH={layout.dotsH}
+          area={layout.cast}
+        />
       )}
 
+      {layout && <Memorial state={memorial} layout={layout} />}
+
+      {layout &&
+        frameIds.map((id) => (
+          <Frame
+            key={id}
+            id={id}
+            view={views[id]}
+            rect={layout.slots[views[id].slot]}
+            years={id === tourLoss.frame ? years : undefined}
+            register={register}
+            onLoad={onPageLoad}
+          />
+        ))}
+
+      {layout && <Cast cast={cast} area={layout.cast} />}
+
+      {layout && <Notes placed={shownNotes} stageH={h} />}
+
       {cramped && (
-        <div className="absolute inset-0 z-20 grid place-items-center px-8 pb-28 text-center">
+        <div className="absolute inset-0 grid place-items-center px-8 text-center">
           <div className="max-w-sm">
             <FindoeLogo className="mx-auto size-12" />
-            <p className="mt-5 font-display text-2xl font-medium leading-tight">
+            <p className="mt-5 font-display text-2xl font-medium leading-tight text-pnc-navy">
               This tour needs a larger screen
             </p>
-            <p className="mt-3 text-white/65">
-              It shows several people&rsquo;s screens side by side. Open it on a laptop or widen
-              this window, and it picks up where you left off.
+            <p className="mt-3 text-pnc-muted">
+              It shows the laptop version of the app, sometimes three people side by side. Open it
+              on a laptop or widen this window, and it picks up where you left off.
             </p>
           </div>
         </div>
       )}
-
-      <footer
-        className="absolute inset-x-0 bottom-0 z-30 flex items-center gap-8 px-[clamp(1rem,2.6vw,3rem)] pb-2"
-        style={{ height: layout?.captionH ?? 110 }}
-      >
-        <div key={s.caption} className="tour-caption min-w-0 flex-1">
-          <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-white/45">
-            {chapterIndex + 1} · {tourChapters[chapterIndex].label}
-          </p>
-          <h2 className="mt-1 font-display text-[clamp(1.2rem,1.9vw,1.9rem)] font-medium leading-tight">
-            {caption.title}
-          </h2>
-          <p className="mt-1 text-[clamp(0.875rem,1.15vw,1.125rem)] text-white/65">
-            {caption.body}
-          </p>
-        </div>
-
-        <ol aria-label="Chapters" className="hidden items-center gap-1.5 md:flex">
-          {tourChapters.map((chapter, i) => {
-            const stops = tourStops.filter(
-              (stop) => tourCaptions[tourStates[stop].caption].chapter === chapter.id,
-            );
-            const passed = stops.filter((stop) => stop <= beat).length;
-            return (
-              <li
-                key={chapter.id}
-                aria-current={i === chapterIndex ? "step" : undefined}
-                title={chapter.label}
-                className="h-1 w-9 overflow-hidden rounded-full bg-white/15"
-              >
-                <span
-                  className="block h-full rounded-full bg-white transition-[width] duration-500"
-                  style={{ width: `${(passed / stops.length) * 100}%` }}
-                />
-              </li>
-            );
-          })}
-        </ol>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            aria-label="Back"
-            disabled={beat === 0}
-            onClick={back}
-            className={roundButton}
-          >
-            <ArrowLeft className="size-4.5" aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            aria-label="Next"
-            disabled={beat === lastBeat}
-            onClick={forward}
-            className={roundButton}
-          >
-            <ArrowRight className="size-4.5" aria-hidden="true" />
-          </button>
-        </div>
-      </footer>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// The loss: a quiet moment for John, then word going out to three screens
-
-const flowTo = ["husband", "wife", "advisor"] as const;
-const flowSlots = ["third1", "third2", "third3"] as const;
-
-function Loss({ s, layout }: { s: TourState; layout: StageLayout }) {
-  const { center, source } = layout;
-  const at = s.memorial === "source" ? source : center;
-  const years = `${tourFacts.born.slice(0, 4)} – ${tourFacts.died.slice(0, 4)}`;
-  return (
-    <div aria-hidden={s.memorial === "off"} className="pointer-events-none absolute inset-0 z-10">
-      <svg className="absolute inset-0 size-full overflow-visible">
-        <defs>
-          {flowTo.map((id, i) => {
-            const end = layout.slots[flowSlots[i]];
-            return (
-              <linearGradient
-                key={id}
-                id={`tour-flow-${id}`}
-                gradientUnits="userSpaceOnUse"
-                x1={source.x}
-                y1={source.y}
-                x2={end.x + end.w / 2}
-                y2={end.y}
-              >
-                <stop offset="0" stopColor="white" stopOpacity="0.9" />
-                <stop offset="1" stopColor={tourGlow[id][0]} />
-              </linearGradient>
-            );
-          })}
-        </defs>
-        {flowTo.map((id, i) => {
-          const slot = layout.slots[flowSlots[i]];
-          const x = slot.x + slot.w / 2;
-          const y = slot.y - 8;
-          const y0 = source.y + 12;
-          const bend = (y - y0) * 0.62;
-          return (
-            <path
-              key={id}
-              d={`M ${source.x} ${y0} C ${source.x} ${y0 + bend}, ${x} ${y - bend}, ${x} ${y}`}
-              pathLength={1}
-              fill="none"
-              stroke={`url(#tour-flow-${id})`}
-              strokeWidth={2}
-              strokeLinecap="round"
-              data-on={s.flows}
-              className="tour-flow"
-              style={{
-                opacity: s.flows ? 1 : 0,
-                transitionDelay: s.flows ? `${i * 120}ms` : "0ms",
-                filter: `drop-shadow(0 0 6px ${tourGlow[id][0]})`,
-              }}
-            />
-          );
-        })}
-      </svg>
-
-      {/* A single light: it rests at the centre, then becomes where the news starts from. */}
-      <div
-        className="absolute left-0 top-0 transition-[transform,opacity] duration-[1100ms] ease-[cubic-bezier(0.6,0,0.2,1)]"
-        style={{
-          transform: `translate(${at.x}px, ${at.y}px)`,
-          opacity: s.memorial === "off" ? 0 : 1,
-        }}
-      >
-        <span
-          className={cn(
-            "tour-ember absolute -left-2 -top-2 block size-4 rounded-full bg-white transition-shadow duration-[1300ms]",
-            s.memorial === "source"
-              ? "shadow-[0_0_18px_6px_rgb(255_255_255/0.35),0_0_60px_20px_rgb(255_255_255/0.12)]"
-              : "shadow-[0_0_30px_12px_rgb(255_244_214/0.4),0_0_120px_50px_rgb(255_244_214/0.14)]",
-          )}
-        />
-      </div>
-
-      <div
-        className={cn(
-          "absolute left-1/2 w-[min(90vw,40rem)] -translate-x-1/2 text-center transition-opacity ease-out",
-          s.memorial === "center"
-            ? "opacity-100 delay-500 duration-[1400ms]"
-            : "opacity-0 duration-500",
-        )}
-        style={{ top: center.y + 44 }}
-      >
-        <p className="font-[Georgia,'Times_New_Roman',serif] text-[clamp(2.25rem,4vw,3.5rem)] leading-tight">
-          {tourPeople.husband.name}
-        </p>
-        <p className="mt-3 text-[clamp(0.9rem,1.2vw,1.1rem)] tracking-[0.35em] text-white/60">
-          {years}
-        </p>
-        <p className="mt-6 font-[Georgia,'Times_New_Roman',serif] text-[clamp(1rem,1.3vw,1.25rem)] italic text-white/55">
-          Husband to Maya. Father to David and Alexa.
-        </p>
-      </div>
-
-      <p
-        className={cn(
-          "absolute left-1/2 -translate-x-1/2 whitespace-nowrap text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-white/60 transition-opacity",
-          s.memorial === "source" ? "opacity-100 delay-700 duration-700" : "opacity-0 duration-300",
-        )}
-        style={{ top: source.y - 38 }}
-      >
-        The bank records John&rsquo;s passing · {formatDate(tourFacts.died, "medium")}
-      </p>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// The close
-
-function Ending({ show, onReplay }: { show: boolean; onReplay: () => void }) {
-  const button =
-    "flex h-11 items-center gap-2 rounded-full px-5 text-sm font-semibold transition-colors";
-  return (
-    <div
-      aria-hidden={!show}
-      className={cn(
-        "absolute inset-0 z-20 grid place-items-center pb-24 transition-opacity duration-1000",
-        show ? "opacity-100 delay-300" : "pointer-events-none opacity-0",
-      )}
-    >
-      <div className="max-w-2xl px-6 text-center">
-        <FindoeLogo className="mx-auto size-14" />
-        <p className="mt-6 font-display text-[clamp(2rem,3.6vw,3.25rem)] font-medium leading-tight">
-          A family is never left to work it out alone.
-        </p>
-        <p className="mt-4 text-[clamp(1rem,1.3vw,1.2rem)] text-white/65">
-          One family view before a loss. A prepared advisor and guided, cited claims after it.
-        </p>
-        <div className="mt-8 flex justify-center gap-3">
-          <button
-            type="button"
-            tabIndex={show ? 0 : -1}
-            onClick={onReplay}
-            className={cn(button, "bg-white/10 ring-1 ring-white/20 hover:bg-white/20", focusRing)}
-          >
-            <RotateCcw className="size-4" aria-hidden="true" /> Replay the tour
-          </button>
-          <Link
-            href={routes.signOn}
-            tabIndex={show ? 0 : -1}
-            className={cn(button, "bg-pnc-orange hover:bg-pnc-orange-600", focusRing)}
-          >
-            Open the prototype <ArrowRight className="size-4" aria-hidden="true" />
-          </Link>
-        </div>
-      </div>
     </div>
   );
 }

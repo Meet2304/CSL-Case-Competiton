@@ -2,7 +2,16 @@
 
 import Link from "next/link";
 import { useEffect, useId, useState, type ReactNode } from "react";
-import { ArrowRight, CircleCheck, FileUp, LoaderCircle, Search } from "lucide-react";
+import {
+  ArrowRight,
+  CircleCheck,
+  FileCheck2,
+  FileText,
+  FileUp,
+  LoaderCircle,
+  Search,
+} from "lucide-react";
+import { useViewer } from "@/components/customer/Viewer";
 import { MockBadge } from "@/components/mock/Mock";
 import { Dialog } from "@/components/ui/Dialog";
 import { Money } from "@/components/ui/Money";
@@ -15,12 +24,13 @@ import {
   sampleInstitutions,
   samplePncAccounts,
   samplePrices,
+  sampleTitleCheck,
   type AddOption,
 } from "@/data/addAsset";
 import { cn } from "@/lib/format";
 import { routes } from "@/lib/routes";
 
-type Step = "ask" | "working" | "result" | "done";
+type Step = "ask" | "proof" | "working" | "result" | "done";
 
 /** The first number in what someone typed ("1,000", "$12.50", "EUR 100"). */
 const amount = (s = "") => Number.parseFloat(s.replace(/[^\d.]/g, "")) || 0;
@@ -76,7 +86,9 @@ function Flow({ option: o, onClose }: { option: AddOption; onClose: () => void }
                 ? `Connecting to ${picked}`
                 : o.flow === "import"
                   ? "Reading your file"
-                  : "Estimating its value"}
+                  : o.flow === "document"
+                    ? "Checking the document"
+                    : "Estimating its value"}
           </p>
           <p className="mt-1 text-sm text-pnc-muted">This takes a moment.</p>
         </div>
@@ -85,6 +97,24 @@ function Flow({ option: o, onClose }: { option: AddOption; onClose: () => void }
 
   if (step === "result")
     return <Result option={o} values={values} picked={picked} onAdd={() => setStep("done")} />;
+
+  // A document flow asks for the paper that proves ownership before anything is added.
+  if (step === "proof" && o.proof)
+    return (
+      <Body>
+        <p className="font-semibold text-pnc-ink">Proof of ownership</p>
+        <p className="mt-0.5 text-sm text-pnc-muted">{o.proof.hint}</p>
+        <button
+          type="button"
+          onClick={() => setStep("working")}
+          className="mt-3 flex w-full flex-col items-center rounded-lg border-2 border-dashed border-pnc-line px-6 py-8 text-center hover:border-pnc-link focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pnc-link"
+        >
+          <FileUp className="size-7 text-pnc-blue-700" aria-hidden="true" />
+          <span className="mt-2 font-semibold text-pnc-ink">{o.proof.label}</span>
+          <span className="mt-0.5 text-sm text-pnc-muted">PDF, JPG or PNG</span>
+        </button>
+      </Body>
+    );
 
   // First screen: what the flow needs to know.
   if (o.flow === "connect")
@@ -127,7 +157,15 @@ function Flow({ option: o, onClose }: { option: AddOption; onClose: () => void }
       onSubmit={(e) => {
         e.preventDefault();
         if (!ready) return;
-        setStep(o.flow === "estimate" ? "working" : o.flow === "ticker" ? "result" : "done");
+        setStep(
+          o.flow === "estimate"
+            ? "working"
+            : o.flow === "document"
+              ? "proof"
+              : o.flow === "ticker"
+                ? "result"
+                : "done",
+        );
       }}
     >
       <Body>
@@ -175,7 +213,9 @@ function Flow({ option: o, onClose }: { option: AddOption; onClose: () => void }
               ? "Look it up"
               : o.flow === "portfolio"
                 ? "Link portfolio"
-                : "Add asset"}
+                : o.flow === "document"
+                  ? "Continue"
+                  : "Add asset"}
           <ArrowRight className="size-4" aria-hidden="true" />
         </button>
       </Footer>
@@ -238,7 +278,9 @@ function Result({
 }) {
   let body: ReactNode;
   let action = "Add to Assets and Debts";
-  if (o.flow === "pnc") {
+  if (o.flow === "document") {
+    body = <TitleCheck values={values} />;
+  } else if (o.flow === "pnc") {
     const found = samplePncAccounts[o.id] ?? [];
     body = (
       <>
@@ -307,6 +349,48 @@ function Result({
           <ArrowRight className="size-4" aria-hidden="true" />
         </button>
       </Footer>
+    </>
+  );
+}
+
+/** What the uploaded title shows, checked against the person and what they entered. */
+function TitleCheck({ values }: { values: Record<string, string> }) {
+  const { person } = useViewer();
+  const t = sampleTitleCheck;
+  const vehicle = [values.year, values.model].filter(Boolean).join(" ");
+  const checks = [
+    `Owner on the title: ${person.name}, matches your profile`,
+    `Vehicle: ${vehicle}, matches what you entered`,
+    `Liens: ${t.liens.toLowerCase()}`,
+  ];
+  return (
+    <>
+      <div className="flex items-center gap-3 rounded-lg border border-pnc-line p-3">
+        <span className="grid size-10 shrink-0 place-items-center rounded-md bg-pnc-blue-50 text-pnc-blue-700">
+          <FileText className="size-5" aria-hidden="true" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-semibold text-pnc-ink">{t.document}</span>
+          <span className="block truncate text-xs text-pnc-muted">
+            {t.file} · title {t.titleNumber} · issued {t.issued}
+          </span>
+        </span>
+        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-pnc-positive-bg px-2.5 py-1 text-xs font-semibold text-pnc-positive">
+          <FileCheck2 className="size-3.5" aria-hidden="true" /> Verified
+        </span>
+      </div>
+      <ul className="mt-4 space-y-2 text-sm text-pnc-ink">
+        {checks.map((c) => (
+          <li key={c} className="flex gap-2">
+            <CircleCheck className="mt-0.5 size-4 shrink-0 text-pnc-positive" aria-hidden="true" />
+            {c}
+          </li>
+        ))}
+      </ul>
+      <p className="mt-4 text-sm text-pnc-muted">
+        The title is kept with the vehicle on Assets and Debts, so your family and your advisor can
+        see it is yours.
+      </p>
     </>
   );
 }
