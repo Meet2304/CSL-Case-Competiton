@@ -79,7 +79,7 @@ describe("my assets", () => {
     const find = (q: string) => items.filter((i) => assetMatches(i, q)).map((i) => i.account.id);
     expect(find("x0011")).toEqual(["acct-jordan-ira"]);
     expect(find("maya roth")).toEqual(["acct-casey-roth"]);
-    expect(find("my family")).toEqual(["acct-casey-savings", "acct-casey-roth"]);
+    expect(find("smith family")).toEqual(["acct-casey-savings", "acct-casey-roth"]);
     expect(find("")).toHaveLength(items.length);
   });
 });

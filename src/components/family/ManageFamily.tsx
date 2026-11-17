@@ -1,14 +1,21 @@
 "use client";
 
 import { useId, useState, type KeyboardEvent } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Check, Eye, EyeOff, Pencil } from "lucide-react";
 import { tabButton } from "@/components/advisor/assistant/parts";
 import { Dialog } from "@/components/ui/Dialog";
 import { firstName } from "@/lib/family";
 import { useFamily } from "./FamilyProvider";
 import { MemberFamilyView } from "./MemberFamilyView";
 import { MembersPanel } from "./MembersPanel";
-import { PanelIntro } from "./parts";
+import {
+  fieldInput,
+  fieldLabel,
+  linkButton,
+  PanelIntro,
+  primaryButton,
+  secondaryButton,
+} from "./parts";
 import { RolesPanel } from "./RolesPanel";
 
 export const manageTabs = [
@@ -19,8 +26,8 @@ export const manageTabs = [
 export type ManageTab = (typeof manageTabs)[number]["id"];
 
 /**
- * Everything an admin can change about a family, in one panel: who's in it
- * and their role, what each role can see and do, and a preview of exactly
+ * Everything an admin can change about a family, in one panel: its name, who's
+ * in it and their role, what each role can see and do, and a preview of exactly
  * what any member sees. Only rendered for admins.
  */
 export function ManageFamily({
@@ -54,6 +61,7 @@ export function ManageFamily({
       title={`Manage ${state.familyName}`}
       description="Only admins can see or change these settings."
     >
+      <RenameFamily />
       <div
         role="tablist"
         aria-label="Manage family"
@@ -87,6 +95,76 @@ export function ManageFamily({
         {current === "visibility" && <VisibilityPanel />}
       </div>
     </Dialog>
+  );
+}
+
+/** The family's name, with an inline form to rename it. */
+function RenameFamily() {
+  const { state, dispatch } = useFamily();
+  const id = useId();
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(state.familyName);
+  const [tried, setTried] = useState(false);
+  const error = !name.trim() ? "Give your family a name." : null;
+
+  function start() {
+    setName(state.familyName);
+    setTried(false);
+    setEditing(true);
+  }
+
+  if (!editing)
+    return (
+      <div className="flex items-center justify-between gap-3 border-b border-pnc-line px-5 py-3.5">
+        <div className="min-w-0">
+          <p className="text-xs text-pnc-muted">Family name</p>
+          <p className="truncate font-semibold text-pnc-ink">{state.familyName}</p>
+        </div>
+        <button type="button" onClick={start} className={linkButton}>
+          <Pencil className="size-3.5" aria-hidden="true" /> Rename
+        </button>
+      </div>
+    );
+
+  return (
+    <form
+      noValidate
+      onSubmit={(e) => {
+        e.preventDefault();
+        setTried(true);
+        if (error) return;
+        dispatch({ type: "renameFamily", name });
+        setEditing(false);
+      }}
+      className="border-b border-pnc-line px-5 py-4"
+    >
+      <label htmlFor={`${id}-name`} className={fieldLabel}>
+        Family name
+      </label>
+      <input
+        id={`${id}-name`}
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        maxLength={40}
+        aria-invalid={tried && error ? true : undefined}
+        aria-describedby={tried && error ? `${id}-error` : undefined}
+        className={fieldInput}
+        autoFocus
+      />
+      {tried && error && (
+        <p id={`${id}-error`} className="mt-1 text-xs text-pnc-negative">
+          {error}
+        </p>
+      )}
+      <div className="mt-3 flex flex-wrap gap-3">
+        <button type="submit" className={primaryButton}>
+          <Check className="size-4" aria-hidden="true" /> Save name
+        </button>
+        <button type="button" onClick={() => setEditing(false)} className={secondaryButton}>
+          Cancel
+        </button>
+      </div>
+    </form>
   );
 }
 
