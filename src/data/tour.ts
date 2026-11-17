@@ -1,19 +1,21 @@
 /**
  * The script of the guided tour (`/tour`): one family's story, told on the
- * working app. Each scene puts one or two people's screens on stage; each
- * stop is one key press, which clicks through the real controls and then
- * rests. The family is John, Maya, David and Alexa Smith, with the Bank
- * Advisor; the tour's own words introduce no other names.
+ * working app. Between acts the stage shows the family themselves (`cast`);
+ * within an act, a scene puts one or two people's screens on stage. Each stop
+ * is one key press: it clicks through the real controls, the spotlight settles
+ * on the one thing that matters, and one short line says what it means. The
+ * family is John, Maya, David and Alexa Smith, with the Bank Advisor; the
+ * tour's own words introduce no other names.
  *
  * Targets describe elements by the words on them, so the tour keeps working
  * when the app's markup changes but its labels do not. When you rename a
  * label or heading in the app, update the script and replay `/tour`.
  */
 import type { Target } from "@/lib/film";
-import type { FrameId, TourScene, TourStop } from "@/lib/tour";
+import type { FrameId, TourScene, TourStep, TourStop } from "@/lib/tour";
 import type { WillDraft } from "@/lib/will/types";
 import { advisorCustomers } from "./advisor";
-import { people } from "./household";
+import { accounts, people } from "./household";
 import type { AvatarLook } from "./types";
 import { placeholderCharities } from "./will";
 
@@ -81,8 +83,12 @@ export const tourGlow: Record<FrameId, string> = {
   husband: "var(--tour-husband)",
   wife: "var(--tour-wife)",
   child1: "var(--tour-child1)",
+  child2: "var(--tour-child2)",
   advisor: "var(--tour-advisor)",
 };
+
+/** The family, in the order the stage shows them. */
+export const familyIds = ["husband", "wife", "child1", "child2"] as const;
 
 const john = people.find((p) => p.id === "p-jordan")!;
 const maya = people.find((p) => p.id === "p-casey")!;
@@ -97,7 +103,26 @@ export const tourLoss = {
   born: john.birthdate,
   date: loss.date,
   reportedVia: loss.reportedVia,
+  /** The words under his name when he is gone. */
+  remembered: "Husband to Maya. Father to David and Alexa.",
 };
+
+/** What John looks after, alone, before the story begins: his accounts, wherever they are held. */
+export const carried = [
+  "acct-ira",
+  "acct-life",
+  "acct-brokerage",
+  "acct-savings",
+  "acct-card",
+  "acct-joint-checking",
+].map((short) => {
+  const id = short === "acct-joint-checking" ? short : short.replace("acct-", "acct-jordan-");
+  const a = accounts.find((x) => x.id === id)!;
+  return { id, name: a.name, balance: a.balance, external: Boolean(a.external) };
+});
+
+/** The beneficiaries John names on his Savings, as his will gives it: to the children. */
+export const savingsBeneficiaries = children.map((c) => ({ id: c.id, name: c.name }));
 
 // ---------------------------------------------------------------------------
 // John's will, as far as he has got before the tour begins: every answer
@@ -172,59 +197,31 @@ const JOHN_AS_CLIENT = "/advisor/clients/c-sample#estate";
 const WIDE = 1280;
 const HALF = 860;
 
+const home = { path: "/home", ready: { text: "Portfolio Summary" } };
+
 export const tourScenes: Record<string, TourScene> = {
-  "sign-on": {
-    world: "before",
-    frames: {
-      husband: {
-        slot: "left",
-        path: "/",
-        ready: { css: "input[name=userId]" },
-        width: HALF,
-        signedOut: true,
-      },
-      wife: {
-        slot: "right",
-        path: "/",
-        ready: { css: "input[name=userId]" },
-        width: HALF,
-        signedOut: true,
-      },
-    },
-  },
-  john: {
-    world: "before",
-    frames: {
-      husband: { slot: "solo", path: "/assets", ready: { text: "What you own" }, width: WIDE },
-    },
-  },
+  john: { world: "before", frames: { husband: { slot: "solo", ...home, width: WIDE } } },
   family: {
-    world: "before",
+    world: "ready",
     frames: {
       husband: { slot: "solo", path: FAMILY, ready: { text: "Shared assets" }, width: WIDE },
     },
   },
   access: {
-    world: "before",
+    world: "ready",
     frames: {
       husband: { slot: "left", path: FAMILY, ready: { text: "Shared assets" }, width: HALF },
       child1: { slot: "right", path: FAMILY, ready: { text: "Shared with you" }, width: HALF },
     },
   },
-  loss: {
-    world: "before",
-    frames: {
-      husband: { slot: "solo", path: "/home", ready: { text: "Portfolio Summary" }, width: WIDE },
-    },
-  },
   advisor: {
-    world: "before",
+    world: "ready",
     frames: {
       advisor: { slot: "solo", path: "/advisor", ready: { text: "Your Customers" }, width: WIDE },
     },
   },
   transfer: {
-    world: "before",
+    world: "ready",
     frames: {
       advisor: {
         slot: "left",
@@ -232,7 +229,7 @@ export const tourScenes: Record<string, TourScene> = {
         ready: { text: "Estate of John Smith" },
         width: HALF,
       },
-      wife: { slot: "right", path: "/home", ready: { text: "Portfolio Summary" }, width: HALF },
+      wife: { slot: "right", ...home, width: HALF },
     },
   },
   maya: {
@@ -240,10 +237,17 @@ export const tourScenes: Record<string, TourScene> = {
     frames: {
       wife: {
         slot: "solo",
-        path: "/home",
-        ready: { text: "so sorry for the loss of John" },
+        path: "/assets#unclaimed",
+        ready: { text: "accounts that can pass to you" },
         width: WIDE,
       },
+    },
+  },
+  children: {
+    world: "after",
+    frames: {
+      child1: { slot: "left", path: "/home", ready: { text: "so sorry about John" }, width: HALF },
+      child2: { slot: "right", path: "/home", ready: { text: "so sorry about John" }, width: HALF },
     },
   },
 };
@@ -255,161 +259,144 @@ export const tourScenes: Record<string, TourScene> = {
 const dialog = "dialog[open]";
 const inDialog = (text: string, css = "button"): Target => ({ css: `${dialog} ${css}`, text });
 /** The white card that holds this heading. */
-const card = (text: string, closest = ".shadow-card"): Target => ({ text, closest });
+const card = (text: string, closest = "section"): Target => ({ text, closest });
 const findoePanel = "aside.findoe-panel";
 
 const ADVISOR_QUESTION =
   "Based on John's will, what do I need to do to start the asset transfer to his spouse?";
+const CONDOLENCE =
+  "Maya, I'm so sorry about John. There is nothing you need to do today. When you feel ready, I'm here.";
 const MAYA_QUESTION = "Will I owe tax on what John left me?";
 
 export const tourStops: TourStop[] = [
-  // --- Two people ----------------------------------------------------------
+  // --- The family ----------------------------------------------------------
+  { id: "title", cast: "title", line: "" },
+  { id: "smiths", cast: "family", line: "The Smiths." },
   {
-    id: "open",
-    scene: "sign-on",
-    say: "John and Maya each have their own sign-on to PNC Private Bank.",
-  },
-  {
-    id: "sign-on",
-    scene: "sign-on",
-    say: "Each signs on and lands on a home page of their own.",
-    steps: [
-      { in: "husband", do: "type", into: { css: "input[name=userId]" }, text: "john" },
-      { in: "wife", do: "type", into: { css: "input[name=userId]" }, text: "maya" },
-      {
-        in: "husband",
-        do: "click",
-        on: { css: "button[type=submit]", text: "Sign On" },
-        signsIn: true,
-      },
-      { in: "husband", do: "wait", for: { text: "Portfolio Summary" } },
-      {
-        in: "wife",
-        do: "click",
-        on: { css: "button[type=submit]", text: "Sign On" },
-        signsIn: true,
-      },
-      { in: "wife", do: "wait", for: { text: "Portfolio Summary" } },
-    ],
+    id: "carries",
+    cast: "carries",
+    line: "John looks after the money. The whole picture lives with him.",
   },
 
-  // --- John puts his affairs in one place ---------------------------------
+  // --- John puts his affairs in order --------------------------------------
+  {
+    id: "home",
+    scene: "john",
+    line: "It starts with one view.",
+    focus: { husband: { on: card("Portfolio Summary") } },
+  },
   {
     id: "assets",
     scene: "john",
-    say: "John's Assets and Debts: everything he owns and owes, in one place.",
-  },
-  {
-    id: "add",
-    scene: "john",
-    say: "Add asset: accounts at PNC, accounts held elsewhere, and things he enters himself.",
+    line: "Everything he owns. Everything he owes.",
     steps: [
-      { in: "husband", do: "click", on: { css: "a", text: "Add asset" } },
-      { in: "husband", do: "wait", for: { text: "External accounts" } },
+      { in: "husband", do: "click", on: { css: "a", text: "Open Assets and Debts" } },
+      { in: "husband", do: "wait", for: { text: "What you own" } },
     ],
   },
   {
     id: "outside",
     scene: "john",
-    say: "He links an account held at another institution.",
-    steps: [
-      { in: "husband", do: "click", on: { text: "Banks and brokerages", closest: "button" } },
-      { in: "husband", do: "click", on: inDialog("Demo Brokerage") },
-      { in: "husband", do: "wait", for: { text: "Found at Demo Brokerage" } },
-    ],
-    focus: { husband: { on: { css: dialog }, maxZoom: 1.5 } },
+    line: "Even what PNC doesn't hold.",
+    focus: { husband: { on: { text: "Term Life Policy", closest: "li" }, maxZoom: 1.25 } },
   },
   {
-    id: "outside-added",
+    id: "add",
     scene: "john",
-    say: "The accounts found there are added to his Assets and Debts.",
+    line: "The house. The car. The things a bank never sees.",
     steps: [
-      { in: "husband", do: "click", on: inDialog("Add 2 accounts") },
-      { in: "husband", do: "wait", for: { text: "Added to Assets and Debts" } },
+      { in: "husband", do: "click", on: { css: "a", text: "Add asset" } },
+      { in: "husband", do: "wait", for: { text: "Add your own" } },
     ],
-    focus: { husband: { on: { css: dialog }, maxZoom: 1.5 } },
+    focus: {
+      husband: { on: { text: "Property, valuables and anything else", closest: "section" } },
+    },
   },
   {
-    id: "own",
+    id: "house",
     scene: "john",
-    say: "He adds the family home himself, and the bank estimates its value.",
+    line: "He adds the family home. The bank values it for him.",
     steps: [
-      { in: "husband", do: "click", on: inDialog("Add another") },
       { in: "husband", do: "click", on: { text: "Real estate", closest: "button" } },
       { in: "husband", do: "type", into: { css: `${dialog} input` }, text: "100 Sample Street" },
       { in: "husband", do: "click", on: inDialog("Estimate value") },
       { in: "husband", do: "wait", for: { text: "Estimated value" } },
     ],
-    focus: { husband: { on: { css: dialog }, maxZoom: 1.5 } },
+    focus: { husband: { on: { css: dialog }, spot: false } },
   },
   {
-    id: "own-added",
+    id: "gaps",
     scene: "john",
-    say: "The home joins everything else he owns.",
+    line: "Findoe finds the gaps while there is still time.",
     steps: [
       { in: "husband", do: "click", on: inDialog("Add to Assets and Debts") },
       { in: "husband", do: "wait", for: { text: "Added to Assets and Debts" } },
+      { in: "husband", do: "click", on: inDialog("Back to Assets and Debts", "a") },
+      { in: "husband", do: "wait", for: { text: "What you own" } },
+      { in: "husband", do: "click", on: { css: "header a", text: "Home", exact: true } },
+      { in: "husband", do: "wait", for: { text: "Portfolio Summary" } },
     ],
-    focus: { husband: { on: { css: dialog }, maxZoom: 1.5 } },
+    focus: {
+      husband: { on: { text: "Add a beneficiary to Savings x0002", closest: "li" }, maxZoom: 1.3 },
+    },
+  },
+  {
+    id: "named",
+    scene: "john",
+    line: "A name today. No probate later.",
+    steps: [
+      { in: "husband", do: "click", on: { css: 'a[href="/assets#manage-acct-jordan-savings"]' } },
+      { in: "husband", do: "click", on: inDialog("Add beneficiary") },
+      ...savingsBeneficiariesSteps(),
+      { in: "husband", do: "click", on: inDialog("Save") },
+    ],
+    focus: { husband: { on: { css: `${dialog} section`, text: "David and Alexa" }, maxZoom: 1.3 } },
   },
   {
     id: "will",
     scene: "john",
-    say: "His will lives under Assets and Debts too, and he has answered every question.",
+    line: "The conversation nobody wants to have.",
     steps: [
-      { in: "husband", do: "click", on: inDialog("Back to Assets and Debts", "a") },
-      { in: "husband", do: "wait", for: { text: "What you own" } },
+      { in: "husband", do: "click", on: { css: `${dialog} button[aria-label="Close"]` } },
       { in: "husband", do: "click", on: { css: "header button", text: "Assets and Debts" } },
       { in: "husband", do: "click", on: { css: "a", text: "Your will" } },
       { in: "husband", do: "wait", for: { text: "What your will covers" } },
     ],
-  },
-  {
-    id: "will-review",
-    scene: "john",
-    say: "He reviews it: Maya inherits, and Maya carries out his wishes.",
-    steps: [
-      { in: "husband", do: "click", on: { css: "button", text: "Continue your will" } },
-      { in: "husband", do: "wait", for: { text: "Generate will (preview)" } },
-    ],
+    focus: { husband: { on: { text: "Finish your will", closest: "div.rounded-lg" } } },
   },
   {
     id: "will-draft",
     scene: "john",
-    say: "The bank writes the will from his answers.",
+    line: "His wishes, in plain words.",
     steps: [
+      { in: "husband", do: "click", on: { css: "button", text: "Continue your will" } },
       { in: "husband", do: "click", on: { css: "button", text: "Generate will (preview)" } },
       { in: "husband", do: "wait", for: { text: "Add will to my account" } },
     ],
-    focus: { husband: { on: { text: "Add will to my account", closest: "div.space-y-6" } } },
+    focus: { husband: { on: { text: "Last Will and Testament of", closest: "div" }, spot: false } },
   },
   {
-    id: "will-on-file",
+    id: "signed",
     scene: "john",
-    say: "He adds the will to his account. His family and his advisor now know it is in place.",
+    line: "Done, long before it is needed.",
     steps: [
       { in: "husband", do: "click", on: { css: "button", text: "Add will to my account" } },
-      { in: "husband", do: "wait", for: { text: "Your will is on file" } },
       { in: "husband", do: "click", on: { css: "button", text: "Go to will overview" } },
       { in: "husband", do: "wait", for: { text: "People your will names" } },
     ],
+    focus: { husband: { on: { text: "People your will names", closest: "div" }, maxZoom: 1.3 } },
   },
 
   // --- One family ----------------------------------------------------------
   {
-    id: "family",
+    id: "dashboard",
     scene: "family",
-    say: "The Smith Family dashboard: what John and Maya own and owe, together, and the four of them.",
+    line: "One family. One shared picture.",
   },
   {
-    id: "david",
+    id: "access",
     scene: "access",
-    say: "John is an admin. David, 17, sees only what the family shares with him.",
-  },
-  {
-    id: "roles",
-    scene: "access",
-    say: "In Manage family, John opens David's role and what it can see.",
+    line: "John decides who sees what.",
     steps: [
       { in: "husband", do: "click", on: { css: "button", text: "Manage family" } },
       { in: "husband", do: "click", on: { css: "[role=tab]", text: "Roles & access" } },
@@ -420,12 +407,12 @@ export const tourStops: TourStop[] = [
       },
       { in: "husband", do: "wait", for: { text: "What this role can see" } },
     ],
-    focus: { husband: { on: { text: "What this role can see", closest: "div" } } },
+    focus: { child1: { on: { css: "h3", text: "Shared with you", closest: "section" } } },
   },
   {
     id: "share",
     scene: "access",
-    say: "He shares a savings account and a debt, and they appear on David's screen.",
+    line: "Account by account. Person by person.",
     steps: [
       {
         in: "husband",
@@ -440,49 +427,27 @@ export const tourStops: TourStop[] = [
       { in: "husband", do: "click", on: inDialog("Save changes") },
       { in: "child1", do: "wait", for: { text: "Cash Rewards Visa" } },
     ],
+    focus: { child1: { on: { css: "h3", text: "Shared with you", closest: "section" } } },
   },
 
   // --- A loss --------------------------------------------------------------
-  {
-    id: "loss",
-    scene: "loss",
-    say: "John passes away.",
-    steps: [{ do: "pause", ms: 1600 }],
-    quiet: "husband",
-  },
+  { id: "together", cast: "advisor", line: "And their advisor knows every one of them." },
+  { id: "loss", cast: "memorial", line: "" },
 
   // --- The advisor ---------------------------------------------------------
   {
     id: "alert",
     scene: "advisor",
-    say: "His advisor's home page opens on it: John is at the top, with what to do next.",
+    line: "The bank hears first. The advisor knows who to call.",
+    focus: { advisor: { on: { text: "Customer passed away · Oct 24", closest: "tr" } } },
   },
   {
     id: "estate",
     scene: "advisor",
-    say: "John's estate: the steps to process his will, in order.",
+    line: "John's will, carried out as he wrote it.",
     steps: [
       { in: "advisor", do: "click", on: { css: "a", text: "Process will" } },
       { in: "advisor", do: "wait", for: { text: "Estate of John Smith" } },
-    ],
-  },
-  {
-    id: "certificate",
-    scene: "advisor",
-    say: "The death certificate Maya sent is already verified by the bank.",
-    steps: [
-      { in: "advisor", do: "click", on: { css: "button", text: "View certificate" } },
-      { in: "advisor", do: "wait", for: { text: "Certificate of Death" } },
-    ],
-    focus: { advisor: { on: { css: dialog }, maxZoom: 1.5 } },
-  },
-  {
-    id: "passes",
-    scene: "advisor",
-    say: "The will John put on file decides what passes to Maya, David and Alexa.",
-    steps: [
-      { in: "advisor", do: "click", on: { css: `${dialog} button[aria-label="Close"]` } },
-      { in: "advisor", do: "look", at: { text: "Will on file", closest: "section" } },
     ],
     focus: {
       advisor: { on: { text: "Beneficiaries and what passes to them", closest: "section" } },
@@ -491,67 +456,59 @@ export const tourStops: TourStop[] = [
   {
     id: "ask",
     scene: "advisor",
-    say: "The advisor asks Findoe how to begin, and it shows its work before it answers.",
+    line: "Findoe answers, and shows its work.",
     steps: [
       { in: "advisor", do: "type", into: { css: "aside textarea" }, text: ADVISOR_QUESTION },
       { in: "advisor", do: "click", on: { css: "aside button", text: "Send" } },
       { in: "advisor", do: "wait", for: { text: "Worked through" } },
+      { in: "advisor", do: "click", on: { text: "Worked through", closest: "button" } },
     ],
-    focus: { advisor: { on: { css: "aside" }, fit: "width", maxZoom: 1.6 } },
+    focus: { advisor: { on: { css: "aside" }, fit: "width", maxZoom: 1.35 } },
   },
   {
-    id: "thinking",
+    id: "message",
     scene: "advisor",
-    say: "Its chain of thought is there to open: every record and rule it read.",
-    steps: [{ in: "advisor", do: "click", on: { text: "Worked through", closest: "button" } }],
-    focus: { advisor: { on: { css: "aside" }, fit: "width", maxZoom: 1.6 } },
-  },
-
-  // --- The handover --------------------------------------------------------
-  {
-    id: "maya-before",
-    scene: "transfer",
-    say: "Until now, nothing has been asked of Maya.",
+    line: "Then a person, not a process.",
+    steps: [
+      { in: "advisor", do: "click", on: { css: "main a", text: "Message" } },
+      { in: "advisor", do: "type", into: { css: "textarea" }, text: CONDOLENCE },
+      { in: "advisor", do: "click", on: { css: "main button[aria-label^='Send']" } },
+      { in: "advisor", do: "wait", for: { text: "nothing you need to do today" } },
+    ],
+    focus: { advisor: { on: { text: "nothing you need to do today", closest: "section" } } },
   },
   {
-    id: "initiate",
+    id: "transfer",
     scene: "transfer",
-    say: "The advisor initiates the wealth transfer, and sees who will be told.",
+    line: "Everyone John named is told what comes to them.",
     steps: [
       { in: "advisor", do: "click", on: { css: "button", text: "Initiate" } },
       { in: "advisor", do: "wait", for: { text: "Initiate wealth transfer?" } },
     ],
-    focus: { advisor: { on: { css: dialog } } },
+    focus: { advisor: { on: { css: dialog }, spot: false } },
   },
   {
     id: "notified",
     scene: "transfer",
-    say: "On Maya's screen, a condolence comes first. Nothing is due today.",
+    line: "Maya is met with care. Nothing is due today.",
     steps: [
       { in: "advisor", do: "click", on: inDialog("Initiate and notify") },
       { in: "wife", do: "wait", for: { text: "so sorry for the loss of John" } },
     ],
+    focus: { wife: { on: { text: "so sorry for the loss of John", closest: "div" } } },
   },
 
   // --- Maya ----------------------------------------------------------------
   {
-    id: "maya",
-    scene: "maya",
-    say: "Maya's home page, when she is ready: one link to what passes to her.",
-  },
-  {
     id: "unclaimed",
     scene: "maya",
-    say: "Everything John left her is in one list, each with the reason it is hers.",
-    steps: [
-      { in: "wife", do: "click", on: { css: "a", text: "See what passes to you" } },
-      { in: "wife", do: "wait", for: { text: "accounts that can pass to you" } },
-    ],
+    line: "Everything John left her, in one place.",
+    focus: { wife: { on: { css: 'ul[aria-label="Accounts you can claim"]' } } },
   },
   {
     id: "claim",
     scene: "maya",
-    say: "Joint Checking was theirs together. Two of its three steps are already filled in for her.",
+    line: "Two of three steps are already done for her.",
     steps: [
       { in: "wife", do: "click", on: { css: "button", text: "claim for Joint Checking" } },
       { in: "wife", do: "wait", for: { text: "Survivorship form" } },
@@ -560,7 +517,7 @@ export const tourStops: TourStop[] = [
   {
     id: "sent",
     scene: "maya",
-    say: "She confirms, signs and sends it. The bank takes it from here.",
+    line: "Sent. Nothing more today.",
     steps: [
       { in: "wife", do: "click", on: { text: "This is still my current ID", closest: "label" } },
       {
@@ -578,39 +535,47 @@ export const tourStops: TourStop[] = [
   {
     id: "maya-asks",
     scene: "maya",
-    say: "The life policy is paid by an insurer, not the bank. She asks Findoe how to claim it.",
+    line: "Her question, in her own words.",
     steps: [
-      { in: "wife", do: "click", on: { css: "button", text: "All unclaimed assets" } },
-      { in: "wife", do: "wait", for: { text: "accounts that can pass to you" } },
-      { in: "wife", do: "click", on: { css: "button", text: "Ask Findoe about Term Life Policy" } },
-      { in: "wife", do: "wait", for: { text: "Wrote the answer" } },
-    ],
-    focus: { wife: { on: { css: findoePanel }, fit: "width", maxZoom: 1.5 } },
-  },
-  {
-    id: "maya-tax",
-    scene: "maya",
-    say: "Then the question that keeps her up: tax. Findoe checks her records and the law, and cites both.",
-    steps: [
+      { in: "wife", do: "click", on: { css: "button.fixed", text: "Ask Findoe" } },
       { in: "wife", do: "type", into: { css: `${findoePanel} textarea` }, text: MAYA_QUESTION },
       { in: "wife", do: "click", on: { css: `${findoePanel} button`, text: "Send" } },
       { in: "wife", do: "wait", for: { text: "Searched the legal library" } },
     ],
-    focus: { wife: { on: { css: findoePanel }, fit: "width", maxZoom: 1.5 } },
+    focus: { wife: { on: { css: findoePanel }, fit: "width", maxZoom: 1.45 } },
   },
   {
     id: "maya-answer",
     scene: "maya",
-    say: "Most likely very little: a spouse pays no Pennsylvania inheritance tax, and every line is cited.",
+    line: "Her own accounts. The actual law.",
     steps: [{ in: "wife", do: "look", at: { text: "Most likely very little", closest: "div" } }],
     focus: {
-      wife: { on: { text: "Most likely very little", closest: "div" }, fit: "width", maxZoom: 1.5 },
+      wife: {
+        on: { text: "Most likely very little", closest: "div" },
+        fit: "width",
+        maxZoom: 1.45,
+      },
     },
   },
+
+  // --- The children, and the close -----------------------------------------
   {
-    id: "end",
-    say: "What John put in place, Maya never has to search for.",
+    id: "children",
+    scene: "children",
+    line: "The children are told gently. Nothing is asked of them.",
+    focus: {
+      child1: { on: { text: "so sorry about John", closest: "div" } },
+      child2: { on: { text: "so sorry about John", closest: "div" } },
+    },
   },
+  { id: "close", cast: "close", line: "What John put in place, Maya never had to search for." },
 ];
 
-export const tourQuestions = { advisor: ADVISOR_QUESTION, maya: MAYA_QUESTION, findoePanel, card };
+/** John ticks each child as a beneficiary on his Savings. */
+function savingsBeneficiariesSteps(): TourStep[] {
+  return savingsBeneficiaries.map(({ name }) => ({
+    in: "husband" as const,
+    do: "click" as const,
+    on: { css: `${dialog} label`, text: name },
+  }));
+}

@@ -202,6 +202,7 @@ html[data-scale] {
   --tour-husband: #2fbf8f;
   --tour-wife: #9b7bf7;
   --tour-child1: #f5a524;
+  --tour-child2: #f0619a;
   --tour-advisor: #3b9eff;
 }
 
@@ -232,6 +233,56 @@ html:has(.tour-stage) nextjs-portal {
 .tour-press {
   background: color-mix(in srgb, var(--glow) 38%, transparent);
 }
+/*
+ * The spotlight: a clear window over what matters, with the rest of the page
+ * washed back towards white, so a newcomer sees one thing at a time.
+ */
+.tour-spot {
+  border-radius: 14px;
+  box-shadow:
+    0 0 0 1.5px color-mix(in srgb, var(--glow) 55%, transparent),
+    0 0 0 100vmax rgb(255 255 255 / 0.74);
+  transition:
+    left 900ms cubic-bezier(0.65, 0, 0.35, 1),
+    top 900ms cubic-bezier(0.65, 0, 0.35, 1),
+    width 900ms cubic-bezier(0.65, 0, 0.35, 1),
+    height 900ms cubic-bezier(0.65, 0, 0.35, 1),
+    opacity 700ms ease;
+}
+
+/* The family, between acts: people glide to their places; John's accounts drift in around him. */
+.tour-person {
+  transition:
+    left 1200ms cubic-bezier(0.65, 0, 0.35, 1),
+    top 1200ms cubic-bezier(0.65, 0, 0.35, 1),
+    transform 1200ms cubic-bezier(0.65, 0, 0.35, 1),
+    opacity 1400ms ease,
+    filter 1800ms ease;
+}
+.tour-face {
+  box-shadow:
+    0 0 0 4px white,
+    0 0 0 6px color-mix(in srgb, var(--glow) 45%, white),
+    0 14px 40px -8px color-mix(in srgb, var(--glow) 55%, transparent);
+  transition: filter 2s ease;
+}
+.tour-chip {
+  transition:
+    opacity 700ms ease,
+    transform 900ms cubic-bezier(0.22, 0.8, 0.3, 1);
+}
+
+/* The stop's one line, arriving. */
+.tour-line {
+  animation: tour-line 700ms cubic-bezier(0.22, 0.8, 0.3, 1) both;
+}
+@keyframes tour-line {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
 /* A person who has died: the color drains from their screen and the glow behind it goes out. */
 .tour-frame[data-quiet="true"] .tour-glow {
   opacity: 0;

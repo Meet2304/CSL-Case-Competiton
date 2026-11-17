@@ -44,26 +44,29 @@ A presenter-led walk through one family's story, told on the working app and mad
 over in a pitch or a customer conversation. It needs no sign-on. Open it with **Take the guided
 tour** on the sign-on page or go straight to `/tour`.
 
-The stage is plain white with nothing on it but the screens: no titles, captions, arrows or
-progress bar. Each person's screen is a white card holding the real pages, signed in as them,
-with one soft color glowing behind it and their picture, name and role above it, in the same
-color every time they appear: John green, Maya violet, David amber, the Bank Advisor blue.
+The stage is plain white. Between acts it shows the family themselves: the Smiths, John with
+everything he looks after around him, their advisor beside them, John's memorial and the close.
+Within an act it shows the working app: each person's screen is a white card holding the real
+pages, signed in as them, with one soft color glowing behind it and their picture, name and role
+above it (John green, Maya violet, David amber, Alexa pink, the Bank Advisor blue). A spotlight
+washes the rest of the page back to white so only the one thing that matters stays clear, and
+one short line under the stage says what it means. There are no titles, arrows or progress bars.
 
 - **Nothing moves by itself.** Each press of → (or Page Down, the space bar or a click on the
-  stage) plays one stop and then rests: a pointer moves and clicks the app's own controls, a
-  page opens, the camera closes in. A press while a stop is still playing is ignored. ← steps
-  back a stop, Home starts again and Esc leaves. The current stop is kept in the URL
-  (`/tour#maya-tax`), so a refresh or a shared link opens at the same place.
-- **The story, in 34 stops:** John and Maya sign on side by side. John, alone, adds an account
-  held at another institution and the family home (valued for him) through **Add asset**, then
-  reviews his will, has it written and puts it on file. The Smith Family dashboard; John opens
-  Manage family and shares a savings account and a debt with David, whose screen updates beside
-  his. John passes away: his screen drains of color. His advisor's home opens on it; the estate
-  page, the verified death certificate, what his will passes to each of them, and a question to
-  Findoe whose chain of thought can be opened. The advisor initiates the transfer and Maya's
-  screen, beside it, receives a condolence. Maya claims Joint Checking (two of three steps
-  already filled in) and asks Findoe how to claim the life policy and whether she will owe tax:
-  it shows the records and laws it searched, then a cited answer.
+  stage) plays one stop and then rests: a pointer clicks the app's own controls, the camera and
+  spotlight settle. A press while a stop is still playing is ignored. ← steps back a stop, Home
+  starts again and Esc leaves. The current stop is kept in the URL (`/tour#named`), so a refresh
+  or a shared link opens at the same place.
+- **The story, in 31 stops:** The Smiths, and John carrying the whole picture alone. John's
+  Home and Assets and Debts, including the life policy outside PNC; he adds the family home
+  through **Add asset** and the bank values it; Findoe flags an account with no beneficiary and
+  he names David and Alexa ("A name today. No probate later."); he finishes his will and puts it
+  on file. The Smith Family dashboard; John decides what David sees, and David's screen updates
+  beside his. Their advisor joins them; John's memorial. The advisor's home opens on it; John's
+  estate as his will directs; a question to Findoe with its working shown; a message to Maya
+  ("A person, not a process."); the transfer, and Maya's screen receiving a condolence. Maya's
+  unclaimed assets, a claim with two of three steps already done, and her own question about tax,
+  answered from her records and the law. David and Alexa, told gently. The close.
 - **Made for a laptop or a projector.** Cards fill the window at any aspect ratio. On a
   phone-sized window the tour asks for a larger screen.
 - **The family is John, Maya, David and Alexa**, plus the Bank Advisor; the tour's own words

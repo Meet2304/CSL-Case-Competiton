@@ -14,10 +14,18 @@ import {
   waitFor,
 } from "@/components/film/driver";
 import { useHashTab } from "@/components/shared/useHashTab";
-import { tourLoss, tourPeople, tourScenes, tourStops, tourWillDraft } from "@/data/tour";
+import {
+  savingsBeneficiaries,
+  tourLoss,
+  tourPeople,
+  tourScenes,
+  tourStops,
+  tourWillDraft,
+} from "@/data/tour";
 import { bereavementActions, currentBereavement } from "@/lib/bereavement";
 import { visiblePart, type Rect, type Target } from "@/lib/film";
 import { filmSignIn, filmSignOut } from "@/lib/filmSession";
+import { householdActions } from "@/lib/householdStore";
 import { cn } from "@/lib/format";
 import { routes } from "@/lib/routes";
 import {
@@ -33,7 +41,8 @@ import {
   type TourWorld,
 } from "@/lib/tour";
 import { REVIEW_SCREEN, screens } from "@/lib/will/flow";
-import { loadWill, saveWill, setWillStatus } from "@/lib/will/storage";
+import { saveWill, setWillStatus } from "@/lib/will/storage";
+import { Cast } from "./Cast";
 import { Frame, GLIDE_MS, hiddenFrame, MOVE_MS, VEIL_MS, type FrameView } from "./Frame";
 
 const stopIds = tourStops.map((s) => s.id);
@@ -72,22 +81,27 @@ function seedWill(status: "in-progress" | "on-file") {
 }
 
 /**
- * Puts the demo's saved state where a scene needs it. Moving forward, the
- * state is whatever the people on stage just did; jumping in or stepping
- * back (`fresh`), it is rebuilt from nothing.
+ * Puts the demo's saved state where a scene needs it. Before John has put his
+ * affairs in order, everything starts clean. After that, his will is on file
+ * and his Savings names the children; after his death, the bank has told the
+ * family, begun the transfer and has Maya's copy of the certificate. Moving
+ * forward these are what the people on stage just did, so this only fills in
+ * what is missing; jumping in or stepping back (`fresh`), it rebuilds them.
  */
 function prepareWorld(world: TourWorld, fresh: boolean) {
-  const told = () => currentBereavement().losses.some((l) => l.personName === tourLoss.personName);
   if (world === "before") {
-    if (fresh || told()) resetDemo();
-    if (!loadWill(tourLoss.personId).progress) seedWill("in-progress");
+    resetDemo();
+    seedWill("in-progress");
     return;
   }
-  if (fresh) {
-    resetDemo();
-    seedWill("on-file");
-  }
-  if (!told())
+  if (fresh) resetDemo();
+  seedWill("on-file");
+  householdActions.setBeneficiaries(
+    "acct-jordan-savings",
+    savingsBeneficiaries.map((p) => p.id),
+  );
+  if (world === "ready") return;
+  if (!currentBereavement().losses.some((l) => l.personName === tourLoss.personName))
     bereavementActions.recordLoss({
       personName: tourLoss.personName,
       date: tourLoss.date,
@@ -124,10 +138,11 @@ async function reveal(el: HTMLElement, smooth: boolean) {
 }
 
 /**
- * The guided tour: the working app on a plain white stage, one card per
- * person. The stop lives in the URL hash; the arrow keys step through it,
- * and each press plays one stop and then rests. There is nothing else on the
- * stage: no titles, no captions, no controls.
+ * The guided tour: one family's story on a plain white stage. Between acts
+ * the stage shows the family themselves; within an act, the working app, one
+ * card per person, with a spotlight on the one thing that matters and one
+ * short line beneath. The stop lives in the URL hash; the arrow keys step
+ * through it, and each press plays one stop and then rests.
  */
 export function GuidedTour() {
   const [stopId, setStopId] = useHashTab(stopIds);
@@ -201,6 +216,7 @@ export function GuidedTour() {
       focus: el ? visiblePart(rectOf(el), pageSize(id)) : undefined,
       maxZoom: focus?.maxZoom,
       fit: focus?.fit,
+      spot: el !== null && focus !== undefined && focus.spot !== false,
       cut,
     });
 
@@ -319,10 +335,10 @@ export function GuidedTour() {
     const plan = planStop(tourStops, interrupted ? null : from, to);
     settle(null);
 
-    if (plan.kind === "card") {
+    if (plan.kind === "cast") {
       for (const id of frameIds)
         patch(id, { shown: false, pointer: { ...live.current[id].pointer, shown: false } });
-      await sleep(900);
+      await sleep(from === null ? 300 : 1300);
       if (alive()) settle(to);
       return;
     }
@@ -353,11 +369,11 @@ export function GuidedTour() {
       // The page changes behind white, once the card has reached its place.
       await sleep(from === null ? 0 : moves ? GLIDE_MS : VEIL_MS);
       if (!alive()) return;
-      for (const id of ids) patch(id, { focus: undefined, cut: true });
+      for (const id of ids) patch(id, { focus: undefined, spot: false, cut: true });
       prepareWorld(scene.world, !plan.animate);
       for (const id of ids) {
         const next = scene.frames[id]!;
-        await signInAs(next.signedOut ? "nobody" : id);
+        await signInAs(id);
         if (!alive()) return;
         await load(id, next.path);
         if (!alive()) return;
@@ -473,8 +489,13 @@ export function GuidedTour() {
     iframes.current[id] = el;
   };
 
-  const ended = !stop.scene;
+  const cast = stop.cast ?? null;
   const years = `${tourLoss.born.slice(0, 4)} – ${tourLoss.date.slice(0, 4)}`;
+  const button = cn(
+    "flex h-11 items-center gap-2 rounded-full px-5 text-sm font-semibold transition-colors",
+    focusRing,
+  );
+  const closing = tourStops.find((s) => s.cast === "close")!.line;
 
   return (
     <div
@@ -487,7 +508,7 @@ export function GuidedTour() {
       className="tour-stage fixed inset-0 overflow-hidden bg-white text-pnc-ink"
     >
       <p className="sr-only" aria-live="polite">
-        {stop.say}
+        {stop.line || stop.id}
       </p>
 
       {layout &&
@@ -504,43 +525,48 @@ export function GuidedTour() {
         ))}
 
       {layout && (
-        <div
-          aria-hidden={!ended}
-          className={cn(
-            "absolute inset-0 grid place-items-center transition-opacity duration-1000",
-            ended ? "opacity-100 delay-500" : "pointer-events-none opacity-0",
-          )}
-        >
-          <div className="max-w-3xl px-8 text-center">
-            <FindoeLogo className="mx-auto size-12" />
-            <p className="mt-8 text-balance font-display text-[clamp(2rem,3.6vw,3.25rem)] font-medium leading-tight text-pnc-navy">
-              {stop.scene ? "" : stop.say}
-            </p>
-            <div className="mt-10 flex justify-center gap-3">
+        <Cast
+          cast={cast}
+          area={{ x: 0, y: 0, w: w, h: layout.line.y }}
+          closing={closing}
+          actions={
+            <>
               <button
                 type="button"
-                tabIndex={ended ? 0 : -1}
+                tabIndex={cast === "close" ? 0 : -1}
                 onClick={() => go(0)}
-                className={cn(
-                  "flex h-11 items-center gap-2 rounded-full px-5 text-sm font-semibold text-pnc-ink ring-1 ring-pnc-line transition-colors hover:bg-pnc-surface",
-                  focusRing,
-                )}
+                className={cn(button, "text-pnc-ink ring-1 ring-pnc-line hover:bg-pnc-surface")}
               >
                 <RotateCcw className="size-4" aria-hidden="true" /> Watch again
               </button>
               <button
                 type="button"
-                tabIndex={ended ? 0 : -1}
+                tabIndex={cast === "close" ? 0 : -1}
                 onClick={() => void exit()}
-                className={cn(
-                  "flex h-11 items-center gap-2 rounded-full bg-pnc-blue-700 px-5 text-sm font-semibold text-white transition-colors hover:bg-pnc-blue-800",
-                  focusRing,
-                )}
+                className={cn(button, "bg-pnc-blue-700 text-white hover:bg-pnc-blue-800")}
               >
                 Open the prototype <ArrowRight className="size-4" aria-hidden="true" />
               </button>
-            </div>
-          </div>
+            </>
+          }
+        />
+      )}
+
+      {/* The stop's one line. The close says its line large, above the family. */}
+      {layout && (
+        <div
+          className="absolute inset-x-0 flex items-center justify-center px-8"
+          style={{ top: layout.line.y, height: layout.line.h }}
+        >
+          <p
+            key={stop.id}
+            className={cn(
+              "tour-line max-w-4xl text-balance text-center font-display text-[clamp(1.05rem,1.6vw,1.6rem)] font-medium leading-snug text-pnc-navy",
+              (cast === "close" || !stop.line) && "invisible",
+            )}
+          >
+            {stop.line}
+          </p>
         </div>
       )}
 

@@ -118,24 +118,27 @@ and mobile views stay in one design language.
   Flow content is data in `src/data/bereavement.ts`; completion is derived in
   `src/lib/transfer.ts` — don't store "done" flags. Customer-facing copy about a
   loss must stay gentle: condolence first, no pressure, nothing urgent today.
-- **Guided tour (`/tour`, `routes.tour`):** a presenter-led story told on the working app, open
-  to every role, so it lives at `src/app/tour` and `src/proxy.ts` lets it through untouched. It is
-  the one demo linked from the sign-on page. The stage is plain white and shows only the people's
-  screens: no titles, captions or controls. **Nothing moves unless a key is pressed**: the script
-  is the list of stops in `src/data/tour.ts`; a press plays one stop's steps (`click`, `type`,
+- **Guided tour (`/tour`, `routes.tour`):** one family's story told on the working app, open to
+  every role, so it lives at `src/app/tour` and `src/proxy.ts` lets it through untouched. It is the
+  one demo linked from the sign-on page. The stage is plain white: between acts a moment with the
+  family themselves (`cast`, drawn by `Cast.tsx`), within an act one card per person
+  (`Frame.tsx`), and one short line per stop beneath (at most 12 words; a test checks it). Keep
+  each stop to one idea: a spotlight (`focus`, unless `spot: false`) washes the rest of the page
+  back so only that one thing stays clear. **Nothing moves unless a key is pressed**: the script is
+  the list of stops in `src/data/tour.ts`; a press plays one stop's steps (`click`, `type`,
   `wait`, `look`, found by visible words as in the film) and then rests. Never add a timer, loop
   or autoplay that advances the story by itself. A stop is reached by loading its scene's pages
   and replaying the earlier stops of that scene at once (`planStop` in `src/lib/tour.ts`), so Back
-  and a link to any stop (`/tour#<id>`) just work. Each person's screen is a `Frame`
-  (`src/components/tour/Frame.tsx`): the app in a same-origin frame, signed in as them, laid out
-  at a fixed width and scaled to a card that `stageLayout` places, with one soft glow color per
-  person behind it (`--tour-*` tokens in `globals.css`, via `tourGlow`) and their avatar, name and
-  role above it. As with the film, the app must not know the tour exists: no tour-only props,
-  classes or branches in app components. John's answered will is seeded from `tourWillDraft` (a
-  test checks it is complete). People are named John Smith, Maya Smith, David Smith, Alexa Smith
-  and Bank Advisor only (a test checks this). When you rename a label the tour clicks, update
-  the script and replay `/tour`. After editing `globals.css`, restart `next dev`: it can keep
-  serving the old styles.
+  and a link to any stop (`/tour#<id>`) just work. A scene's `world` (`before`, `ready`, `after`)
+  decides the demo state its pages open on (`prepareWorld` in `GuidedTour.tsx`). Each card is the
+  app in a same-origin frame, signed in as that person, laid out at a fixed width and scaled to a
+  slot that `stageLayout` places, with one glow color per person (`--tour-*` tokens in
+  `globals.css`, via `tourGlow`). As with the film, the app must not know the tour exists: no
+  tour-only props, classes or branches in app components. John's answered will is seeded from
+  `tourWillDraft` (a test checks it is complete). People are named John Smith, Maya Smith, David
+  Smith, Alexa Smith and Bank Advisor only (a test checks this). When you rename a label the tour
+  clicks, update the script and replay `/tour`. After editing `globals.css`, restart `next dev`:
+  it can keep serving the old styles.
 - **Product film (`/film`, `routes.film`):** the working app filmed in a same-origin frame, open
   to every role like the tour. The script is data in `src/data/film.ts`: a scene is a page, who is
   signed in and whether the death is recorded yet; a shot is a caption (headline of at most 8

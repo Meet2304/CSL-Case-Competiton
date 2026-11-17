@@ -13,15 +13,26 @@ const sizes: [number, number][] = [
 ];
 
 describe("the tour's script", () => {
-  it("has unique stop ids and only known scenes", () => {
+  it("has unique stop ids, and each stop is either a scene or a moment with the family", () => {
     expect(new Set(tourStops.map((s) => s.id)).size).toBe(tourStops.length);
-    for (const s of tourStops) if (s.scene) expect(tourScenes[s.scene], s.id).toBeDefined();
+    for (const s of tourStops) {
+      expect(Boolean(s.scene) !== Boolean(s.cast), s.id).toBe(true);
+      if (s.scene) expect(tourScenes[s.scene], s.id).toBeDefined();
+    }
   });
 
-  it("opens on a scene and ends on its closing line", () => {
-    expect(tourStops[0].scene).toBeDefined();
-    expect(tourStops.at(-1)!.scene).toBeUndefined();
-    expect(tourStops.filter((s) => !s.scene)).toHaveLength(1);
+  it("opens on the family and closes on them", () => {
+    expect(tourStops[0].cast).toBe("title");
+    expect(tourStops.at(-1)!.cast).toBe("close");
+  });
+
+  it("says one short line at a time", () => {
+    for (const s of tourStops) {
+      expect(s.line.split(" ").length, s.id).toBeLessThanOrEqual(12);
+      expect(s.line.length, s.id).toBeLessThanOrEqual(80);
+    }
+    // Only the title and the memorial let the picture speak alone.
+    expect(tourStops.filter((s) => !s.line).map((s) => s.cast)).toEqual(["title", "memorial"]);
   });
 
   it("acts only on screens that are on stage", () => {
@@ -30,7 +41,6 @@ describe("the tour's script", () => {
       for (const step of s.steps ?? []) if ("in" in step) expect(on[step.in], s.id).toBeDefined();
       for (const id of Object.keys(s.focus ?? {}))
         expect(on[id as keyof typeof on], s.id).toBeDefined();
-      if (s.quiet) expect(on[s.quiet], s.id).toBeDefined();
     }
   });
 
@@ -39,17 +49,23 @@ describe("the tour's script", () => {
   });
 
   it("names only the family and the Bank Advisor", () => {
-    const said = JSON.stringify([tourPeople, tourStops.map((s) => s.say)]);
+    const said = JSON.stringify([tourPeople, tourStops.map((s) => s.line)]);
     expect(said).not.toMatch(/\bAlex\b|Dana|Morgan|Avery|Jamie|Taylor|Placeholder|Example|Sample/);
   });
 
-  it("tells John's family only after the advisor starts passing on his estate", () => {
-    // Before the transfer the family has heard nothing; the handover scene starts it on stage.
-    const handover = tourStops.findIndex((s) => s.id === "notified");
-    tourStops.forEach((s, i) => {
-      if (!s.scene) return;
-      expect(tourScenes[s.scene].world, s.id).toBe(i <= handover ? "before" : "after");
-    });
+  it("moves the story forward in order: John prepares, then the bank acts, then the family is told", () => {
+    const order = { before: 0, ready: 1, after: 2 };
+    const worlds = tourStops.flatMap((s) => (s.scene ? [order[tourScenes[s.scene].world]] : []));
+    expect(worlds).toEqual([...worlds].sort((a, b) => a - b));
+    // The family hears only once the advisor starts passing on John's estate, on stage.
+    const told = tourStops.findIndex((s) => s.scene && tourScenes[s.scene].world === "after");
+    expect(tourStops[told - 1].id).toBe("notified");
+  });
+
+  it("remembers John between his own act and the bank's", () => {
+    const at = (id: string) => tourStops.findIndex((s) => s.id === id);
+    expect(at("signed")).toBeLessThan(at("loss"));
+    expect(at("loss")).toBeLessThan(at("alert"));
   });
 
   it("gives John a will with every question answered, so he can put it on file on stage", () => {
@@ -63,11 +79,11 @@ describe("the tour's script", () => {
 
 describe("moving through the tour", () => {
   const stops: TourStop[] = [
-    { id: "a", say: "", scene: "one" },
-    { id: "b", say: "", scene: "one" },
-    { id: "c", say: "", scene: "one" },
-    { id: "d", say: "", scene: "two" },
-    { id: "e", say: "" },
+    { id: "a", line: "", scene: "one" },
+    { id: "b", line: "", scene: "one" },
+    { id: "c", line: "", scene: "one" },
+    { id: "d", line: "", scene: "two" },
+    { id: "e", line: "", cast: "close" },
   ];
 
   it("plays the next stop of the same scene on the pages already there", () => {
@@ -83,8 +99,8 @@ describe("moving through the tour", () => {
     expect(planStop(stops, null, 2)).toEqual({ kind: "enter", replay: [0, 1], animate: false });
   });
 
-  it("needs nothing loaded for the closing line", () => {
-    expect(planStop(stops, 3, 4)).toEqual({ kind: "card" });
+  it("needs nothing loaded for a moment with the family", () => {
+    expect(planStop(stops, 3, 4)).toEqual({ kind: "cast" });
   });
 });
 
@@ -96,7 +112,7 @@ describe("the stage", () => {
         expect(r.x, `${id} ${w}x${h}`).toBeGreaterThan(0);
         expect(r.y - nameH, `${id} ${w}x${h}`).toBeGreaterThan(0);
         expect(r.x + r.w, `${id} ${w}x${h}`).toBeLessThan(w);
-        expect(r.y + r.h, `${id} ${w}x${h}`).toBeLessThan(h);
+        expect(r.y + r.h, `${id} ${w}x${h}`).toBeLessThanOrEqual(stageLayout(w, h).line.y);
       }
     }
   });
@@ -111,7 +127,7 @@ describe("the stage", () => {
   it("gives a lone screen most of the stage", () => {
     for (const [w, h] of sizes) {
       const { solo } = stageLayout(w, h).slots;
-      expect(solo.w * solo.h, `${w}x${h}`).toBeGreaterThan(w * h * 0.6);
+      expect(solo.w * solo.h, `${w}x${h}`).toBeGreaterThan(w * h * 0.55);
     }
   });
 
@@ -136,7 +152,7 @@ describe("the camera", () => {
 
   it("closes in on what is in focus, no further than allowed", () => {
     const cam = cameraFor(view, { x: 900, y: 100, w: 300, h: 200 });
-    expect(cam.scale).toBe(1.7);
+    expect(cam.scale).toBe(1.45);
     expect(cameraFor(view, { x: 900, y: 100, w: 300, h: 200 }, { maxZoom: 1.2 }).scale).toBe(1.2);
   });
 

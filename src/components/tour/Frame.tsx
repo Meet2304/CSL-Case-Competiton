@@ -32,6 +32,8 @@ export type FrameView = {
   focus?: Rect;
   maxZoom?: number;
   fit?: "width";
+  /** Fade everything but `focus` back, so only it stays clear. */
+  spot?: boolean;
   /** Jump the camera rather than move it. */
   cut: boolean;
   pointer: Pointer;
@@ -144,6 +146,23 @@ export function Frame({
                 style={{ width: page.w, height: page.h }}
               />
             )}
+            {/* The spotlight: the rest of the page washes back to white around what matters. */}
+            <span
+              aria-hidden="true"
+              className="tour-spot pointer-events-none absolute"
+              style={
+                view.focus
+                  ? {
+                      left: view.focus.x - 10,
+                      top: view.focus.y - 10,
+                      width: view.focus.w + 20,
+                      height: view.focus.h + 20,
+                      opacity: view.spot ? 1 : 0,
+                      transitionDuration: view.cut ? "0ms" : undefined,
+                    }
+                  : { left: 0, top: 0, width: page.w, height: page.h, opacity: 0 }
+              }
+            />
             <span
               aria-hidden="true"
               className={cn(
