@@ -1,3 +1,4 @@
+import { useId } from "react";
 import type { AvatarLook } from "@/data/types";
 import { cn } from "@/lib/format";
 
@@ -132,7 +133,9 @@ export function PersonAvatar({
   className?: string;
 }) {
   const l = look ? looks[look] : seeded(seed);
-  const clip = `avatar-${look ?? hash(seed).toString(36)}`;
+  // Unique per portrait: a page can show the same person twice, and a clip path that shares its id
+  // with one inside a hidden part of the page would clip this one away entirely.
+  const clip = `avatar-${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
   const size = l.size ?? 1;
 
   return (

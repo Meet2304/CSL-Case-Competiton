@@ -72,6 +72,32 @@ to no one person.
   stage and screens in `src/components/tour`. Nothing is saved; reloading returns to the stop in
   the URL.
 
+## Product story — `/story`
+
+The product demo for the pitch: one light canvas of the Smith family's life with Findoe, which a
+camera travels over one key press at a time. It needs no sign-on and is not linked from the
+sign-on page; go straight to `/story`.
+
+- **Keys only, nothing plays by itself.** → (or space, Enter, ↓, Page Down) moves on; ← (or ↑, Page
+  Up, Backspace) steps back; Home and End jump to either end; F fills the screen. A presentation
+  clicker works too. Each press plays one short, choreographed moment and then waits. The stop is
+  kept in the URL (`/story#loss`), so a refresh or a shared link opens at the same place.
+- **The canvas is a 3 × 3 grid of scenes with the family in the middle**, visited clockwise: the
+  family and John carrying everything alone; John's Home and Assets and Debts (including the life
+  policy outside PNC); adding a vintage car and fixing the gaps Findoe found by naming
+  beneficiaries; the will; the shared family dashboard, who sees what, and David's own phone; back to
+  the family with their advisor, then the loss and one record reaching everyone; the advisor's alert,
+  plan and Findoe's cited reasoning; the estate (a condolence before the transfer); Maya's
+  condolence, one claim and a cited answer about John's IRA; the children told gently. The last
+  stops pull back until the whole circle is on screen, then close.
+- **Light, PNC-styled and quiet.** One short line of words under the picture per stop and a
+  hairline of progress; no labels or hints around the edges.
+- In this telling John acts on Findoe's reminders before he dies (he names beneficiaries on Savings
+  and the brokerage account, following his will), so nothing at PNC waits on probate. Every other
+  figure comes from the shared household, estate and advisor mock data.
+- Words and figures are in `src/data/story.ts`, the stops, camera and thread in `src/lib/story.ts`
+  (tested in `src/lib/__tests__/story.test.ts`), and the stage and scenes in `src/components/story`.
+
 ## Product film — `/film`
 
 The same story as the tour, told on the working software instead of drawn visuals. The real pages

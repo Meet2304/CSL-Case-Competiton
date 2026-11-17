@@ -76,8 +76,9 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // The guided tour and the product film are open to every role and have one layout each.
-  if (publicPath === routes.tour || publicPath === routes.film) return NextResponse.next();
+  // The guided tour, the product film and the product story are open to every role, one layout each.
+  if (publicPath === routes.tour || publicPath === routes.film || publicPath === routes.story)
+    return NextResponse.next();
 
   // Server Action POSTs (sign-in) must reach the page they were posted from.
   const isAction = request.method === "POST";

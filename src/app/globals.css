@@ -41,6 +41,7 @@
   --color-chart-cash: #0f6bd0;
   --color-chart-retirement: #1d9a8a;
   --color-chart-investments: #ef6a00;
+  --color-story-paper: #f6f8fb; /* the product story's canvas */
   --color-mock: #8a5a00; /* mock-data labelling */
   --color-mock-bg: #fff4d6;
   --color-mock-line: #f0c75e;
@@ -220,7 +221,8 @@ html:has(.tour-stage) nextjs-portal {
 }
 
 /* Screens are scaled as a whole, so presentation zoom must not resize their text as well. */
-.tour-screen {
+.tour-screen,
+.story-stage {
   --text-3xs: 0.625rem;
   --text-2xs: 0.6875rem;
   --text-xs: 0.75rem;
@@ -393,6 +395,179 @@ html:has(.tour-stage) nextjs-portal {
   .tour-ring,
   .tour-halo,
   .tour-ember {
+    animation: none;
+  }
+}
+
+/*
+ * Product story (/story). One light canvas that a camera travels over; every
+ * move waits for a key. The camera scales the whole canvas, so the page's own
+ * presentation zoom is switched off here.
+ */
+html:has(.story-stage) {
+  font-size: 100%;
+}
+html:has(.story-stage) nextjs-portal {
+  display: none;
+}
+.story-stage {
+  background: radial-gradient(120% 100% at 50% 40%, white, var(--color-story-paper) 70%);
+  transition: background-color 1.2s ease;
+}
+
+/* A plate is lit while the camera is on it, and rests unseen otherwise. */
+.story-plate {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.7s ease,
+    visibility 0s linear 0.7s;
+}
+.story-plate[data-lit="true"] {
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity 0.9s ease 0.3s,
+    visibility 0s;
+}
+
+/* Something arriving on the canvas: it leaves quickly and arrives slowly, after `--d`. */
+.story-show {
+  opacity: 0;
+  transform: translate3d(0, 16px, 0);
+  transition:
+    opacity 0.4s ease,
+    transform 0.4s ease;
+}
+.story-show[data-from="fade"] {
+  transform: none;
+}
+.story-show[data-from="left"] {
+  transform: translate3d(-36px, 0, 0);
+}
+.story-show[data-from="right"] {
+  transform: translate3d(36px, 0, 0);
+}
+.story-show[data-from="scale"] {
+  transform: scale(0.92);
+}
+.story-show[data-on="true"] {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.8s ease var(--d, 0ms),
+    transform 1s cubic-bezier(0.2, 0.7, 0.2, 1) var(--d, 0ms);
+}
+
+/* A value that changes in place: colours and sizes ease, after `--d`. */
+.story-ease {
+  transition:
+    background-color 0.6s ease var(--d, 0ms),
+    border-color 0.6s ease var(--d, 0ms),
+    color 0.6s ease var(--d, 0ms),
+    opacity 0.6s ease var(--d, 0ms),
+    filter 1.2s ease var(--d, 0ms),
+    transform 1s cubic-bezier(0.2, 0.7, 0.2, 1) var(--d, 0ms),
+    box-shadow 0.6s ease var(--d, 0ms);
+}
+
+/* A press: a ring that lands on a control just before it changes. */
+.story-tap {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 72px;
+  height: 72px;
+  margin: -36px 0 0 -36px;
+  border-radius: 9999px;
+  border: 2px solid var(--color-pnc-orange);
+  background: color-mix(in srgb, var(--color-pnc-orange) 20%, transparent);
+  opacity: 0;
+  pointer-events: none;
+}
+.story-tap[data-on="true"] {
+  animation: story-tap 1.15s ease-out var(--d, 500ms) both;
+}
+@keyframes story-tap {
+  0% {
+    opacity: 0;
+    transform: scale(0.25);
+  }
+  22% {
+    opacity: 1;
+    transform: scale(0.62);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(0.5);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.5);
+  }
+}
+
+/* Words being typed into a field. */
+.story-type {
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path 0.2s linear;
+}
+.story-type[data-on="true"] {
+  clip-path: inset(0 0 0 0);
+  transition: clip-path 0.9s steps(16) var(--d, 0ms);
+}
+
+/* The story's one line of words, arriving a beat after the camera starts to move. */
+.story-line {
+  animation: story-line 0.9s cubic-bezier(0.22, 0.8, 0.3, 1) 0.35s both;
+}
+@keyframes story-line {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+/* The first stop: a quiet arrow, inviting the first press. */
+.story-nudge {
+  animation: story-nudge 2.4s ease-in-out infinite;
+}
+@keyframes story-nudge {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(8px);
+  }
+}
+
+/* The thread from one plate to the next, drawn as the story reaches it. */
+.story-thread {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 0.6s ease;
+}
+.story-thread[data-on="true"] {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 1.6s cubic-bezier(0.5, 0, 0.2, 1) 0.2s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .story-show,
+  .story-show[data-on="true"],
+  .story-ease,
+  .story-plate,
+  .story-plate[data-lit="true"],
+  .story-thread,
+  .story-thread[data-on="true"],
+  .story-type[data-on="true"] {
+    transition-duration: 0.01s;
+    transition-delay: 0s;
+  }
+  .story-tap[data-on="true"],
+  .story-line,
+  .story-nudge {
     animation: none;
   }
 }

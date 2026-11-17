@@ -138,6 +138,17 @@ and mobile views stay in one design language.
   David Smith, Alexa Smith and Bank Advisor only (a test checks this), and legal citations must be
   ids in `rulebook.sources` (also tested). The readiness score is mock data that exists only in
   the tour. After editing `globals.css`, restart `next dev`: it can keep serving the old styles.
+- **Product story (`/story`, `routes.story`):** the pitch's product demo, a light canvas a camera
+  travels over, open to every role (`src/proxy.ts` lets it through). **Nothing moves unless a key is
+  pressed**: never add a timer or autoplay that advances it; CSS delays may stage what one press
+  shows. Everything on screen is drawn from the current stop alone (`at`), so Back and links to a
+  stop (`/story#<id>`) work; keep it that way. Stops are data in `src/lib/story.ts`; a stop names
+  its plate and, optionally, a `data-focus` id the camera closes in on (measured from the layout,
+  so a scene can change without retuning the camera). Words and figures live in
+  `src/data/story.ts`, derived from the household, estate and advisor data; one canvas line per stop,
+  at most 12 words, and no other captions, labels or hints on the stage. People are John, Maya,
+  David and Alexa Smith and the Bank Advisor only, and legal citations are ids in
+  `rulebook.sources` (both tested).
 - **Product film (`/film`, `routes.film`):** the working app filmed in a same-origin frame, open
   to every role like the tour. The script is data in `src/data/film.ts`: a scene is a page, who is
   signed in and whether the death is recorded yet; a shot is a caption (headline of at most 8

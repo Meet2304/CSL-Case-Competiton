@@ -10,6 +10,8 @@ export const routes = {
   tour: "/tour",
   /** Product film: a movie-style walk through the working app. Open to everyone. */
   film: "/film",
+  /** Product story: a key-driven walk through Findoe on one light canvas. Open to everyone. */
+  story: "/story",
   /** Customer home: portfolio summary and analysis, notifications, families and team. */
   home: "/home",
   /** Assets and Debts: everything the customer owns, manages, or family shares with them, and their will. */
