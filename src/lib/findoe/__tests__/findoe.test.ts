@@ -16,7 +16,7 @@ const seed: HouseholdState = { families: seedFamilies, designations: {} };
 const person = (id: string) => people.find((p) => p.id === id)!;
 const husbandDied: RecordedLoss = {
   id: "t1",
-  personName: "John",
+  personName: "John Smith",
   date: "2026-10-20",
   reportedVia: "Phone call",
   recordedOn: "2026-10-21",
@@ -127,7 +127,7 @@ describe("Findoe for customers", () => {
       "Joint Checking",
       "401(k) Rollover IRA",
       "Term Life Policy",
-      "Alexis's Teen Savings",
+      "Alexa's Teen Savings",
     ])
       expect(all.text).toContain(`**${t}**`);
     expect(all.text).toContain("go through John's estate");
@@ -155,11 +155,11 @@ describe("Findoe for customers", () => {
 
   it("describes other members' access only to admins", () => {
     const admin = customerReply(ctxFor("p-jordan"), "Who can see my accounts?");
-    expect(admin.text).toContain("**David** (Older child): sees Joint Checking x0001");
+    expect(admin.text).toContain("**David Smith** (Older child): sees Joint Checking x0001");
     const member = customerReply(ctxFor("p-avery"), "Who can see my accounts?");
     expect(member.text).toContain("you can see Joint Checking x0001");
     expect(member.text).not.toContain("Admin");
-    expect(member.text).not.toContain("Alexis");
+    expect(member.text).not.toContain("Alexa Smith");
   });
 
   it("suggests loss questions while a death is being settled", () => {
@@ -183,7 +183,7 @@ describe("Findoe for advisors", () => {
   it("puts the most recent loss first and links to the client", () => {
     const r = advisorReply(ctx, "Who needs my attention today?");
     // The demo's one incident: the bank has recorded John's death.
-    expect(r.text).toContain("**John**");
+    expect(r.text).toContain("**John Smith**");
     expect(r.actions[0].href).toBe(routes.advisorClient("c-sample"));
     expect(r.sources.map((s) => s.key)).toContain("treas-210");
   });

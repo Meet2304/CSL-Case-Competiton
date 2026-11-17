@@ -3,7 +3,7 @@
  * the advisor read from. Every name and figure is invented.
  *
  * John (52) and Maya (49) are married; David is 17 and turns 18 on
- * Nov 30, 2026; Alexis is 14. Dana is the family's estate attorney (no login).
+ * Nov 30, 2026; Alexa is 14. Dana is the family's estate attorney (no login).
  * A few gaps are deliberate so the planning reminders have something to say:
  * John's savings has no payable-on-death beneficiary, the brokerage account
  * has no transfer-on-death beneficiary, and nobody has a will yet.
@@ -17,7 +17,7 @@ export const HOUSEHOLD_ID = "c-sample";
 export const people: HouseholdPerson[] = [
   {
     id: "p-jordan",
-    name: "John",
+    name: "John Smith",
     relationship: "Self",
     birthdate: "1974-05-14",
     email: "john@example.com",
@@ -26,7 +26,7 @@ export const people: HouseholdPerson[] = [
   },
   {
     id: "p-casey",
-    name: "Maya",
+    name: "Maya Smith",
     relationship: "Spouse",
     birthdate: "1977-03-02",
     email: "maya@example.com",
@@ -35,7 +35,7 @@ export const people: HouseholdPerson[] = [
   },
   {
     id: "p-avery",
-    name: "David",
+    name: "David Smith",
     relationship: "Child",
     birthdate: "2008-11-30",
     email: "david@example.com",
@@ -44,10 +44,10 @@ export const people: HouseholdPerson[] = [
   },
   {
     id: "p-riley",
-    name: "Alexis",
+    name: "Alexa Smith",
     relationship: "Child",
     birthdate: "2012-06-18",
-    email: "alexis@example.com",
+    email: "alexa@example.com",
     login: "alexis",
     avatar: "child",
   },
@@ -72,16 +72,21 @@ export const retiredRoleIds = ["r-trusted"];
 export const previousFamilyNames = ["Sample Family", "My Family"];
 
 export const previousNames: Record<string, string> = {
-  Husband: "John",
-  Wife: "Maya",
-  "Child 1": "David",
-  "Child 2": "Alexis",
-  "Jordan Sample": "John",
-  "Casey Sample": "Maya",
-  Father: "John",
-  Mother: "Maya",
-  "Avery Sample": "David",
-  "Riley Sample": "Alexis",
+  John: "John Smith",
+  Maya: "Maya Smith",
+  David: "David Smith",
+  Alexis: "Alexa Smith",
+  Alexa: "Alexa Smith",
+  Husband: "John Smith",
+  Wife: "Maya Smith",
+  "Child 1": "David Smith",
+  "Child 2": "Alexa Smith",
+  "Jordan Sample": "John Smith",
+  "Casey Sample": "Maya Smith",
+  Father: "John Smith",
+  Mother: "Maya Smith",
+  "Avery Sample": "David Smith",
+  "Riley Sample": "Alexa Smith",
 };
 
 export const accounts: BankAccount[] = [
@@ -290,7 +295,7 @@ export const seedFamilies: StoredFamily[] = [
     members: [
       {
         id: "p-jordan",
-        name: "John",
+        name: "John Smith",
         email: "john@example.com",
         relationship: "Self",
         roleId: "r-admin",
@@ -298,7 +303,7 @@ export const seedFamilies: StoredFamily[] = [
       },
       {
         id: "p-casey",
-        name: "Maya",
+        name: "Maya Smith",
         email: "maya@example.com",
         relationship: "Spouse",
         roleId: "r-admin",
@@ -306,7 +311,7 @@ export const seedFamilies: StoredFamily[] = [
       },
       {
         id: "p-avery",
-        name: "David",
+        name: "David Smith",
         email: "david@example.com",
         relationship: "Child",
         note: "Turns 18 on Nov 30",
@@ -315,8 +320,8 @@ export const seedFamilies: StoredFamily[] = [
       },
       {
         id: "p-riley",
-        name: "Alexis",
-        email: "alexis@example.com",
+        name: "Alexa Smith",
+        email: "alexa@example.com",
         relationship: "Child",
         note: "Age 14",
         roleId: "r-younger-child",

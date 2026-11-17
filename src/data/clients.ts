@@ -9,6 +9,7 @@
  * always add up to the relationship value and match the account count shown
  * in the advisor's table.
  */
+import { accounts, people } from "./household";
 import { advisorCustomers } from "./advisor";
 import type {
   AdvisorCustomer,
@@ -21,7 +22,7 @@ import type {
 
 const handWritten: ClientProfile[] = [
   // John: this advisor's client. His holdings are his own accounts in the Sample
-  // household (src/data/household.ts); Maya, David and Alexis have their own advisors.
+  // household (src/data/household.ts); Maya, David and Alexa have their own advisors.
   {
     customerId: "c-sample",
     age: 52,
@@ -41,14 +42,14 @@ const handWritten: ClientProfile[] = [
     ],
     members: [
       {
-        name: "John",
+        name: "John Smith",
         relationship: "Self",
         age: 52,
         status: "Living",
         roles: ["Owner of every account below"],
       },
       {
-        name: "Maya",
+        name: "Maya Smith",
         relationship: "Spouse",
         age: 49,
         status: "Living",
@@ -60,7 +61,7 @@ const handWritten: ClientProfile[] = [
         note: "Has her own advisor (Private Banker, PNC Private Bank).",
       },
       {
-        name: "David",
+        name: "David Smith",
         relationship: "Child",
         age: 17,
         status: "Living",
@@ -68,7 +69,7 @@ const handWritten: ClientProfile[] = [
         note: "Turns 18 on Nov 30. Maya is his custodian; contact through Maya.",
       },
       {
-        name: "Alexis",
+        name: "Alexa Smith",
         relationship: "Child",
         age: 14,
         status: "Living",
@@ -89,55 +90,55 @@ const handWritten: ClientProfile[] = [
         name: "Joint Checking",
         last4: "0001",
         type: "Checking",
-        value: 84_620.55,
+        value: 12_480.55,
         ownership: "Joint",
-        owners: ["John", "Maya"],
+        owners: ["John Smith", "Maya Smith"],
       },
       {
         id: "h-js-sav",
         name: "Savings",
         last4: "0002",
         type: "Savings",
-        value: 246_250,
+        value: 18_250,
         ownership: "Individual",
-        owners: ["John"],
+        owners: ["John Smith"],
       },
       {
         id: "h-js-ira",
         name: "401(k) Rollover IRA",
         last4: "0011",
         type: "401(k) rollover IRA",
-        value: 1_284_000,
+        value: 184_000,
         ownership: "Individual",
-        owners: ["John"],
-        beneficiaries: ["Maya"],
+        owners: ["John Smith"],
+        beneficiaries: ["Maya Smith"],
       },
       {
         id: "h-js-brk",
         name: "Brokerage Account",
         last4: "0012",
         type: "Brokerage",
-        value: 1_126_500,
+        value: 96_500,
         ownership: "Individual",
-        owners: ["John"],
+        owners: ["John Smith"],
       },
       {
         id: "h-js-card",
         name: "Cash Rewards Visa",
         last4: "0003",
         type: "Credit card",
-        value: -12_846.19,
+        value: -1_284.19,
         ownership: "Individual",
-        owners: ["John"],
+        owners: ["John Smith"],
       },
       {
         id: "h-js-life",
         name: "Term Life Policy",
         type: "Life insurance",
-        value: 2_000_000,
+        value: 500_000,
         ownership: "Individual",
-        owners: ["John"],
-        beneficiaries: ["Maya"],
+        owners: ["John Smith"],
+        beneficiaries: ["Maya Smith"],
         external: true,
       },
     ],
@@ -817,6 +818,21 @@ function generate(c: AdvisorCustomer): ClientProfile {
     interactions,
   };
 }
+
+// Resolve John's balances and account parties from the same household customers see.
+const johnProfile = handWritten.find((p) => p.customerId === "c-sample")!;
+johnProfile.holdings = johnProfile.holdings.map((holding) => {
+  const account = accounts.find((a) =>
+    holding.last4 ? a.last4 === holding.last4 : a.kind === "life-insurance",
+  )!;
+  const name = (id: string) => people.find((p) => p.id === id)!.name;
+  return {
+    ...holding,
+    value: account.balance,
+    owners: account.owners.map(name),
+    beneficiaries: account.beneficiaries?.map(name),
+  };
+});
 
 export const clientProfiles: ClientProfile[] = advisorCustomers.map(
   (c) => handWritten.find((p) => p.customerId === c.id) ?? generate(c),

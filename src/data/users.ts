@@ -11,28 +11,28 @@ export const demoUsers: DemoUser[] = [
   {
     userId: "john",
     role: "customer",
-    displayName: "John",
+    displayName: "John Smith",
     personId: "p-jordan",
-    hint: "John, 52",
+    hint: "John Smith, 52",
   },
   {
     userId: "maya",
     role: "customer",
-    displayName: "Maya",
+    displayName: "Maya Smith",
     personId: "p-casey",
-    hint: "Maya, 49",
+    hint: "Maya Smith, 49",
   },
   {
     userId: "david",
     role: "customer",
-    displayName: "David",
+    displayName: "David Smith",
     personId: "p-avery",
     hint: "Older child, 17",
   },
   {
     userId: "alexis",
     role: "customer",
-    displayName: "Alexis",
+    displayName: "Alexa Smith",
     personId: "p-riley",
     hint: "Younger child, 14",
   },
@@ -41,6 +41,7 @@ export const demoUsers: DemoUser[] = [
 
 /** User IDs from before the household was renamed, so rehearsed sign-ins keep working. */
 const previousIds: Record<string, string> = {
+  alexa: "alexis",
   husband: "john",
   wife: "maya",
   child1: "david",

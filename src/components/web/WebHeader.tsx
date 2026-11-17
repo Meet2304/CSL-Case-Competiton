@@ -18,7 +18,6 @@ type NavItem = {
   badge?: number;
 };
 
-
 export function WebHeader({ variant = "customer" }: { variant?: Role }) {
   const nav = useCustomerNav();
   const unread = unreadCount(useMessages());

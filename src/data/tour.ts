@@ -2,7 +2,7 @@
  * MOCK DATA and script for the guided tour (`/tour`): a short walk through one
  * family's story that shows the problem and what Findoe does about it.
  * Balances come from the shared household so the tour and the prototype never
- * disagree. People are John, Maya, David, Alexis
+ * disagree. People are John, Maya, David, Alexa
  * and the Bank Advisor; the tour introduces no other names.
  */
 import { accounts } from "./household";
@@ -17,10 +17,10 @@ export const tourPeople: Record<
   TourPersonId,
   { id: TourPersonId; name: string; look?: AvatarLook }
 > = {
-  husband: { id: "husband", name: "John", look: "husband" },
-  wife: { id: "wife", name: "Maya", look: "wife" },
-  child1: { id: "child1", name: "David", look: "teen" },
-  child2: { id: "child2", name: "Alexis", look: "child" },
+  husband: { id: "husband", name: "John Smith", look: "husband" },
+  wife: { id: "wife", name: "Maya Smith", look: "wife" },
+  child1: { id: "child1", name: "David Smith", look: "teen" },
+  child2: { id: "child2", name: "Alexa Smith", look: "child" },
   advisor: { id: "advisor", name: "Bank Advisor" },
 };
 
@@ -71,7 +71,7 @@ function build(id: TourAccountId): TourAccount {
   if (!source) throw new Error(`Tour account ${id} is missing from the household`);
   return {
     id,
-    name: id === "teenSavings" ? "Alexis's Teen Savings" : source.name,
+    name: id === "teenSavings" ? "Alexa's Teen Savings" : source.name,
     last4: source.last4,
     balance: source.balance,
     external: source.external,
@@ -230,14 +230,14 @@ export const tourSteps: TourStep[] = [
     chapter: "before",
     title: "The whole family, inside the bank",
     body: "John shares his accounts with the family and decides who sees each one.",
-    tryIt: "Select a circle under David or Alexis.",
+    tryIt: "Select a circle under David or Alexa.",
   },
   {
     id: "preview",
     chapter: "before",
     title: "The children are already customers",
     body: "Each child has a login and sees only what the family shares with them.",
-    tryIt: "Switch between David and Alexis.",
+    tryIt: "Switch between David and Alexa.",
   },
   {
     id: "notice",

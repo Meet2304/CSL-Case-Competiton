@@ -118,7 +118,7 @@ and mobile views stay in one design language.
   and one visual (`src/components/tour/visuals`, keyed by the step id). A visual uses at most one
   `Sheet` (never a card inside a card) with rows split by hairlines, and nothing may scroll: the
   visual is laid out 760px wide (380px on phones, switch with `@[600px]:`) and `FitCanvas` scales
-  it to fit. People are named John, Maya, David, Alexis and Bank Advisor only (a test
+  it to fit. People are named John Smith, Maya Smith, David Smith, Alexa Smith and Bank Advisor only (a test
   checks this). Anything a click changes goes through `tourReducer` and is derived in
   `src/lib/tour.ts` (`routesFor`, `advisorPlan`, `findoeAnswer`), never stored per visual. Legal
   citations must be ids in `rulebook.sources` (also tested).

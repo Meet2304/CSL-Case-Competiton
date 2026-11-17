@@ -32,7 +32,7 @@ export const initialFamilyState: FamilyState = {
   members: [
     {
       id: "m-jordan",
-      name: "John",
+      name: "John Smith",
       email: "john@example.com",
       relationship: "Self",
       roleId: "r-admin",
@@ -40,7 +40,7 @@ export const initialFamilyState: FamilyState = {
     },
     {
       id: "m-casey",
-      name: "Maya",
+      name: "Maya Smith",
       email: "maya@example.com",
       relationship: "Spouse",
       roleId: "r-admin",
@@ -48,7 +48,7 @@ export const initialFamilyState: FamilyState = {
     },
     {
       id: "m-avery",
-      name: "David",
+      name: "David Smith",
       email: "david@example.com",
       relationship: "Child",
       note: "Age 21",
@@ -57,7 +57,7 @@ export const initialFamilyState: FamilyState = {
     },
     {
       id: "m-riley",
-      name: "Alexis",
+      name: "Alexa Smith",
       email: "alexis@example.com",
       relationship: "Child",
       note: "Age 15",

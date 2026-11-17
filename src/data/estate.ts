@@ -22,7 +22,7 @@ export type DeathCertificate = {
 export const deathCertificates: Record<string, DeathCertificate> = {
   "p-jordan": {
     certificateNumber: "SC-2026-004417",
-    decedent: "John Sample",
+    decedent: "John Smith",
     placeOfDeath: "Sample General Hospital, Pittsburgh, PA",
     mannerOfDeath: "Natural",
     certifiedBy: "Attending physician, Sample General Hospital",
@@ -78,7 +78,7 @@ export const beneficiaryAdvisors: Record<string, PeerAdvisor> = {
 };
 
 /**
- * Who acts for a beneficiary under 18: David is 17 (18 on Nov 30) and Alexis
+ * Who acts for a beneficiary under 18: David is 17 (18 on Nov 30) and Alexa
  * is 14, so Maya holds both shares and hears about them.
  */
 export const custodianFor: Record<string, string> = { "p-avery": "p-casey", "p-riley": "p-casey" };

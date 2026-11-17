@@ -99,7 +99,7 @@ export function transferPlan(
         p.receives.reduce((s, r) => s + r.amount, 0) - p.takesOn.reduce((s, b) => s + b.amount, 0),
       ),
     }))
-    // Largest share first; equal shares (to the dollar) keep their order, e.g. David then Alexis.
+    // Largest share first; equal shares (to the dollar) keep their order, e.g. David then Alexa.
     .sort((a, b) => Math.round(b.net) - Math.round(a.net));
   return {
     decedentId,

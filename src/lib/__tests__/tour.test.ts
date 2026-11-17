@@ -37,10 +37,10 @@ describe("tour script", () => {
 
   it("names only the family and the Bank Advisor", () => {
     expect(Object.values(tourPeople).map((p) => p.name)).toEqual([
-      "John",
-      "Maya",
-      "David",
-      "Alexis",
+      "John Smith",
+      "Maya Smith",
+      "David Smith",
+      "Alexa Smith",
       "Bank Advisor",
     ]);
     // Everything the tour can say, in every state the viewer can reach.

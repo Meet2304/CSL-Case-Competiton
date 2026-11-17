@@ -24,16 +24,16 @@ describe("John's wealth transfer", () => {
     expect(routes("p-riley")["acct-jordan-savings"]).toBe("gift");
     const brokerage = (id: string) =>
       of(id).receives.find((r) => r.account.id === "acct-jordan-brokerage")!.amount;
-    expect(brokerage("p-casey")).toBe(563_250);
-    expect(brokerage("p-avery")).toBe(281_625);
-    expect(brokerage("p-riley")).toBe(281_625);
+    expect(brokerage("p-casey")).toBe(48_250);
+    expect(brokerage("p-avery")).toBe(24_125);
+    expect(brokerage("p-riley")).toBe(24_125);
   });
 
   it("charges the card debt to the residuary beneficiaries in the same shares, to the cent", () => {
     const debt = (id: string) => of(id).takesOn.reduce((s, b) => s + b.amount, 0);
-    expect(debt("p-casey") + debt("p-avery") + debt("p-riley")).toBeCloseTo(12_846.19, 2);
-    expect(debt("p-casey")).toBeCloseTo(6_423.1, 2);
-    expect(plan.totalDebts).toBeCloseTo(12_846.19, 2);
+    expect(debt("p-casey") + debt("p-avery") + debt("p-riley")).toBeCloseTo(1_284.19, 2);
+    expect(debt("p-casey")).toBeCloseTo(642.1, 2);
+    expect(plan.totalDebts).toBeCloseTo(1_284.19, 2);
   });
 
   it("passes every one of John's accounts to someone", () => {
@@ -53,27 +53,27 @@ describe("John's wealth transfer", () => {
 describe("next steps for each beneficiary", () => {
   const ctx = {
     name: (id: string) =>
-      ({ "p-casey": "Maya", "p-avery": "David", "p-riley": "Alexis" })[id] ?? id,
-    executor: "Maya",
-    custodianOf: (id: string) => (id === "p-avery" || id === "p-riley" ? "Maya" : undefined),
+      ({ "p-casey": "Maya Smith", "p-avery": "David Smith", "p-riley": "Alexa Smith" })[id] ?? id,
+    executor: "Maya Smith",
+    custodianOf: (id: string) => (id === "p-avery" || id === "p-riley" ? "Maya Smith" : undefined),
     isSpouse: (id: string) => id === "p-casey",
   };
   const steps = (id: string) => beneficiarySteps(of(id), ctx);
 
   it("takes Maya through what passes outside the will first, then the will", () => {
     const s = steps("p-casey");
-    expect(s[0]).toMatch(/^Retitle Joint Checking x0001 into Maya's name alone/);
+    expect(s[0]).toMatch(/^Retitle Joint Checking x0001 into Maya Smith's name alone/);
     expect(s.some((x) => x.includes("roll it into her own IRA"))).toBe(true);
     expect(s.some((x) => x.includes("with the insurer"))).toBe(true);
-    expect(s.some((x) => x.startsWith("Once Maya has letters testamentary, transfer 50% of"))).toBe(
-      true,
-    );
-    expect(s.at(-1)).toMatch(/Cash Rewards Visa x0003 is paid from Maya's share/);
+    expect(
+      s.some((x) => x.startsWith("Once Maya Smith has letters testamentary, transfer 50% of")),
+    ).toBe(true);
+    expect(s.at(-1)).toMatch(/Cash Rewards Visa x0003 is paid from Maya Smith's share/);
   });
 
   it("puts a child's share in a custodial account their custodian manages", () => {
     const s = steps("p-riley");
-    expect(s[0]).toMatch(/open a custodial account for Alexis that Maya manages/);
+    expect(s[0]).toMatch(/open a custodial account for Alexa Smith that Maya Smith manages/);
     expect(s[0]).toContain("Savings x0002");
   });
 });

@@ -42,7 +42,7 @@ describe("my assets", () => {
       assetsFor(seed, personId, all, [])
         .filter((i) => canManage(i, personId))
         .map((i) => i.account.id);
-    // John: everything they own, Alexis's account (custodian), and Maya's accounts (admin).
+    // John: everything they own, Alexa's account (custodian), and Maya's accounts (admin).
     expect(manageable("p-jordan")).toEqual(
       expect.arrayContaining(["acct-jordan-savings", "acct-riley-savings", "acct-casey-roth"]),
     );
@@ -63,13 +63,13 @@ describe("my assets", () => {
       assetsFor(seed, personId, all, [])
         .filter((i) => canPayFrom(i, personId))
         .map((i) => i.account.id);
-    // John: his own cash accounts and Alexis's account he's custodian of; never the IRA or card.
+    // John: his own cash accounts and Alexa's account he's custodian of; never the IRA or card.
     expect(payable("p-jordan")).toEqual(
       expect.arrayContaining(["acct-joint-checking", "acct-jordan-savings", "acct-riley-savings"]),
     );
     expect(payable("p-jordan")).not.toContain("acct-jordan-ira");
     expect(payable("p-jordan")).not.toContain("acct-jordan-card");
-    // David only sees the joint checking (no pay permission); Alexis's account is run by a custodian.
+    // David only sees the joint checking (no pay permission); Alexa's account is run by a custodian.
     expect(payable("p-avery")).toEqual([]);
     expect(payable("p-riley")).toEqual([]);
   });

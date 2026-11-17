@@ -6,6 +6,7 @@
  * surface at the top. Customers without a `will` have none on file; the
  * advisor assistant recommends one based on relationship value and household.
  */
+import { accounts, people } from "./household";
 import type { Advisor, AdvisorCustomer, AdvisorNotification, LossEvent } from "./types";
 
 export const advisor: Advisor = {
@@ -48,16 +49,18 @@ type Seed = Omit<AdvisorCustomer, "lossEvents" | "will"> &
 const seeds: Seed[] = [
   {
     id: "c-sample",
-    name: "John",
+    name: people.find((p) => p.id === "p-jordan")!.name,
     household: [
-      { name: "Maya", relationship: "Spouse" },
-      { name: "David", relationship: "Child" },
-      { name: "Alexis", relationship: "Child" },
+      { name: "Maya Smith", relationship: "Spouse" },
+      { name: "David Smith", relationship: "Child" },
+      { name: "Alexa Smith", relationship: "Child" },
     ],
     segment: "Private Bank",
     // The advisor looks after John alone: his own accounts at PNC (src/data/household.ts).
-    // Maya, David and Alexis are his family and beneficiaries, not this advisor's clients.
-    relationshipValue: 49_092.3,
+    // Maya, David and Alexa are his family and beneficiaries, not this advisor's clients.
+    relationshipValue: accounts
+      .filter((a) => a.owners.includes("p-jordan") && !a.external)
+      .reduce((sum, a) => sum + a.balance, 0),
     accountCount: 5,
     will: { status: "on-file", updated: "2024-03-12" },
     // The demo's one incident: the bank has recorded John's death, so his advisor's
@@ -67,7 +70,7 @@ const seeds: Seed[] = [
         id: "l-john",
         date: "2026-10-24",
         relationship: "Self",
-        memberName: "John",
+        memberName: "John Smith",
         reportedVia: "Phone call",
         followUpComplete: false,
       },
@@ -108,17 +111,6 @@ const seeds: Seed[] = [
     lastContact: "2026-10-14",
     nextReview: "2026-11-20",
     will: { status: "on-file", updated: "2025-06-14" },
-    lossEvents: [
-      // Handled earlier in the year — kept as history, no longer flagged.
-      {
-        id: "l-3",
-        date: "2026-03-08",
-        relationship: "Parent",
-        memberName: "Jamie Demo",
-        reportedVia: "Branch visit",
-        followUpComplete: true,
-      },
-    ],
   },
   {
     id: "c-mockford",

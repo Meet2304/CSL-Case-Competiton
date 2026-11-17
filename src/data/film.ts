@@ -2,7 +2,7 @@
  * The script of the product film (`/film`): which page of the working app each
  * shot is filmed on, what is clicked, and what the camera frames. Captions are
  * one headline and one sentence; the presenter says the rest. People are
- * John, Maya, David, Alexis and the Bank Advisor; no other names.
+ * John, Maya, David, Alexa and the Bank Advisor; no other names.
  *
  * Targets describe elements by the words on them, so the film keeps working
  * when the app's markup changes but its labels do not.

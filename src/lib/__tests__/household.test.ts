@@ -96,7 +96,7 @@ describe("families", () => {
       type: "addMember" as const,
       member: {
         id: "p-riley",
-        name: "Alexis",
+        name: "Alexa Smith",
         email: "x@example.com",
         relationship: "Child" as const,
         roleId: "r-trusted",

@@ -23,8 +23,8 @@ const reportedOptions: LossEvent["reportedVia"][] = [
   "Mobile app",
 ];
 const people = customerDirectory(advisorCustomers);
-// In the demo story John is the one who dies; Maya, David and Alexis survive.
-const DEFAULT_PERSON = "John";
+// In the demo story John is the one who dies; Maya, David and Alexa survive.
+const DEFAULT_PERSON = "John Smith";
 
 const input =
   "mt-1 w-full rounded-md border border-pnc-line bg-white px-3 py-2.5 text-sm outline-none focus:border-pnc-link";
