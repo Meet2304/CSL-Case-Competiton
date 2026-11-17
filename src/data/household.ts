@@ -69,7 +69,7 @@ export const people: HouseholdPerson[] = [
 export const retiredRoleIds = ["r-trusted"];
 
 /** Names the seeded family had before; saved copies take the seed's current name. */
-export const previousFamilyNames = ["Sample Family"];
+export const previousFamilyNames = ["Sample Family", "My Family"];
 
 export const previousNames: Record<string, string> = {
   Husband: "John",
@@ -284,7 +284,7 @@ export type StoredFamily = {
 export const seedFamilies: StoredFamily[] = [
   {
     id: "fam-sample",
-    familyName: "My Family",
+    familyName: "Smith Family",
     createdBy: "p-jordan",
     createdOn: "2026-06-02",
     members: [
