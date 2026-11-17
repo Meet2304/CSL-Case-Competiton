@@ -3,7 +3,7 @@
 import { useActionState, useRef, useState } from "react";
 import { FlaskConical, ScanFace } from "lucide-react";
 import { FacetBackdrop } from "@/components/brand/FacetBackdrop";
-import { PncLogo } from "@/components/brand/PncLogo";
+import { PrivateBankLogo } from "@/components/brand/PncLogo";
 import { Toggle } from "@/components/ui/Toggle";
 import { demoUsers } from "@/data/users";
 import { signIn, type SignInState } from "@/lib/auth";
@@ -17,7 +17,7 @@ export function MobileSignOn() {
   return (
     <div className="relative isolate flex flex-1 flex-col px-7 pt-[calc(var(--status-h)+4rem)] text-white">
       <FacetBackdrop className="-z-10" />
-      <PncLogo tone="light" size="lg" className="self-center" />
+      <PrivateBankLogo size="md" product={false} className="self-center" />
 
       <form action={action} className="mt-16 flex flex-col">
         <label htmlFor="m-user-id" className="text-sm text-white/90">
@@ -32,14 +32,6 @@ export function MobileSignOn() {
           autoCapitalize="none"
           aria-invalid={state.error ? true : undefined}
           className="border-b border-white/70 bg-transparent py-2 text-lg tracking-wide outline-none placeholder:text-white/70 focus:border-white"
-        />
-        <input
-          name="password"
-          type="password"
-          aria-label="Password"
-          placeholder="Enter Password"
-          autoComplete="off"
-          className="mt-8 border-b border-white/70 bg-transparent py-2 text-lg outline-none placeholder:text-white/90 focus:border-white"
         />
 
         <div className="mt-7 flex items-center justify-between text-md">
@@ -64,14 +56,11 @@ export function MobileSignOn() {
         >
           {pending ? "Signing In…" : "Sign In"}
         </button>
-        <a href="#" className="mt-5 text-center text-md">
-          Forgot User ID or Password?
-        </a>
       </form>
 
       <div className="mt-auto mb-8 text-center text-xs text-white/80">
         <p className="flex items-center justify-center gap-1.5 font-semibold">
-          <FlaskConical className="size-3.5 shrink-0" /> Demo sign-on · any password
+          <FlaskConical className="size-3.5 shrink-0" /> Concept demo · no password
         </p>
         <p className="mt-2 flex justify-center gap-2">
           {demoUsers.map((u) => (

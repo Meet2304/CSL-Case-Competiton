@@ -1,6 +1,7 @@
 /**
- * Rules for the family dashboard: who can see and control which asset, and
- * what happens legally when a family member dies. Pure functions only — the
+ * Rules for the family dashboard: who can see which asset, and what happens
+ * legally when a family member dies. Roles only ever grant visibility; moving
+ * money or changing an asset belongs to its owners alone. Pure functions only — the
  * React state lives in components/family/FamilyProvider.tsx.
  */
 import { FULL_ACCESS, methodSteps, NO_ACCESS } from "@/data/family";
@@ -40,18 +41,18 @@ export const livingAdmins = (s: FamilyState) => s.members.filter((m) => isAdminM
 // ---------------------------------------------------------------------------
 // Access
 
-/** Keeps a permission set consistent: anything beyond viewing implies view. */
-export function normalizeAccess(a: AssetAccess): AssetAccess {
-  const view = a.view || a.activity || a.transact || a.manage;
-  return { ...a, view };
+/** Visibility only: seeing the balance implies knowing the account; control is never granted. */
+export function visibilityOnly(a: AssetAccess): AssetAccess {
+  return { view: a.view || a.balance, balance: a.balance, transact: false, manage: false };
 }
 
-export const isFull = (a: AssetAccess) => a.view && a.activity && a.transact && a.manage;
+const SEES_ALL: AssetAccess = { view: true, balance: true, transact: false, manage: false };
 
+/** What a role lets its members see of an asset. Admins see every shared asset in full. */
 export function roleAccess(role: FamilyRole | undefined, assetId: string): AssetAccess {
   if (!role) return NO_ACCESS;
-  if (role.isAdmin) return FULL_ACCESS;
-  return role.access[assetId] ?? NO_ACCESS;
+  if (role.isAdmin) return SEES_ALL;
+  return visibilityOnly(role.access[assetId] ?? NO_ACCESS);
 }
 
 /** An in-progress legal process freezes control of the asset for everyone. */
@@ -62,16 +63,20 @@ export function activeProcess(s: FamilyState, assetId: string): SuccessionProces
 export const isLocked = (s: FamilyState, assetId: string) =>
   activeProcess(s, assetId) !== undefined;
 
-/** What a member can actually do with an asset right now. */
+/**
+ * What a member can actually do with an asset right now. Its owners can do
+ * everything (unless a legal process or closure freezes it); everyone else
+ * can only see what their role shows them, never move money or change it.
+ */
 export function effectiveAccess(
   s: FamilyState,
   member: FamilyMember,
   asset: FamilyAsset,
 ): AssetAccess {
   if (member.status === "Deceased") return NO_ACCESS;
-  const base = roleAccess(roleById(s, member.roleId), asset.id);
-  if (isLocked(s, asset.id) || asset.closed) return { ...base, transact: false, manage: false };
-  return base;
+  if (asset.owners.includes(member.id))
+    return isLocked(s, asset.id) || asset.closed ? SEES_ALL : FULL_ACCESS;
+  return roleAccess(roleById(s, member.roleId), asset.id);
 }
 
 /** Living members who can see an asset. */
@@ -79,12 +84,10 @@ export function viewersOf(s: FamilyState, asset: FamilyAsset): FamilyMember[] {
   return s.members.filter((m) => effectiveAccess(s, m, asset).view);
 }
 
-/** "Sees 4 of 10 assets · controls 1" for a role card. */
+/** "Sees 4 of 10 assets" for a role card. */
 export function roleSummary(s: FamilyState, role: FamilyRole) {
-  const access = s.assets.map((a) => roleAccess(role, a.id));
   return {
-    sees: access.filter((a) => a.view).length,
-    controls: access.filter((a) => a.transact || a.manage).length,
+    sees: s.assets.filter((a) => roleAccess(role, a.id).view).length,
     total: s.assets.length,
   };
 }

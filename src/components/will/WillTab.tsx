@@ -19,7 +19,7 @@ import { WillDocument } from "@/components/will/WillDocument";
 import { ProgressBar, StepDot, statusText } from "@/components/will/progress";
 import { sectionMeta } from "@/components/will/sections";
 import { WillPlanner } from "@/components/will/WillPlanner";
-import type { FamilyMember, FamilyState } from "@/data/types";
+import type { FamilyState } from "@/data/types";
 import { firstName } from "@/lib/family";
 import { formatDate } from "@/lib/format";
 import { householdAsFamily } from "@/lib/household";
@@ -27,44 +27,10 @@ import { percentDone, sectionProgress, sections, type SectionProgress } from "@/
 import { generateWill } from "@/lib/will/generate";
 import { namedMembers } from "@/lib/will/roles";
 import { readWillUpdated, useHydrated, useSavedWill, useWillStatus } from "@/lib/will/storage";
-import { emptyDraft, newId, type WillDraft } from "@/lib/will/types";
-
-/** Living household members other than the testator, as the planner names them. */
-function householdPeople(state: FamilyState) {
-  return state.members
-    .filter((m) => m.id !== state.selfId && m.status !== "Deceased")
-    .map((m) => ({ name: m.name, relationship: m.relationship }));
-}
-
-/** A new will starts from the household the bank already knows about. */
-function prefillFromHousehold(state: FamilyState) {
-  return (draft: WillDraft): WillDraft => {
-    const living = state.members.filter((m) => m.id !== state.selfId && m.status !== "Deceased");
-    const spouse = living.find((m) => m.relationship === "Spouse");
-    const children = living.filter((m) => m.relationship === "Child");
-    const [first = "", ...rest] = spouse?.name.split(" ") ?? [];
-    return {
-      ...draft,
-      basics: spouse
-        ? {
-            ...draft.basics,
-            marital: "married",
-            spouse: { first, middle: "", last: rest.join(" ") },
-          }
-        : draft.basics,
-      nominees: children.length
-        ? {
-            ...draft.nominees,
-            hasChildren: "yes",
-            children: children.map((c) => ({ id: newId("c"), name: c.name, birthdate: "" })),
-          }
-        : draft.nominees,
-    };
-  };
-}
+import { emptyDraft, type WillDraft } from "@/lib/will/types";
 
 /**
- * The signed-in person's will (the Will page, `routes.will`): a short start
+ * The signed-in person's will (Assets and Debts › Your will, `routes.will`): a short start
  * page, the step-by-step planner, or the will on file. While editing, one
  * breadcrumb leads back to the start page, so there's never a second "back"
  * link.
@@ -101,8 +67,6 @@ export function WillSection() {
           owner={person.id}
           openAt={planning === "resume" ? undefined : planning}
           onExit={() => setPlanning(null)}
-          people={householdPeople(household)}
-          prefill={prefillFromHousehold(household)}
         />
       </div>
     );
@@ -117,14 +81,11 @@ export function WillSection() {
       </div>
     );
   } else {
-    const living = household.members.filter((m) => m.id !== person.id && m.status !== "Deceased");
     const parts = sectionProgress(saved?.draft ?? emptyDraft(), saved?.progress);
     body = (
       <WillStart
         parts={parts}
         started={status === "in-progress" && parts.some((p) => p.status !== "todo")}
-        family={living.filter((m) => m.relationship === "Spouse" || m.relationship === "Child")}
-        indexOf={(m) => household.members.indexOf(m)}
         onStart={() => setPlanning("resume")}
         onOpen={(section) => setPlanning(section)}
       />
@@ -191,15 +152,11 @@ const facts = [
 function WillStart({
   parts,
   started,
-  family,
-  indexOf,
   onStart,
   onOpen,
 }: {
   parts: SectionProgress[];
   started: boolean;
-  family: FamilyMember[];
-  indexOf: (m: FamilyMember) => number;
   onStart: () => void;
   onOpen: (section: number) => void;
 }) {
@@ -252,16 +209,6 @@ function WillStart({
               {started ? "Continue your will" : "Start your will"}
               <ArrowRight className="size-4" aria-hidden="true" />
             </button>
-            {!started && family.length > 0 && (
-              <p className="flex items-center gap-2 text-sm text-pnc-muted">
-                <span className="flex -space-x-1.5">
-                  {family.map((m) => (
-                    <Avatar key={m.id} member={m} index={indexOf(m)} size="sm" />
-                  ))}
-                </span>
-                Your family is already filled in
-              </p>
-            )}
           </div>
         </div>
       </div>
@@ -394,8 +341,8 @@ function WillOnFile({
             <IconChip icon={ScrollText} size="sm" />
             <p>
               When the time comes, {executor ? firstName(executor.member.name) : "your executor"}{" "}
-              will see your will on My Assets, under Unclaimed assets, and can begin settling your
-              estate with PNC.
+              will see your will on Assets and Debts, under Unclaimed assets, and can begin settling
+              your estate with PNC.
             </p>
           </section>
         </aside>

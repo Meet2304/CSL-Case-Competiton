@@ -44,6 +44,8 @@ describe("production advisor demo", () => {
   it("keeps John's advisor holdings aligned with his customer accounts", () => {
     const owned = accounts.filter((a) => a.owners.includes("p-jordan") && !a.external);
     expect(john.accountCount).toBe(owned.length);
+    // The Private Bank-scale household (portfolio home): about $2.73M of John's own at PNC.
+    expect(john.relationshipValue).toBeCloseTo(2_728_524.36, 2);
     expect(john.relationshipValue).toBeCloseTo(
       owned.reduce((sum, a) => sum + a.balance, 0),
       2,

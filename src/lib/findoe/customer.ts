@@ -140,6 +140,7 @@ const namesOf = (ids: string[], youId?: string) =>
   ids.map((id) => (id === youId ? "you" : nameOf(id))).join(" and ");
 
 function amount(a: BankAccount): string {
+  if (a.balanceHidden) return "";
   if (a.kind === "life-insurance") return `Face value ${formatMoney(a.balance)}`;
   if (a.kind === "credit-card") return `Balance owed ${formatMoney(-a.balance)}`;
   return formatMoney(a.balance);
@@ -382,7 +383,7 @@ function missingBeneficiaries(ctx: CustomerContext): Reply {
       gaps.some((a) => a.kind === "brokerage")
         ? `. For the brokerage account it's called a transfer-on-death beneficiary${c.law("pa-ch64")}`
         : ""
-    }. It takes a couple of minutes on My Assets.`,
+    }. It takes a couple of minutes on Assets and Debts.`,
   ];
   return c.reply(lines, gaps.map(nameBeneficiary), [
     "What happens to my accounts if I die?",
@@ -445,7 +446,7 @@ function planFirst(ctx: CustomerContext): Reply {
       [
         `You're in good shape.${willRow(c, ctx)}${rows(c, owned(ctx).filter(takesBeneficiary))} Your will is on file and every account that can name a beneficiary has one. Review both after any big change in the family.`,
       ],
-      [{ label: "Review My Assets", href: routes.assets, icon: "assets" }],
+      [{ label: "Review Assets and Debts", href: routes.assets, icon: "assets" }],
       ["What happens to my accounts if I die?"],
     );
   const byId = new Map(owned(ctx).map((a) => [a.id, a]));
@@ -519,7 +520,7 @@ function lossFirst(ctx: CustomerContext, loss: NonNullable<CustomerContext["loss
     [
       {
         label: "See what passes to you",
-        detail: "My Assets › Unclaimed assets · guided, and saved as you go",
+        detail: "Assets and Debts › Unclaimed assets · guided, and saved as you go",
         href: routes.unclaimedAssets,
         icon: "next-steps",
       },
@@ -752,11 +753,11 @@ function overview(ctx: CustomerContext): Reply {
       `You can see ${ctx.assets.length} accounts at PNC${shared ? `, including ${shared} shared with you through your family` : ""}:`,
       ...ctx.assets.map(
         (i) =>
-          `- **${accountLabel(i.account)}**: ${amount(i.account)}${relation(i)}.${accountRow(c, i.account)}`,
+          `- **${accountLabel(i.account)}**${amount(i.account) ? `: ${amount(i.account)}` : ""}${relation(i)}.${accountRow(c, i.account)}`,
       ),
       `Together that's ${formatMoney(total(atPnc))} held at PNC.`,
     ],
-    [{ label: "Open My Assets", href: routes.assets, icon: "assets" }],
+    [{ label: "Open Assets and Debts", href: routes.assets, icon: "assets" }],
     ctx.isMinor ? ["What changes when I turn 18?"] : ["What happens to my accounts if I die?"],
   );
 }
@@ -825,7 +826,7 @@ function fallback(ctx: CustomerContext, question: string): Reply {
 }
 
 // ---------------------------------------------------------------------------
-// Claiming what passes to you (My Assets › Unclaimed assets)
+// Claiming what passes to you (Assets and Debts › Unclaimed assets)
 
 /** How an item passes to the viewer, in a few words, and the law behind it. */
 function howItPasses(item: SurvivorItem, them1: string): { how: string; law?: string } {
@@ -865,7 +866,7 @@ function claimAll(ctx: CustomerContext, loss: NonNullable<CustomerContext["loss"
     [
       {
         label: "Open your unclaimed assets",
-        detail: `${items.length} waiting · on My Assets`,
+        detail: `${items.length} waiting · on Assets and Debts`,
         href: routes.unclaimedAssets,
         icon: "assets",
       },

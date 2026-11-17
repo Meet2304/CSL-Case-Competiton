@@ -51,7 +51,7 @@ export function OneViewVisual() {
             </div>
           ))}
           <div>
-            <dt className="text-sm text-pnc-muted">Owed on cards</dt>
+            <dt className="text-sm text-pnc-muted">Debts</dt>
             <dd className="mt-0.5 text-lg font-semibold">
               <Money value={tourAccounts.card.balance} />
             </dd>

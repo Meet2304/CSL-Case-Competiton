@@ -112,7 +112,7 @@ export function AssetSummary({
                       className="size-2 shrink-0 rounded-full ring-2 ring-inset ring-pnc-negative"
                       aria-hidden="true"
                     />
-                    Owed on cards
+                    Debts
                   </dt>
                   <dd className="font-semibold @[22rem]:mt-0.5">
                     <Money value={owed} />

@@ -110,7 +110,7 @@ function Today({
 }
 
 /**
- * My Assets › Unclaimed assets, after the bank records a death in the
+ * Assets and Debts › Unclaimed assets, after the bank records a death in the
  * household: the deceased's accounts that can pass to the signed-in person,
  * each with a guided claim (opened in place from `#claim-<item id>`) and a way
  * to ask Findoe about it. Built from the survivor plan, so every claim shares

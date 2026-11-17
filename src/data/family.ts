@@ -9,17 +9,17 @@
 import { creditCardAccounts, depositAccounts, virtualWallet } from "./mock";
 import type { AssetAccess, FamilyState, SuccessionMethod, SuccessionStep } from "./types";
 
-const NONE: AssetAccess = { view: false, activity: false, transact: false, manage: false };
+const NONE: AssetAccess = { view: false, balance: false, transact: false, manage: false };
 export const FULL_ACCESS: AssetAccess = {
   view: true,
-  activity: true,
+  balance: true,
   transact: true,
   manage: true,
 };
 export const NO_ACCESS = NONE;
 
 const viewOnly: AssetAccess = { ...NONE, view: true };
-const viewActivity: AssetAccess = { ...NONE, view: true, activity: true };
+const viewActivity: AssetAccess = { ...NONE, view: true, balance: true };
 const viewTransact: AssetAccess = { ...NONE, view: true, transact: true };
 
 const [checking, savings] = depositAccounts;
@@ -201,7 +201,7 @@ export const initialFamilyState: FamilyState = {
     },
     {
       id: "a-trust",
-      name: "Sample Family Trust",
+      name: "Smith Family Trust",
       last4: "0201",
       category: "Brokerage account",
       value: 1_250_000,

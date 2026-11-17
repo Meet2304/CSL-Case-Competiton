@@ -4,7 +4,7 @@ import { CalendarHeart } from "lucide-react";
 import { useViewer } from "@/components/customer/Viewer";
 import { WillSection } from "@/components/will/WillTab";
 
-/** The Will page. Wills start at 18, so a minor who lands here gets a gentle note instead. */
+/** Assets and Debts › Your will. Wills start at 18, so a minor who lands here gets a gentle note instead. */
 export function WillPage() {
   const { isMinor, age } = useViewer();
   if (!isMinor) return <WillSection />;

@@ -24,16 +24,16 @@ describe("John's wealth transfer", () => {
     expect(routes("p-riley")["acct-jordan-savings"]).toBe("gift");
     const brokerage = (id: string) =>
       of(id).receives.find((r) => r.account.id === "acct-jordan-brokerage")!.amount;
-    expect(brokerage("p-casey")).toBe(48_250);
-    expect(brokerage("p-avery")).toBe(24_125);
-    expect(brokerage("p-riley")).toBe(24_125);
+    expect(brokerage("p-casey")).toBe(563_250);
+    expect(brokerage("p-avery")).toBe(281_625);
+    expect(brokerage("p-riley")).toBe(281_625);
   });
 
   it("charges the card debt to the residuary beneficiaries in the same shares, to the cent", () => {
     const debt = (id: string) => of(id).takesOn.reduce((s, b) => s + b.amount, 0);
-    expect(debt("p-casey") + debt("p-avery") + debt("p-riley")).toBeCloseTo(1_284.19, 2);
-    expect(debt("p-casey")).toBeCloseTo(642.1, 2);
-    expect(plan.totalDebts).toBeCloseTo(1_284.19, 2);
+    expect(debt("p-casey") + debt("p-avery") + debt("p-riley")).toBeCloseTo(12_846.19, 2);
+    expect(debt("p-casey")).toBeCloseTo(6_423.1, 2);
+    expect(plan.totalDebts).toBeCloseTo(12_846.19, 2);
   });
 
   it("passes every one of John's accounts to someone", () => {

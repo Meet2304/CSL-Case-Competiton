@@ -16,8 +16,8 @@ const montserrat = Montserrat({
 
 export const metadata: Metadata = {
   title: {
-    default: "PNC Concept Prototype",
-    template: "%s · PNC Concept Prototype",
+    default: "PNC Private Bank PortfolioView (concept)",
+    template: "%s · PNC Private Bank (concept)",
   },
   description:
     "CSL Case Competition prototype that mirrors the PNC online and mobile banking experience. All data shown is mock data.",

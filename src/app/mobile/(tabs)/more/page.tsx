@@ -7,17 +7,23 @@ import {
   FileText,
   Medal,
   ReceiptText,
+  ScrollText,
   Settings,
   Shield,
 } from "lucide-react";
 import { MobileCard, MobileIconRow, MobileSignOffRow } from "@/components/mobile/MobileCard";
 import { MobileHeader } from "@/components/mobile/MobileHeader";
-import { creditCardAccounts } from "@/data/mock";
+import { creditCardAccounts, MOCK_AS_OF } from "@/data/mock";
+import { isMinor, personById } from "@/lib/household";
 import { routes } from "@/lib/routes";
+import { viewerId } from "@/lib/viewer";
 
 export const metadata: Metadata = { title: "More" };
 
-export default function MobileMorePage() {
+export default async function MobileMorePage() {
+  const person = personById(await viewerId())!;
+  // The phone's way to the will, which sits under Assets and Debts (a menu on the web). Adults only.
+  const showWill = !isMinor(person, MOCK_AS_OF);
   return (
     <>
       <MobileHeader title="More" />
@@ -38,6 +44,7 @@ export default function MobileMorePage() {
                 href={routes.card(c.id)}
               />
             ))}
+            {showWill && <MobileIconRow icon={ScrollText} label="Your will" href={routes.will} />}
             <MobileIconRow icon={Medal} label="Rewards" href={routes.rewards} />
             <MobileIconRow icon={ReceiptText} label="Deposit a check" href={routes.deposit} />
           </ul>

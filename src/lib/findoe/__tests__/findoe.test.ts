@@ -87,7 +87,7 @@ describe("Findoe for customers", () => {
   it("shows John which accounts would go through probate, and how to fix each", () => {
     const r = customerReply(ctxFor("p-jordan"), "What happens to my accounts if I die?");
     expect(r.text).toContain("Joint Checking x0001** passes straight to Maya");
-    expect(r.text).toContain("2 accounts ($114,750.00) would go through probate");
+    expect(r.text).toContain("2 accounts ($1,372,750.00) would go through probate");
     expect(r.actions.map((a) => a.href)).toEqual([
       routes.manageAsset("acct-jordan-savings"),
       routes.manageAsset("acct-jordan-brokerage"),

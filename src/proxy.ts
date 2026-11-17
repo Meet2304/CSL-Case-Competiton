@@ -21,8 +21,10 @@ const VIEW_COOKIE = "pnc-view";
 const legacy: Record<string, string> = {
   "/accounts": routes.assets,
   "/plan": routes.will,
+  // The will now sits under Assets and Debts.
+  "/will": routes.will,
   "/advisor/rules": routes.advisor,
-  // Next steps after a loss now lives on My Assets.
+  // Next steps after a loss now lives on Assets and Debts.
   "/next-steps": routes.unclaimedAssets,
 };
 

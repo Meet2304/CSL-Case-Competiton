@@ -127,7 +127,8 @@ export type DemoUser = {
 // read by every customer login and by the advisor.
 
 /** How a household member's illustrated profile picture is drawn (see PersonAvatar). */
-export type AvatarLook = "husband" | "wife" | "teen" | "child";
+/** Fixed portraits: the household's roles, and the bank team on the home page. */
+export type AvatarLook = "husband" | "wife" | "teen" | "child" | "service" | "support";
 
 export type HouseholdPerson = {
   id: string;
@@ -167,6 +168,11 @@ export type BankAccount = {
   /** Held outside PNC (e.g. a life insurance policy); tracked for planning. */
   external?: boolean;
   transactions?: Transaction[];
+  /**
+   * Shared with someone whose family role shows the account but not its
+   * balance: `balance` is 0 here, and screens show the account without an amount.
+   */
+  balanceHidden?: boolean;
 };
 
 export type Advisor = {
@@ -174,6 +180,18 @@ export type Advisor = {
   lastName: string;
   title: string;
   team: string;
+};
+
+/** Someone on the customer's relationship team ("My Team" on the home page). */
+export type TeamContact = {
+  id: string;
+  name: string;
+  title: string;
+  phone: string;
+  email: string;
+  /** Their portrait: a fixed look, or one picked from `avatarSeed`. */
+  avatar?: AvatarLook;
+  avatarSeed: string;
 };
 
 export type FamilyRelationship = "Spouse" | "Parent" | "Child" | "Sibling";
@@ -342,10 +360,10 @@ export type FamilyMember = {
 
 /** What a role may do with one asset. View is implied by any other permission. */
 export type AssetAccess = {
-  /** Visibility: see the asset and its balance. */
+  /** Visibility: know the account exists (its name and type). */
   view: boolean;
-  /** Visibility: see transactions, statements and documents. */
-  activity: boolean;
+  /** Visibility: also see its balance. */
+  balance: boolean;
   /** Control: move money, pay, trade. */
   transact: boolean;
   /** Control: change settings, cards, beneficiaries. */
@@ -394,6 +412,8 @@ export type FamilyAsset = {
   last4?: string;
   category: AssetCategory;
   value: number;
+  /** Seen by a member whose role shows the account but not its balance (`value` is 0). */
+  balanceHidden?: boolean;
   /** Member ids of the legal owners (or trustees for a trust). */
   owners: string[];
   /** How the asset passes legally on an owner's death (not collected for new assets yet). */

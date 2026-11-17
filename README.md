@@ -112,8 +112,8 @@ card, a life policy held outside PNC, Maya's savings and Roth IRA, and the
 kids' custodial accounts). The session keeps the role (`pnc-session`) and the
 person (`pnc-person`); `src/proxy.ts` keeps each role on its own pages.
 
-Customer navigation: **Home · My Assets · Will · Family · Help** on laptops, and
-**Home · My Assets · Will · Family · More** on phones (Pay & Transfer, Cards,
+Customer navigation: **Home · Assets and Debts · Will · Family · Help** on laptops, and
+**Home · Assets and Debts · Will · Family · More** on phones (Pay & Transfer, Cards,
 Rewards and Deposit live under More). **Next steps** appears for adults once
 the bank records a death in the household.
 
@@ -126,7 +126,7 @@ family (with what they're allowed to do).
 **Reminders** (`src/lib/nudges.ts`) come from what's on file: write or finish
 a will, add a beneficiary to each account that can take one, and update a
 beneficiary who has died. David gets a heads-up about turning 18; Alexis gets
-none. Beneficiary reminders show as a count on **My Assets** and the will
+none. Beneficiary reminders show as a count on **Assets and Debts** and the will
 reminder on **Will** in the navigation, where each is resolved.
 
 ## Family — `/family`
@@ -141,10 +141,13 @@ and Alexis sees nothing. Families are just family: no outside advisors.
   a shared account until their role is given access.
 - **Members**: add people from your household in one tap, or invite someone
   by email.
-- **Roles & access**: per account, **Visibility** (balance, activity) and
-  **Control** (transact, manage). The last admin can't be removed.
+- **Roles & access**: roles only decide what each member can **see** of each
+  account: hidden, the account only, or the account and its balance (no role
+  shows transactions). Nobody but an
+  account's owners can move money or change it, admins included
+  (`effectiveAccess` in `src/lib/family.ts`). The last admin can't be removed.
 - **Access limits are confidential to admins.** Members only see what they
-  can use; admins check it with **Preview as**.
+  can use.
 - Families keep working after a death: the person shows as deceased.
 - **Pay bills** (under People): electricity, phone, rent, insurance, tuition
   and more, paid from your own cash accounts or a shared one your role lets you
@@ -153,10 +156,11 @@ and Alexis sees nothing. Families are just family: no outside advisors.
 
 ## Wills and beneficiaries
 
-There's no separate Planning page; the old `/plan` URL redirects to the Will page.
+The will sits under **Assets and Debts**, the accounts it covers: open the Assets and Debts
+dropdown in the navigation (More on the phone). The old `/plan` and `/will` URLs redirect to it.
 
-- **Your will** (`/will`, **Will** in the navigation): an 8-step planner,
-  pre-filled with your household, saved per person as you go. Progress shows as
+- **Your will** (`/assets/will`): an 8-step planner,
+  started blank (nothing is filled in from the household), saved per person as you go. Progress shows as
   numbered steps across the top, each with a dropdown of its steps. Adults only;
   under-18s see a short note instead.
 - **Beneficiaries** (`/assets#manage-<accountId>`): in each account's
