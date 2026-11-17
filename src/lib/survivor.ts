@@ -4,7 +4,12 @@
  * has to do. Built from the accounts as they stand, so a beneficiary added
  * before the death changes the plan. Pure functions.
  */
-import { deathCertificateStep, type FlowStep, type TransferFlow } from "@/data/bereavement";
+import {
+  deathCertificateStep,
+  insurerClaimGuide,
+  type FlowStep,
+  type TransferFlow,
+} from "@/data/bereavement";
 import type { BankAccount, HouseholdPerson } from "@/data/types";
 import { accountLabel, ageOn, firstName, personById } from "@/lib/household";
 
@@ -32,6 +37,8 @@ export type SurvivorItem = {
   flow?: TransferFlow;
   /** What's usually needed, when there's no guided flow. */
   steps?: string[];
+  /** Each step spelled out, for a claim PNC can't make for you (a policy paid by its insurer). */
+  guide?: { title: string; detail: string }[];
 };
 
 const names = (ids: string[]) =>
@@ -338,6 +345,7 @@ export function survivorPlan(
               "Complete their claim form and choose how to be paid",
             ]
           : undefined,
+        guide: insurance && a.external ? insurerClaimGuide : undefined,
       });
     } else if (named.length) {
       items.push({

@@ -26,7 +26,7 @@ export type Nudge = {
   /** "important" when something would go wrong today; "info" for a heads-up. */
   tone: "important" | "suggested" | "info";
   /** What it's about, so lists can pick an icon. */
-  kind: "will" | "beneficiary" | "family" | "birthday";
+  kind: "will" | "beneficiary" | "family" | "birthday" | "dpoa";
 };
 
 /** ISO date someone born on `birthdate` turns 18. */
@@ -42,6 +42,7 @@ export function nudgesFor({
   will,
   willSectionsDone,
   totalSections,
+  dpoaSent = true,
   today,
 }: {
   person: HouseholdPerson;
@@ -50,6 +51,8 @@ export function nudgesFor({
   will: WillStatus;
   willSectionsDone: number;
   totalSections: number;
+  /** Whether the person has sent a Durable Power of Attorney to PNC. */
+  dpoaSent?: boolean;
   today: string;
 }): Nudge[] {
   if (deceasedIds.includes(person.id)) return [];
@@ -100,6 +103,16 @@ export function nudgesFor({
       },
       tone: "suggested",
       kind: "will",
+    });
+
+  if (!dpoaSent)
+    out.push({
+      id: "dpoa",
+      title: "Add a Durable Power of Attorney (DPOA)",
+      body: "Choose someone you trust to handle your finances if you ever can't. It ends at death, when your will takes over.",
+      action: { label: "Set up your DPOA", href: routes.dpoa },
+      tone: "suggested",
+      kind: "dpoa",
     });
 
   for (const a of owned)

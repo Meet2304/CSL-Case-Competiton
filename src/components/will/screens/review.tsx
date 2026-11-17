@@ -508,9 +508,8 @@ export function ReviewScreen() {
             ) : (
               <>
                 <p className="min-w-0 flex-1 basis-64 text-sm leading-relaxed">
-                  Happy with the draft? Add it to your account so your family and your PNC advisor
-                  know it&apos;s in place. It becomes legally valid once you print, sign and witness
-                  it.
+                  Happy with the draft? Print it and sign it with two witnesses, then add it to your
+                  account so your family and your PNC advisor know it&apos;s in place.
                 </p>
                 <button
                   type="button"

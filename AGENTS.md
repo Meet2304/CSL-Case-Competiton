@@ -91,7 +91,11 @@ and mobile views stay in one design language.
   `routes.will` (`/assets/will`; `/will` and `/plan` redirect there), reached from the
   **Assets and Debts** dropdown in the web navigation (`NavMenu` in `WebHeader.tsx`) and from
   More on the phone. Assets can be added at `routes.addAsset` (`AddAsset.tsx`, demo flows only;
-  options are data in `src/data/addAsset.ts`). Beneficiaries are named in each account's Manage
+  options are data in `src/data/addAsset.ts`; a vehicle is added with its title as proof, never an
+  estimated value). Beside the will, adults can set up a Durable Power of Attorney (DPOA) at
+  `routes.dpoa` (`DpoaFlow.tsx`, data in `src/data/dpoa.ts`, saved per person in `src/lib/dpoa.ts`):
+  agent, powers, review, sign, send to PNC. It is a demonstration: nothing is signed or registered,
+  and Home reminds adults until they send one. Beneficiaries are named in each account's Manage
   panel (`routes.manageAsset(id)`). The list has Assets and Debts tabs and one line to narrow
   it: a `SelectMenu` (All / Personal: yours alone or custodial / Joint / Shared with me) and a
   search.
@@ -120,23 +124,28 @@ and mobile views stay in one design language.
   loss must stay gentle: condolence first, no pressure, nothing urgent today.
 - **Guided tour (`/tour`, `routes.tour`):** one family's story told on the working app, open to
   every role, so it lives at `src/app/tour` and `src/proxy.ts` lets it through untouched. It is the
-  one demo linked from the sign-on page. The stage is plain white: between acts a moment with the
-  family themselves (`cast`, drawn by `Cast.tsx`), within an act one card per person
-  (`Frame.tsx`), and one short line per stop beneath (at most 12 words; a test checks it). Keep
-  each stop to one idea: a spotlight (`focus`, unless `spot: false`) washes the rest of the page
-  back so only that one thing stays clear. **Nothing moves unless a key is pressed**: the script is
-  the list of stops in `src/data/tour.ts`; a press plays one stop's steps (`click`, `type`,
-  `wait`, `look`, found by visible words as in the film) and then rests. Never add a timer, loop
-  or autoplay that advances the story by itself. A stop is reached by loading its scene's pages
-  and replaying the earlier stops of that scene at once (`planStop` in `src/lib/tour.ts`), so Back
-  and a link to any stop (`/tour#<id>`) just work. A scene's `world` (`before`, `ready`, `after`)
-  decides the demo state its pages open on (`prepareWorld` in `GuidedTour.tsx`). Each card is the
-  app in a same-origin frame, signed in as that person, laid out at a fixed width and scaled to a
-  slot that `stageLayout` places, with one glow color per person (`--tour-*` tokens in
-  `globals.css`, via `tourGlow`). As with the film, the app must not know the tour exists: no
-  tour-only props, classes or branches in app components. John's answered will is seeded from
-  `tourWillDraft` (a test checks it is complete). People are named John Smith, Maya Smith, David
-  Smith, Alexa Smith and Bank Advisor only (a test checks this). When you rename a label the tour
+  one demo linked from the sign-on page. The stage is plain white with no captions: between acts a
+  moment with the family themselves (`cast`, drawn by `Cast.tsx`), within an act one, two or three
+  cards (`Frame.tsx`), and four small dots at the top left naming the part of Findoe on stage
+  (`Products.tsx`; a stop's `product`, else its scene's; none between acts). At the close the
+  dots grow and surround the family. Keep each stop to one idea: a spotlight (`focus`, unless
+  `spot: false`) washes the rest of the page back so only that one thing stays clear; `spot` on a
+  stop fades the other cards; `notes` explain Findoe's working beside a card (`Notes.tsx`); John's
+  name rises above three cards after his death (`Memorial.tsx`). **Nothing moves unless a key is
+  pressed, and a press plays at most one click** (a test checks it): the script is the list of
+  stops in `src/data/tour.ts`; a press plays one stop's steps (`click`, `type`, `wait`, `look`,
+  found by visible words as in the film), with the pointer labelled with the person's name, and
+  then rests. Never add a timer, loop or autoplay that advances the story by itself. A stop is
+  reached by loading its scene's pages and replaying the earlier stops of that scene at once
+  (`planStop` in `src/lib/tour.ts`), so Back and a link to any stop (`/tour#<id>`) just work. A
+  scene's `world` (`before`, `ready`, `loss`, `after`) decides the demo state its pages open on
+  (`prepareWorld` in `GuidedTour.tsx`). Each card is the app in a same-origin frame, signed in as
+  that person, laid out at a fixed width and scaled to a slot that `stageLayout` places, with one
+  glow color per person (`--tour-*` tokens in `globals.css`, via `tourGlow`). As with the film,
+  the app must not know the tour exists: no tour-only props, classes or branches in app
+  components. John's answered will is seeded from `tourWillDraft` (a test checks it is complete).
+  People are named John Smith, Maya Smith, David Smith, Alexa Smith and Bank Advisor only (a test
+  checks this). The product's tagline is "Care that carries on." When you rename a label the tour
   clicks, update the script and replay `/tour`. After editing `globals.css`, restart `next dev`:
   it can keep serving the old styles.
 - **Product film (`/film`, `routes.film`):** the working app filmed in a same-origin frame, open

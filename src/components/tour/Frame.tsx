@@ -39,6 +39,10 @@ export type FrameView = {
   pointer: Pointer;
   /** The person has died: the color drains from their screen and its glow goes out. */
   quiet: boolean;
+  /** Another screen is picked out, so this one fades back. */
+  dim: boolean;
+  /** How long after the stop starts the card fades in, so several can arrive one by one. */
+  delay: number;
 };
 
 export const hiddenFrame: FrameView = {
@@ -51,6 +55,8 @@ export const hiddenFrame: FrameView = {
   cut: true,
   pointer: { x: 640, y: 360, shown: false, down: false },
   quiet: false,
+  dim: false,
+  delay: 0,
 };
 
 /**
@@ -100,8 +106,9 @@ export function Frame({
           top: rect.y,
           width: rect.w,
           height: rect.h,
-          opacity: view.shown ? 1 : 0,
-          transition: `left ${glide}, top ${glide}, width ${glide}, height ${glide}, opacity 700ms ease`,
+          opacity: view.shown ? (view.dim ? 0.28 : 1) : 0,
+          transform: view.dim ? "scale(0.97)" : "none",
+          transition: `left ${glide}, top ${glide}, width ${glide}, height ${glide}, opacity 700ms ease ${view.shown && !view.dim ? view.delay : 0}ms, transform 700ms ease`,
           "--glow": tourGlow[id],
         } as React.CSSProperties
       }
@@ -196,6 +203,10 @@ export function Frame({
                     strokeLinejoin="round"
                   />
                 </svg>
+                {/* Whose hand it is. */}
+                <span className="tour-hand absolute left-5 top-6 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold text-white">
+                  {person.first}
+                </span>
               </span>
             </span>
           </div>

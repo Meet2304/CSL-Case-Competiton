@@ -1,7 +1,25 @@
 import { describe, expect, it } from "vitest";
 import { findDemoUser } from "@/data/users";
-import { tourGlow, tourPeople, tourScenes, tourStops, tourWillDraft } from "@/data/tour";
-import { cameraFor, frameIds, planStop, stageLayout, viewportFor, type TourStop } from "@/lib/tour";
+import {
+  iraDecisions,
+  tourGlow,
+  tourPeople,
+  tourScenes,
+  tourStops,
+  tourWillDraft,
+} from "@/data/tour";
+import {
+  cameraFor,
+  frameIds,
+  pageToStage,
+  planStop,
+  pointerMoves,
+  productOf,
+  stageLayout,
+  viewportFor,
+  worldOrder,
+  type TourStop,
+} from "@/lib/tour";
 import { incompleteScreens } from "@/lib/will/flow";
 
 const sizes: [number, number][] = [
@@ -21,18 +39,25 @@ describe("the tour's script", () => {
     }
   });
 
-  it("opens on the family and closes on them", () => {
+  it("opens on the family and closes on them, with the four parts of Findoe around them", () => {
     expect(tourStops[0].cast).toBe("title");
-    expect(tourStops.at(-1)!.cast).toBe("close");
+    expect(tourStops.slice(-2).map((s) => s.cast)).toEqual(["circle", "vision"]);
   });
 
-  it("says one short line at a time", () => {
+  it("plays at most one click or typing per press", () => {
     for (const s of tourStops) {
-      expect(s.line.split(" ").length, s.id).toBeLessThanOrEqual(12);
-      expect(s.line.length, s.id).toBeLessThanOrEqual(80);
+      const clicks = (s.steps ?? []).filter((x) => x.do === "click").length;
+      expect(clicks, s.id).toBeLessThanOrEqual(1);
+      // Filling a form is the one place two fields are typed in one press.
+      if (clicks) expect(pointerMoves(s), s.id).toBe(1);
     }
-    // Only the title and the memorial let the picture speak alone.
-    expect(tourStops.filter((s) => !s.line).map((s) => s.cast)).toEqual(["title", "memorial"]);
+  });
+
+  it("lights a part of Findoe on every screen, and none between acts", () => {
+    for (const s of tourStops) {
+      if (s.cast) expect(productOf(s, tourScenes), s.id).toBeNull();
+      else if (!s.memorial) expect(productOf(s, tourScenes), s.id).not.toBeNull();
+    }
   });
 
   it("acts only on screens that are on stage", () => {
@@ -49,13 +74,14 @@ describe("the tour's script", () => {
   });
 
   it("names only the family and the Bank Advisor", () => {
-    const said = JSON.stringify([tourPeople, tourStops.map((s) => s.line)]);
+    const said = JSON.stringify([tourPeople, tourStops.map((s) => s.notes)]);
     expect(said).not.toMatch(/\bAlex\b|Dana|Morgan|Avery|Jamie|Taylor|Placeholder|Example|Sample/);
   });
 
-  it("moves the story forward in order: John prepares, then the bank acts, then the family is told", () => {
-    const order = { before: 0, ready: 1, after: 2 };
-    const worlds = tourStops.flatMap((s) => (s.scene ? [order[tourScenes[s.scene].world]] : []));
+  it("moves the story forward in order: John prepares, he dies, the advisor acts, Maya claims", () => {
+    const worlds = tourStops.flatMap((s) =>
+      s.scene ? [worldOrder.indexOf(tourScenes[s.scene].world)] : [],
+    );
     expect(worlds).toEqual([...worlds].sort((a, b) => a - b));
     // The family hears only once the advisor starts passing on John's estate, on stage.
     const told = tourStops.findIndex((s) => s.scene && tourScenes[s.scene].world === "after");
@@ -64,8 +90,14 @@ describe("the tour's script", () => {
 
   it("remembers John between his own act and the bank's", () => {
     const at = (id: string) => tourStops.findIndex((s) => s.id === id);
-    expect(at("signed")).toBeLessThan(at("loss"));
-    expect(at("loss")).toBeLessThan(at("alert"));
+    expect(at("will-on-file")).toBeLessThan(at("loss"));
+    expect(at("loss")).toBeLessThan(at("memorial"));
+    expect(at("memorial")).toBeLessThan(at("alert"));
+  });
+
+  it("explains Findoe's answer with the rulebook's own decisions", () => {
+    expect(iraDecisions.steps.length).toBeGreaterThan(1);
+    expect(iraDecisions.outcome).not.toBe("");
   });
 
   it("gives John a will with every question answered, so he can put it on file on stage", () => {
@@ -79,11 +111,11 @@ describe("the tour's script", () => {
 
 describe("moving through the tour", () => {
   const stops: TourStop[] = [
-    { id: "a", line: "", scene: "one" },
-    { id: "b", line: "", scene: "one" },
-    { id: "c", line: "", scene: "one" },
-    { id: "d", line: "", scene: "two" },
-    { id: "e", line: "", cast: "close" },
+    { id: "a", scene: "one" },
+    { id: "b", scene: "one" },
+    { id: "c", scene: "one" },
+    { id: "d", scene: "two" },
+    { id: "e", cast: "circle" },
   ];
 
   it("plays the next stop of the same scene on the pages already there", () => {
@@ -105,15 +137,24 @@ describe("moving through the tour", () => {
 });
 
 describe("the stage", () => {
-  it("keeps every card, and the name above it, on the stage", () => {
+  it("keeps every card, and the name above it, on the stage and below the dots", () => {
     for (const [w, h] of sizes) {
-      const { slots, nameH } = stageLayout(w, h);
+      const { slots, nameH, dotsH } = stageLayout(w, h);
       for (const [id, r] of Object.entries(slots)) {
         expect(r.x, `${id} ${w}x${h}`).toBeGreaterThan(0);
-        expect(r.y - nameH, `${id} ${w}x${h}`).toBeGreaterThan(0);
+        expect(r.y - nameH, `${id} ${w}x${h}`).toBeGreaterThan(dotsH);
         expect(r.x + r.w, `${id} ${w}x${h}`).toBeLessThan(w);
-        expect(r.y + r.h, `${id} ${w}x${h}`).toBeLessThanOrEqual(stageLayout(w, h).line.y);
+        expect(r.y + r.h, `${id} ${w}x${h}`).toBeLessThan(h);
       }
+    }
+  });
+
+  it("does not let three cards overlap, and keeps John's name above them", () => {
+    for (const [w, h] of sizes) {
+      const { slots, memorial, nameH } = stageLayout(w, h);
+      expect(slots.third1.x + slots.third1.w, `${w}x${h}`).toBeLessThan(slots.third2.x);
+      expect(slots.third2.x + slots.third2.w, `${w}x${h}`).toBeLessThan(slots.third3.x);
+      expect(memorial.top.y, `${w}x${h}`).toBeLessThan(slots.third1.y - nameH);
     }
   });
 
@@ -154,6 +195,14 @@ describe("the camera", () => {
     const cam = cameraFor(view, { x: 900, y: 100, w: 300, h: 200 });
     expect(cam.scale).toBe(1.45);
     expect(cameraFor(view, { x: 900, y: 100, w: 300, h: 200 }, { maxZoom: 1.2 }).scale).toBe(1.2);
+  });
+
+  it("finds where a box on a page lands on the stage", () => {
+    const card = { x: 100, y: 50, w: 640, h: 400 };
+    // A page laid out twice as wide as its card, with no zoom: everything is half size.
+    expect(
+      pageToStage(card, 1280, { x: 0, y: 0, scale: 1 }, { x: 200, y: 100, w: 40, h: 20 }),
+    ).toEqual({ x: 200, y: 100, w: 20, h: 10 });
   });
 
   it("never shows past the page's edge", () => {

@@ -204,6 +204,11 @@ html[data-scale] {
   --tour-child1: #f5a524;
   --tour-child2: #f0619a;
   --tour-advisor: #3b9eff;
+  /* The notes that explain Findoe's answer: customer data, the law, citations, and the accent. */
+  --tour-note-data: var(--color-pnc-blue-700);
+  --tour-note-law: #7a4fd6;
+  --tour-note-cited: var(--color-pnc-positive);
+  --tour-note-accent: var(--color-pnc-orange);
 }
 
 /* In development Next.js floats a badge in the corner. Keep it off the stage while presenting. */
@@ -272,14 +277,71 @@ html:has(.tour-stage) nextjs-portal {
     transform 900ms cubic-bezier(0.22, 0.8, 0.3, 1);
 }
 
-/* The stop's one line, arriving. */
-.tour-line {
-  animation: tour-line 700ms cubic-bezier(0.22, 0.8, 0.3, 1) both;
+/* The family behind John: there, but quieter. */
+.tour-back .tour-face {
+  filter: saturate(0.35);
 }
-@keyframes tour-line {
+
+/* The name on a person's pointer, in their color. */
+.tour-hand {
+  background: color-mix(in srgb, var(--glow) 72%, var(--color-pnc-navy));
+  box-shadow: 0 4px 12px -4px rgb(11 35 64 / 0.45);
+}
+
+/* The advisor's ties: drawn in, and John's snaps then fades when he dies. */
+.tour-tie {
+  transition:
+    stroke-dashoffset 1100ms cubic-bezier(0.65, 0, 0.35, 1),
+    opacity 600ms ease;
+}
+.tour-tie-broken {
+  transition: opacity 1800ms ease 900ms;
+}
+
+/* John's accounts gathering into one family view. */
+.tour-gather {
+  animation: tour-gather 1500ms cubic-bezier(0.6, 0, 0.2, 1) both;
+}
+@keyframes tour-gather {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+  25% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.4);
+  }
+}
+
+/* Notes that explain Findoe's answer, and what each is about. */
+.tour-note {
+  animation: tour-note 700ms cubic-bezier(0.22, 0.8, 0.3, 1) both;
+}
+.tour-note-step {
+  animation: tour-note 600ms cubic-bezier(0.22, 0.8, 0.3, 1) both;
+}
+@keyframes tour-note {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateX(-10px);
+  }
+}
+.tour-note-tie {
+  animation: tour-fade 600ms ease both;
+}
+.tour-note-ring {
+  box-shadow:
+    0 0 0 2.5px var(--tour-note-accent),
+    0 0 26px 2px color-mix(in srgb, var(--tour-note-accent) 45%, transparent);
+  animation: tour-fade 600ms ease both;
+}
+@keyframes tour-fade {
+  from {
+    opacity: 0;
   }
 }
 

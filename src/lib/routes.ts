@@ -27,6 +27,8 @@ export const routes = {
   familyDetail: (id: string) => `/family#${id}`,
   /** Your will, under Assets and Debts: write it, see it on file (adults only). */
   will: "/assets/will",
+  /** Set up a Durable Power of Attorney (DPOA) and send it to PNC (adults only). */
+  dpoa: "/assets/dpoa",
   /** Add an asset to Assets and Debts: connect an account, track a ticker, value property, or enter one. */
   addAsset: "/assets/add",
   /** Manage one account on Assets and Debts, e.g. to name its beneficiary. */

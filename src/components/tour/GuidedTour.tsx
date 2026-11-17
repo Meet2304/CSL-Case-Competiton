@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useEffectEvent, useRef, useState, useSyncExternalStore } from "react";
-import { ArrowRight, RotateCcw } from "lucide-react";
 import { resetDemo } from "@/components/advisor/RecordDeathDialog";
 import { FindoeLogo } from "@/components/brand/FindoeLogo";
 import {
@@ -18,6 +17,7 @@ import {
   savingsBeneficiaries,
   tourLoss,
   tourPeople,
+  tourProducts,
   tourScenes,
   tourStops,
   tourWillDraft,
@@ -26,11 +26,13 @@ import { bereavementActions, currentBereavement } from "@/lib/bereavement";
 import { visiblePart, type Rect, type Target } from "@/lib/film";
 import { filmSignIn, filmSignOut } from "@/lib/filmSession";
 import { householdActions } from "@/lib/householdStore";
-import { cn } from "@/lib/format";
 import { routes } from "@/lib/routes";
 import {
+  cameraFor,
   frameIds,
+  pageToStage,
   planStop,
+  productOf,
   stageLayout,
   viewportFor,
   type FrameId,
@@ -44,6 +46,9 @@ import { REVIEW_SCREEN, screens } from "@/lib/will/flow";
 import { saveWill, setWillStatus } from "@/lib/will/storage";
 import { Cast } from "./Cast";
 import { Frame, GLIDE_MS, hiddenFrame, MOVE_MS, VEIL_MS, type FrameView } from "./Frame";
+import { Memorial } from "./Memorial";
+import { Notes, type PlacedNote } from "./Notes";
+import { Products } from "./Products";
 
 const stopIds = tourStops.map((s) => s.id);
 /** The keys the stage answers to; inside a card they are handed back to it. */
@@ -59,9 +64,6 @@ const readStage = () => `${window.innerWidth}x${window.innerHeight}`;
 const noStage = () => "";
 
 const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-
-const focusRing =
-  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pnc-link";
 
 type Views = Record<FrameId, FrameView>;
 const allHidden = Object.fromEntries(frameIds.map((id) => [id, hiddenFrame])) as Views;
@@ -83,8 +85,9 @@ function seedWill(status: "in-progress" | "on-file") {
 /**
  * Puts the demo's saved state where a scene needs it. Before John has put his
  * affairs in order, everything starts clean. After that, his will is on file
- * and his Savings names the children; after his death, the bank has told the
- * family, begun the transfer and has Maya's copy of the certificate. Moving
+ * and his Savings names the children. Once he has died the bank has recorded
+ * it and has Maya's copy of the certificate; after that his advisor has begun
+ * the transfer. Moving
  * forward these are what the people on stage just did, so this only fills in
  * what is missing; jumping in or stepping back (`fresh`), it rebuilds them.
  */
@@ -108,11 +111,12 @@ function prepareWorld(world: TourWorld, fresh: boolean) {
       reportedVia: tourLoss.reportedVia,
       recordedOn: tourLoss.date,
     });
-  if (!currentBereavement().transfers?.[tourLoss.personId])
-    bereavementActions.initiateTransfer(tourLoss.personId, new Date().toISOString());
   // Maya sent the bank John's death certificate; the advisor saw it verified.
   if (!currentBereavement().deathCertificate)
     bereavementActions.uploadCertificate("death-certificate.pdf", tourLoss.date);
+  if (world === "loss") return;
+  if (!currentBereavement().transfers?.[tourLoss.personId])
+    bereavementActions.initiateTransfer(tourLoss.personId, new Date().toISOString());
 }
 
 /** Scrolls a page so the element can be seen, and waits for the page to come to rest. */
@@ -140,9 +144,10 @@ async function reveal(el: HTMLElement, smooth: boolean) {
 /**
  * The guided tour: one family's story on a plain white stage. Between acts
  * the stage shows the family themselves; within an act, the working app, one
- * card per person, with a spotlight on the one thing that matters and one
- * short line beneath. The stop lives in the URL hash; the arrow keys step
- * through it, and each press plays one stop and then rests.
+ * card per person, with a spotlight on the one thing that matters. Four small
+ * dots at the top say which part of Findoe is on stage. The stop lives in the
+ * URL hash; the arrow keys step through it, and each press plays one stop
+ * (at most one click) and then rests.
  */
 export function GuidedTour() {
   const [stopId, setStopId] = useHashTab(stopIds);
@@ -155,6 +160,8 @@ export function GuidedTour() {
   const layout = stageKey && !cramped ? stageLayout(w, h) : null;
 
   const [views, setViews] = useState<Views>(allHidden);
+  /** Notes beside a card, placed once the stop has settled. */
+  const [notes, setNotes] = useState<{ at: number; placed: PlacedNote[] } | null>(null);
   /** The stop that has finished playing; the stage is at rest only while it is the one showing. */
   const [settledAt, setSettledAt] = useState<number | null>(null);
   const settled = settledAt === index;
@@ -277,8 +284,7 @@ export function GuidedTour() {
       }
       if (step.do === "click") {
         // The app's pages share one session, so it must be this person's before they act.
-        if (step.signsIn) session.current = id;
-        else await signInAs(id);
+        await signInAs(id);
         if (!alive()) return;
         el.click();
       } else {
@@ -299,6 +305,14 @@ export function GuidedTour() {
   const aim = async (target: TourStop, cut: boolean, alive: () => boolean) => {
     const scene = tourScenes[target.scene!];
     const ids = frameIds.filter((id) => scene.frames[id]);
+    for (const id of ids) patch(id, { dim: target.spot !== undefined && target.spot !== id });
+    // What the notes explain must be on screen before the camera settles.
+    if (target.notes) {
+      const page = doc(target.notes.in)();
+      const el = page ? find(page, target.notes.items[0].at) : null;
+      if (el) await reveal(el, !cut);
+      if (!alive()) return;
+    }
     const apply = async (id: FrameId, jump: boolean) => {
       const focus = target.focus?.[id];
       const view = doc(id)()?.defaultView;
@@ -308,6 +322,11 @@ export function GuidedTour() {
         if (view.scrollY > 0) view.scrollTo({ top: 0, behavior: jump ? "instant" : "smooth" });
         frame(id, null, jump);
         return;
+      }
+      if (focus.top) {
+        const start = await waitFor(doc(id), focus.top, 6000);
+        start?.scrollIntoView({ block: "start", behavior: jump ? "instant" : "smooth" });
+        if (start && !jump) await sleep(500);
       }
       const el = await waitFor(doc(id), focus.on, 6000);
       if (!alive()) return;
@@ -328,8 +347,31 @@ export function GuidedTour() {
     }
   };
 
+  /** Measures what a stop's notes are about and places them on the stage. */
+  const placeNotes = (target: TourStop, to: number) => {
+    const rect = target.notes && stage.current?.slots[live.current[target.notes.in].slot];
+    if (!target.notes || !rect) return;
+    const id = target.notes.in;
+    const view = live.current[id];
+    const page = viewportFor(rect, view.width);
+    const camera = cameraFor(page, view.focus, { maxZoom: view.maxZoom, fit: view.fit });
+    const d = doc(id)();
+    const placed: PlacedNote[] = [];
+    for (const note of target.notes.items) {
+      const el = d ? find(d, note.at) : null;
+      if (!el) continue;
+      const anchor = pageToStage(rect, view.width, camera, rectOf(el));
+      // A note about something the card is not showing would point at nothing.
+      const midY = anchor.y + Math.min(anchor.h / 2, 22);
+      if (midY < rect.y || midY > rect.y + rect.h) continue;
+      placed.push({ note, anchor, card: rect });
+    }
+    setNotes({ at: to, placed });
+  };
+
   const play = useEffectEvent(async (from: number | null, to: number, alive: () => boolean) => {
     const target = tourStops[to];
+    setNotes(null);
     // Leaving a stop before its steps finished: the pages are in an unknown state, so start over.
     const interrupted = from !== null && !finished.current;
     const plan = planStop(tourStops, interrupted ? null : from, to);
@@ -342,6 +384,7 @@ export function GuidedTour() {
       if (alive()) settle(to);
       return;
     }
+    const world = tourScenes[target.scene!].world;
 
     if (plan.kind === "enter") {
       const scene = tourScenes[target.scene!];
@@ -356,13 +399,18 @@ export function GuidedTour() {
         }
         const glide = was.shown && was.slot !== next.slot;
         moves ||= glide;
+        const third = ["third1", "third2", "third3"].indexOf(next.slot);
         patch(id, {
           shown: true,
           slot: next.slot,
           width: next.width,
           glide,
           veil: true,
-          quiet: false,
+          // Once John has died, his own screen has lost its color.
+          quiet: id === "husband" && (world === "loss" || world === "after"),
+          dim: false,
+          // Three screens arrive one by one, once John's name has risen above them.
+          delay: third >= 0 && plan.animate ? 1500 + third * 450 : 0,
           pointer: { ...was.pointer, shown: false },
         });
       }
@@ -414,10 +462,11 @@ export function GuidedTour() {
     for (const id of frameIds)
       if (live.current[id].pointer.shown)
         patch(id, { pointer: { ...live.current[id].pointer, shown: false } });
-    if (target.quiet) {
-      patch(target.quiet, { quiet: true });
-      // Moving forward, the color drains slowly; the stop rests once it has gone.
-      if (plan.kind !== "enter" || plan.animate) await sleep(2600);
+    if (target.notes) {
+      // Notes are placed once the camera has come to rest.
+      await sleep(MOVE_MS);
+      if (!alive()) return;
+      placeNotes(target, to);
     }
     // Keys go to the stage, not to a field the app focused inside a card.
     if (document.activeElement instanceof HTMLIFrameElement) document.activeElement.blur();
@@ -491,11 +540,9 @@ export function GuidedTour() {
 
   const cast = stop.cast ?? null;
   const years = `${tourLoss.born.slice(0, 4)} – ${tourLoss.date.slice(0, 4)}`;
-  const button = cn(
-    "flex h-11 items-center gap-2 rounded-full px-5 text-sm font-semibold transition-colors",
-    focusRing,
-  );
-  const closing = tourStops.find((s) => s.cast === "close")!.line;
+  const product = productOf(stop, tourScenes);
+  const memorial = cast === "memorial" ? "center" : stop.memorial ? "top" : "off";
+  const shownNotes = notes && notes.at === index && settled ? notes.placed : [];
 
   return (
     <div
@@ -508,8 +555,19 @@ export function GuidedTour() {
       className="tour-stage fixed inset-0 overflow-hidden bg-white text-pnc-ink"
     >
       <p className="sr-only" aria-live="polite">
-        {stop.line || stop.id}
+        {product ? tourProducts[product].name : ""}
       </p>
+
+      {layout && (
+        <Products
+          active={product}
+          vision={cast === "vision"}
+          dotsH={layout.dotsH}
+          area={layout.cast}
+        />
+      )}
+
+      {layout && <Memorial state={memorial} layout={layout} />}
 
       {layout &&
         frameIds.map((id) => (
@@ -524,51 +582,9 @@ export function GuidedTour() {
           />
         ))}
 
-      {layout && (
-        <Cast
-          cast={cast}
-          area={{ x: 0, y: 0, w: w, h: layout.line.y }}
-          closing={closing}
-          actions={
-            <>
-              <button
-                type="button"
-                tabIndex={cast === "close" ? 0 : -1}
-                onClick={() => go(0)}
-                className={cn(button, "text-pnc-ink ring-1 ring-pnc-line hover:bg-pnc-surface")}
-              >
-                <RotateCcw className="size-4" aria-hidden="true" /> Watch again
-              </button>
-              <button
-                type="button"
-                tabIndex={cast === "close" ? 0 : -1}
-                onClick={() => void exit()}
-                className={cn(button, "bg-pnc-blue-700 text-white hover:bg-pnc-blue-800")}
-              >
-                Open the prototype <ArrowRight className="size-4" aria-hidden="true" />
-              </button>
-            </>
-          }
-        />
-      )}
+      {layout && <Cast cast={cast} area={layout.cast} />}
 
-      {/* The stop's one line. The close says its line large, above the family. */}
-      {layout && (
-        <div
-          className="absolute inset-x-0 flex items-center justify-center px-8"
-          style={{ top: layout.line.y, height: layout.line.h }}
-        >
-          <p
-            key={stop.id}
-            className={cn(
-              "tour-line max-w-4xl text-balance text-center font-display text-[clamp(1.05rem,1.6vw,1.6rem)] font-medium leading-snug text-pnc-navy",
-              (cast === "close" || !stop.line) && "invisible",
-            )}
-          >
-            {stop.line}
-          </p>
-        </div>
-      )}
+      {layout && <Notes placed={shownNotes} stageH={h} />}
 
       {cramped && (
         <div className="absolute inset-0 grid place-items-center px-8 text-center">
@@ -578,8 +594,8 @@ export function GuidedTour() {
               This tour needs a larger screen
             </p>
             <p className="mt-3 text-pnc-muted">
-              It shows the laptop version of the app, sometimes two people side by side. Open it on
-              a laptop or widen this window, and it picks up where you left off.
+              It shows the laptop version of the app, sometimes three people side by side. Open it
+              on a laptop or widen this window, and it picks up where you left off.
             </p>
           </div>
         </div>

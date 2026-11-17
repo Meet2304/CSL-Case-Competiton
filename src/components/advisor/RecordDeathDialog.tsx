@@ -13,6 +13,7 @@ import { householdActions } from "@/lib/householdStore";
 import { messagesActions } from "@/lib/messages";
 import { caseworkActions, useHasCasework } from "@/lib/settlement/casework";
 import { reviewActions, useReviews } from "@/lib/settlement/reviews";
+import { resetAllDpoas } from "@/lib/dpoa";
 import { resetAllWills } from "@/lib/will/storage";
 import { useAdvisorBook } from "./useAdvisorBook";
 
@@ -66,6 +67,7 @@ export function resetDemo() {
   householdActions.reset();
   messagesActions.reset();
   resetAllWills();
+  resetAllDpoas();
 }
 
 /**

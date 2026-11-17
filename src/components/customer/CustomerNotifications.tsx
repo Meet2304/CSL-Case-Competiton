@@ -5,6 +5,7 @@ import {
   ArrowRight,
   Cake,
   CircleCheck,
+  FileSignature,
   HeartHandshake,
   ScrollText,
   UserRoundPlus,
@@ -20,6 +21,7 @@ const icons: Record<Nudge["kind"] | "loss", LucideIcon> = {
   beneficiary: UserRoundPlus,
   family: Users,
   birthday: Cake,
+  dpoa: FileSignature,
   loss: HeartHandshake,
 };
 

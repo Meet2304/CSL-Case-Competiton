@@ -174,3 +174,60 @@ export function beneficiarySteps(share: BeneficiaryShare, ctx: StepContext): str
     );
   return steps;
 }
+
+export type ReadinessCheck = { label: string; detail: string; done: boolean };
+
+/**
+ * How ready a client's affairs were when they died, as their advisor sees it:
+ * a will on file, an executor named, a family dashboard set up, and a
+ * beneficiary on every account that takes one. The score is the share of
+ * checks met, with beneficiaries counted account by account.
+ */
+export function estateReadiness({
+  accounts,
+  personId,
+  will,
+  familyMembers,
+  executorName,
+  takesBeneficiary,
+}: {
+  accounts: BankAccount[];
+  personId: string;
+  will?: WillOnFile;
+  /** Members of the families the client belongs to; 0 when none. */
+  familyMembers: number;
+  executorName?: string;
+  takesBeneficiary: (a: BankAccount) => boolean;
+}): { score: number; label: string; checks: ReadinessCheck[] } {
+  const designable = accounts.filter((a) => a.owners.includes(personId) && takesBeneficiary(a));
+  const named = designable.filter((a) => (a.beneficiaries ?? []).length > 0);
+  const checks: ReadinessCheck[] = [
+    {
+      label: "Will on file",
+      detail: will ? "Signed and stored with PNC" : "No will on file",
+      done: Boolean(will),
+    },
+    {
+      label: "Executor named",
+      detail: executorName ?? "Not named",
+      done: Boolean(executorName),
+    },
+    {
+      label: "Family dashboard set up",
+      detail: familyMembers ? `${familyMembers} members` : "Not set up",
+      done: familyMembers > 0,
+    },
+    {
+      label: "Beneficiaries named",
+      detail: `${named.length} of ${designable.length} accounts`,
+      done: designable.length > 0 && named.length === designable.length,
+    },
+  ];
+  const parts = [
+    ...checks.slice(0, 3).map((c) => (c.done ? 1 : 0)),
+    designable.length ? named.length / designable.length : 1,
+  ];
+  const score = Math.round((parts.reduce((s, n) => s + n, 0) / parts.length) * 100);
+  const label = score >= 85 ? "Well prepared" : score >= 60 ? "Partly prepared" : "Not prepared";
+  return { score, label, checks };
+}

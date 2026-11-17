@@ -86,6 +86,30 @@ export const supportResources = [
 
 const lawyer = people.find((p) => p.id === "p-dana")!;
 
+/**
+ * How to claim a life policy paid by an insurer outside PNC. PNC can't file
+ * this claim, so the survivor gets each step spelled out, with what to have ready.
+ */
+export const insurerClaimGuide = [
+  {
+    title: "Call the insurer to open a claim",
+    detail: "Have the policy number and the date of death ready. They'll give you a claim number.",
+  },
+  {
+    title: "Send a certified death certificate",
+    detail: "The insurer needs its own certified copy. The county that issued it can send more.",
+  },
+  {
+    title: "Complete the insurer's claim form",
+    detail: "It confirms who you are and that you're the beneficiary. Sign it and send it back.",
+  },
+  {
+    title: "Choose how to be paid",
+    detail:
+      "A lump sum, or instalments over time. Ask before you choose: they're taxed differently.",
+  },
+];
+
 export const supportPeople = [
   {
     role: "Your advisor",
