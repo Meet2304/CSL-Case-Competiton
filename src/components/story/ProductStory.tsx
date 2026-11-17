@@ -33,7 +33,7 @@ import {
   type PlateId,
   type Rect,
 } from "@/lib/story";
-import { type PlateProps } from "./parts";
+import { personColor, type PlateProps } from "./parts";
 import { JohnPlate, PreparePlate, WillPlate } from "./plates/before";
 import { AdvisorPlate, EstatePlate } from "./plates/bank";
 import { FamilyPlate } from "./plates/family";
@@ -59,6 +59,31 @@ function subscribe(onChange: () => void) {
 }
 const readSize = () => `${window.innerWidth}x${window.innerHeight}`;
 const noSize = () => "";
+
+const grey = "#c9ced6";
+const P = personColor;
+
+/** The light of each scene: the colors of whoever it is about. */
+const sceneLight: Record<PlateId | "world", [string, string]> = {
+  family: [P.john, P.maya],
+  john: [P.john, P.advisor],
+  prepare: [P.john, P.advisor],
+  will: [P.john, P.maya],
+  shared: [P.john, P.david],
+  advisor: [P.advisor, P.advisor],
+  estate: [P.advisor, P.maya],
+  maya: [P.maya, P.advisor],
+  kids: [P.david, P.alexa],
+  world: [P.john, P.maya],
+};
+
+/** Moments that carry their own light. */
+const momentLight: Partial<Record<string, [string, string]>> = {
+  together: [P.advisor, P.maya],
+  loss: [grey, grey],
+  word: [P.maya, P.advisor],
+  close: [P.maya, P.advisor],
+};
 
 /** Height kept clear under the camera for the story's one line of words. */
 const bandFor = (H: number) => Math.round(Math.min(120, Math.max(64, H * 0.12)));
@@ -187,12 +212,18 @@ export function ProductStory() {
 
   const stop = stops[at];
   const line = lines[stop.id];
+  const [lightA, lightB] = momentLight[stop.id] ?? sceneLight[stop.plate];
   const ended = at >= stopIndex("close");
   const H = size ? Number(size.split("x")[1]) : 800;
 
   return (
     <div className="story-stage fixed inset-0 overflow-hidden text-pnc-ink">
       <h1 className="sr-only">Findoe, a product story</h1>
+      <div
+        aria-hidden="true"
+        className="story-ambient"
+        style={{ "--amb-a": lightA, "--amb-b": lightB } as React.CSSProperties}
+      />
       {size && (
         <div
           ref={world}

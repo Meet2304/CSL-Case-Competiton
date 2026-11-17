@@ -16,7 +16,7 @@ import {
   type StoryPersonId,
 } from "@/data/story";
 import { cn, formatDate } from "@/lib/format";
-import { Avatar, Show, during, eased, on, past, type PlateProps } from "../parts";
+import { Avatar, Show, during, eased, on, past, personColor, type PlateProps } from "../parts";
 
 const icons: Record<StoryAccountId, typeof Wallet> = {
   joint: Wallet,
@@ -27,6 +27,7 @@ const icons: Record<StoryAccountId, typeof Wallet> = {
   card: CreditCard,
   mayaSavings: PiggyBank,
   mayaRoth: Landmark,
+  alexaSavings: PiggyBank,
 };
 
 /** Where each person stands on the plate (centre x), and how large they are drawn. */
@@ -162,8 +163,14 @@ export function FamilyPlate({ at }: PlateProps) {
             >
               <Avatar
                 who={id}
-                className="rounded-full shadow-[0_18px_40px_-16px_rgb(11_35_64/0.45)] ring-[5px] ring-white"
-                style={{ width: s.size, height: s.size }}
+                className="rounded-full ring-[5px]"
+                style={{
+                  width: s.size,
+                  height: s.size,
+                  // Each person's own color: a ring, and the light around them.
+                  ["--tw-ring-color" as string]: `color-mix(in srgb, ${personColor[id]} 55%, white)`,
+                  boxShadow: `0 22px 50px -18px ${personColor[id]}`,
+                }}
               />
               <p className="mt-5 font-display text-[22px] font-semibold text-pnc-navy">
                 {isAdvisor ? p.name : p.first}

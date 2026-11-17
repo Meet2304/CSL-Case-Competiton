@@ -1,11 +1,27 @@
-import { Bell, Check, FileText, HeartHandshake, MessageCircle, Search, Send } from "lucide-react";
-import { FindoeLogo } from "@/components/brand/FindoeLogo";
+import {
+  Bell,
+  Check,
+  ChevronRight,
+  Database,
+  FileText,
+  HeartHandshake,
+  MessageCircle,
+  Scale,
+  Search,
+  Send,
+} from "lucide-react";
+import {
+  ChainOfThought,
+  ChainOfThoughtResults,
+  ChainOfThoughtStep,
+} from "@/components/ai-elements/chain-of-thought";
 import { MockBadge } from "@/components/mock/Mock";
 import { Money } from "@/components/ui/Money";
 import {
+  advisorFindoe,
   book,
+  condolence,
   conversation,
-  decision,
   estateSteps,
   inheritances,
   lossFacts,
@@ -20,8 +36,9 @@ import {
   AppWindow,
   Avatar,
   Card,
-  Cite,
+  FindoePanel,
   Hero,
+  Phone,
   Show,
   Tap,
   eased,
@@ -50,6 +67,10 @@ function Tabs({ active }: { active: "Estate" | "Next steps" | "Client" }) {
     </div>
   );
 }
+
+const clientHero = (
+  <Hero title={storyPeople.john.name} sub="Private Bank client since 2010 · Cranberry, PA" />
+);
 
 // ---------------------------------------------------------------------------
 // The advisor: one alert, one client, and a plan with its reasons.
@@ -96,7 +117,7 @@ export function AdvisorPlate({ at }: PlateProps) {
           </div>
           <Card className="flex-1 overflow-hidden">
             <div className="flex items-center justify-between px-7 pb-3 pt-5">
-              <p className="font-display text-[19px] font-semibold text-pnc-navy">Your customers</p>
+              <p className="font-display text-[19px] font-semibold text-pnc-navy">Your Customers</p>
               <MockBadge />
             </div>
             <Show show={!client} d={enter + 500}>
@@ -138,7 +159,7 @@ export function AdvisorPlate({ at }: PlateProps) {
             {book.others.map((c) => (
               <div
                 key={c.id}
-                className="flex items-center gap-4 border-b border-pnc-line px-7 py-3.5 text-[16px] text-pnc-muted"
+                className="flex items-center gap-4 border-b border-pnc-line px-7 py-3.5 text-[16px] text-pnc-muted last:border-b-0"
               >
                 <span className="size-10" />
                 <span className="flex-1 font-semibold text-pnc-link/70">{c.name}</span>
@@ -150,7 +171,7 @@ export function AdvisorPlate({ at }: PlateProps) {
             ))}
           </Card>
         </div>
-        <Card className="w-[380px] p-6">
+        <Card className="h-fit w-[380px] p-6">
           <div className="flex items-center gap-2.5">
             <Bell className="size-5 text-pnc-blue-700" aria-hidden="true" />
             <p className="font-display text-[19px] font-semibold text-pnc-navy">Notifications</p>
@@ -234,74 +255,70 @@ export function AdvisorPlate({ at }: PlateProps) {
           </div>
         </Card>
 
-        <Card focus="findoe-dock" className="flex w-[430px] flex-col overflow-hidden">
-          <div className="flex items-center gap-3 border-b border-pnc-line px-6 py-4">
-            <FindoeLogo className="size-9" thinking={on(at, "plan")} />
-            <span>
-              <span className="block text-[18px] font-semibold">Findoe</span>
-              <span className="text-[13px] text-pnc-muted">
-                Answers from the settlement rulebook
-              </span>
-            </span>
-          </div>
-          <div className="flex-1 space-y-4 px-6 py-5 text-[16px] leading-relaxed">
-            <Show show={client} d={client ? 1300 : 0}>
-              <p>{decision.opening}</p>
-            </Show>
-            <Show show={why} d={why ? 900 : 0} className="rounded-2xl bg-pnc-surface p-4">
-              <p className="text-[14px] font-semibold text-pnc-muted">
-                How I decided · {A.joint.name} x{A.joint.last4}
-              </p>
-              <ol className="mt-3 space-y-2.5">
-                {decision.path.map((p, i) => (
-                  <Show key={p.text} show={why} d={why ? 1400 + i * 450 : 0} from="left">
-                    <li className="flex items-start gap-3">
-                      <span
-                        className={cn(
-                          "mt-1 grid size-5 shrink-0 place-items-center rounded-full text-white",
-                          p.source ? "bg-pnc-blue-700" : "bg-pnc-positive",
-                        )}
-                      >
-                        <Check className="size-3" aria-hidden="true" />
-                      </span>
-                      <span className="flex-1">
-                        <span className={cn("block", !p.source && "font-semibold")}>{p.text}</span>
-                        {p.source && <Cite source={p.source} />}
-                      </span>
-                    </li>
-                  </Show>
-                ))}
-              </ol>
-            </Show>
-            <Show
-              show={why}
-              d={why ? 3000 : 0}
-              className="rounded-2xl bg-pnc-blue-50 p-4 ring-1 ring-pnc-blue-600/20"
-            >
-              <p className="text-[13px] font-semibold uppercase tracking-wide text-pnc-blue-800">
-                One thing I need from you
-              </p>
-              <p className="mt-1 text-[16px] font-semibold text-pnc-ink">{decision.question}</p>
-              <div className="mt-3 flex gap-2">
-                {decision.answers.map((a) => (
-                  <span
-                    key={a}
-                    className="rounded-full bg-white px-4 py-1.5 text-[14px] font-semibold ring-1 ring-pnc-line"
+        {/* Findoe, docked beside the plan: what it worked through, cited, and what it needs. */}
+        <FindoePanel
+          focus="findoe-dock"
+          className="w-[540px]"
+          records="client records"
+          thinking={on(at, "plan")}
+        >
+          <Show show={client} d={client ? 1200 : 0}>
+            <div className="flex gap-3">
+              <span className="w-6 shrink-0" />
+              <div className="min-w-0 flex-1 text-[15px] leading-relaxed">
+                <p>{advisorFindoe.opening}</p>
+                <div className="mt-2.5">
+                  <ChainOfThought
+                    running={false}
+                    title="Working on it"
+                    doneTitle={`Worked through ${advisorFindoe.steps.length} steps`}
+                    defaultOpen
+                    stayOpen
                   >
-                    {a}
-                  </span>
-                ))}
+                    {advisorFindoe.steps.map((s, i) => (
+                      <Show key={s.label} show={why} d={why ? 600 + i * 450 : 0} from="left">
+                        <ChainOfThoughtStep
+                          icon={s.kind === "law" ? Scale : Database}
+                          label={s.label}
+                          status="done"
+                        >
+                          <ChainOfThoughtResults items={s.results} />
+                        </ChainOfThoughtStep>
+                      </Show>
+                    ))}
+                  </ChainOfThought>
+                </div>
               </div>
-            </Show>
-          </div>
-        </Card>
+            </div>
+          </Show>
+          <Show
+            show={why}
+            d={why ? 2400 : 0}
+            className="rounded-2xl bg-pnc-blue-50 p-4 ring-1 ring-pnc-blue-600/20"
+          >
+            <p className="text-[13px] font-semibold uppercase tracking-wide text-pnc-blue-800">
+              One thing I need from you
+            </p>
+            <p className="mt-1 text-[15px] font-semibold text-pnc-ink">{advisorFindoe.need}</p>
+            <div className="mt-3 flex gap-2">
+              {advisorFindoe.answers.map((a) => (
+                <span
+                  key={a}
+                  className="rounded-full bg-white px-4 py-1.5 text-[14px] font-semibold ring-1 ring-pnc-line"
+                >
+                  {a}
+                </span>
+              ))}
+            </div>
+          </Show>
+        </FindoePanel>
       </Show>
     </AppWindow>
   );
 }
 
 // ---------------------------------------------------------------------------
-// The estate: a condolence first, then the will carried out.
+// The estate: a condolence first, then the will carried out, and Maya told.
 
 export function EstatePlate({ at }: PlateProps) {
   const talking = past(at, "message") && !past(at, "transfer");
@@ -310,177 +327,223 @@ export function EstatePlate({ at }: PlateProps) {
   const enter = on(at, "estate") ? 1100 : 250;
   const doneSteps = [true, consoled, started, started];
   return (
-    <AppWindow
-      who="advisor"
-      active={talking ? "Messages" : "Home"}
-      hero={
-        <Hero title={storyPeople.john.name} sub="Private Bank client since 2010 · Cranberry, PA" />
-      }
-    >
-      <Show show d={enter} from="fade" className={layer}>
-        <Card className="h-full overflow-hidden">
-          <Tabs active="Estate" />
-          <div className="px-8 py-5">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="font-display text-[26px] font-medium text-pnc-navy">
-                  Estate of {storyPeople.john.name}
-                </p>
-                <p className="text-[15px] text-pnc-muted">
-                  Passed away {formatDate(lossFacts.died, "medium")} · Will on file, signed{" "}
-                  {formatDate(willFacts.signedOn, "medium")} · Executor {willFacts.executor}
-                </p>
+    <>
+      <AppWindow
+        who="advisor"
+        active={talking ? "Messages" : "Home"}
+        hero={clientHero}
+        // Makes room for Maya's phone beside it once the transfer starts.
+        left={started ? 40 : 100}
+        width={started ? 1090 : 1400}
+        className="transition-[left,width] duration-[1100ms] ease-[cubic-bezier(0.6,0,0.2,1)]"
+      >
+        <Show show d={enter} from="fade" className={layer}>
+          <Card className="h-full overflow-hidden">
+            <Tabs active="Estate" />
+            <div className="px-8 py-4">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="font-display text-[26px] font-medium text-pnc-navy">
+                    Estate of {storyPeople.john.name}
+                  </p>
+                  <p className="text-[15px] text-pnc-muted">
+                    Passed away {formatDate(lossFacts.died, "medium")} · Will on file, signed{" "}
+                    {formatDate(willFacts.signedOn, "medium")} · Executor {willFacts.executor}
+                  </p>
+                </div>
+                <span
+                  className={cn(
+                    "story-ease rounded-full px-3.5 py-1 text-[14px] font-semibold",
+                    started
+                      ? "bg-pnc-positive-bg text-pnc-positive"
+                      : "bg-attention-bg text-attention",
+                  )}
+                  style={eased(started ? 900 : 0)}
+                >
+                  {started ? "Transfer started" : "Transfer not started"}
+                </span>
               </div>
-              <span
-                className={cn(
-                  "story-ease rounded-full px-3.5 py-1 text-[14px] font-semibold",
-                  started
-                    ? "bg-pnc-positive-bg text-pnc-positive"
-                    : "bg-attention-bg text-attention",
-                )}
-                style={eased(started ? 900 : 0)}
-              >
-                {started ? "Transfer started" : "Transfer not started"}
-              </span>
-            </div>
 
-            <ol className="mt-4 grid grid-cols-4 gap-3">
-              {estateSteps.map((s, i) => {
-                const done = doneSteps[i];
-                return (
-                  <li
-                    key={s.title}
-                    className={cn(
-                      "story-ease relative rounded-2xl px-4 py-3 ring-1",
-                      done ? "bg-pnc-positive-bg ring-transparent" : "bg-white ring-pnc-line",
-                    )}
-                    style={eased(done ? 700 + (i - 2) * 300 : 0)}
-                  >
-                    <span
+              <ol className="mt-4 grid grid-cols-4 gap-3">
+                {estateSteps.map((s, i) => {
+                  const done = doneSteps[i];
+                  return (
+                    <li
+                      key={s.title}
                       className={cn(
-                        "story-ease grid size-8 place-items-center rounded-full text-[15px] font-semibold",
-                        done ? "bg-pnc-positive text-white" : "bg-pnc-chip text-pnc-muted",
+                        "story-ease relative rounded-2xl px-4 py-3 ring-1",
+                        done ? "bg-pnc-positive-bg ring-transparent" : "bg-white ring-pnc-line",
                       )}
-                      style={eased(done ? 700 + (i - 2) * 300 : 0)}
+                      style={eased(done ? 700 + Math.max(0, i - 2) * 300 : 0)}
                     >
-                      {done ? <Check className="size-4" aria-hidden="true" /> : i + 1}
-                    </span>
-                    <p className="mt-2 text-[16px] font-semibold leading-snug text-pnc-ink">
-                      {s.title}
-                    </p>
-                    <p className="text-[14px] leading-snug text-pnc-muted">{s.detail}</p>
-                    {i === 1 && <Tap show={on(at, "message")} d={300} />}
-                    {i === 2 && <Tap show={on(at, "transfer")} d={200} />}
-                  </li>
-                );
-              })}
-            </ol>
-
-            <div className="mt-4 flex items-center gap-3">
-              <p className="font-display text-[19px] font-semibold text-pnc-navy">
-                Beneficiaries and what passes to them
-              </p>
-              <MockBadge />
-            </div>
-            <div className="mt-3 grid grid-cols-3 gap-4">
-              {inheritances.map((b, bi) => (
-                <Show key={b.person} show d={enter + 300 + bi * 150}>
-                  <div
-                    className={cn(
-                      "story-ease rounded-2xl bg-white px-5 py-4 ring-1",
-                      started ? "ring-pnc-positive/50" : "ring-pnc-line",
-                    )}
-                    style={eased(started ? 1300 + bi * 350 : 0)}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Avatar who={b.person} className="size-11 rounded-full" />
-                      <span className="flex-1">
-                        <span className="block text-[17px] font-semibold">
-                          {storyPeople[b.person].name}
-                        </span>
-                        <span className="text-[14px] text-pnc-muted">{b.note}</span>
-                      </span>
                       <span
-                        className="story-ease flex items-center gap-1 rounded-full bg-pnc-positive px-2.5 py-0.5 text-[13px] font-semibold text-white"
+                        className={cn(
+                          "story-ease grid size-8 place-items-center rounded-full text-[15px] font-semibold",
+                          done ? "bg-pnc-positive text-white" : "bg-pnc-chip text-pnc-muted",
+                        )}
+                        style={eased(done ? 700 + Math.max(0, i - 2) * 300 : 0)}
+                      >
+                        {done ? <Check className="size-4" aria-hidden="true" /> : i + 1}
+                      </span>
+                      <p className="mt-2 text-[16px] font-semibold leading-snug text-pnc-ink">
+                        {s.title}
+                      </p>
+                      <p className="text-[14px] leading-snug text-pnc-muted">{s.detail}</p>
+                      {i === 1 && <Tap show={on(at, "message")} d={300} />}
+                      {i === 2 && <Tap show={on(at, "transfer")} d={200} />}
+                    </li>
+                  );
+                })}
+              </ol>
+
+              <div className="mt-4 flex items-center gap-3">
+                <p className="font-display text-[19px] font-semibold text-pnc-navy">
+                  Beneficiaries and what passes to them
+                </p>
+                <MockBadge />
+              </div>
+              <div className="mt-3 grid grid-cols-3 gap-4">
+                {inheritances.map((b, bi) => (
+                  <Show key={b.person} show d={enter + 300 + bi * 150}>
+                    <div
+                      className={cn(
+                        "story-ease rounded-2xl bg-white px-5 py-4 ring-1",
+                        started ? "ring-pnc-positive/50" : "ring-pnc-line",
+                      )}
+                      style={eased(started ? 1300 + bi * 350 : 0)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Avatar who={b.person} className="size-11 rounded-full" />
+                        <span className="flex-1">
+                          <span className="block text-[17px] font-semibold">
+                            {storyPeople[b.person].name}
+                          </span>
+                          <span className="text-[14px] text-pnc-muted">{b.note}</span>
+                        </span>
+                        <span
+                          className="story-ease flex items-center gap-1 rounded-full bg-pnc-positive px-2.5 py-0.5 text-[13px] font-semibold text-white"
+                          style={{
+                            opacity: started ? 1 : 0,
+                            transform: started ? "none" : "scale(0.7)",
+                            ...eased(started ? 1300 + bi * 350 : 0),
+                          }}
+                        >
+                          <Send className="size-3" aria-hidden="true" /> Notified
+                        </span>
+                      </div>
+                      <Money
+                        value={b.total}
+                        className="mt-2 block font-display text-[24px] font-semibold text-pnc-navy"
+                      />
+                      {/* Once everyone is told, the detail folds away and who was told stays. */}
+                      <div
+                        className="grid transition-[grid-template-rows,opacity] duration-700"
                         style={{
-                          opacity: started ? 1 : 0,
-                          transform: started ? "none" : "scale(0.7)",
-                          ...eased(started ? 1300 + bi * 350 : 0),
+                          gridTemplateRows: started ? "0fr" : "1fr",
+                          opacity: started ? 0 : 1,
+                          transitionDelay: started ? "600ms" : "0ms",
                         }}
                       >
-                        <Send className="size-3" aria-hidden="true" /> Told
-                      </span>
+                        <ul className="mt-2 min-h-0 space-y-1.5 overflow-hidden">
+                          {b.items.map((it) => (
+                            <li key={it.account} className="flex justify-between gap-3 text-[14px]">
+                              <span className="text-pnc-muted">
+                                <span className="font-semibold text-pnc-ink">
+                                  {A[it.account].name}
+                                </span>{" "}
+                                · {it.basis}
+                              </span>
+                              <Money value={it.amount} compact className="shrink-0 text-pnc-ink" />
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     </div>
-                    <Money
-                      value={b.total}
-                      className="mt-2 block font-display text-[24px] font-semibold text-pnc-navy"
-                    />
-                    <ul className="mt-2 space-y-1.5">
-                      {b.items.map((it) => (
-                        <li key={it.account} className="flex justify-between gap-3 text-[14px]">
-                          <span className="text-pnc-muted">
-                            <span className="font-semibold text-pnc-ink">{A[it.account].name}</span>{" "}
-                            · {it.basis}
-                          </span>
-                          <Money value={it.amount} compact className="shrink-0 text-pnc-ink" />
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                  </Show>
+                ))}
+              </div>
+            </div>
+          </Card>
+        </Show>
+
+        {/* A note to Maya, before any of it. */}
+        <div
+          aria-hidden="true"
+          className="story-ease pointer-events-none absolute inset-0 bg-pnc-navy/25"
+          style={{ opacity: talking ? 1 : 0 }}
+        />
+        <Show
+          show={talking}
+          from="right"
+          d={talking ? 500 : 0}
+          focus="messages"
+          className="absolute bottom-0 right-0 top-0 w-[620px] bg-white shadow-[-20px_0_60px_-30px_rgb(11_35_64/0.5)]"
+        >
+          <div className="flex items-center gap-3.5 border-b border-pnc-line px-8 py-5">
+            <Avatar who="maya" className="size-12 rounded-full" />
+            <span>
+              <span className="block text-[19px] font-semibold">{storyPeople.maya.name}</span>
+              <span className="text-[14px] text-pnc-muted">John&apos;s spouse · executor</span>
+            </span>
+            <MessageCircle className="ml-auto size-5 text-pnc-muted" aria-hidden="true" />
+          </div>
+          <div className="space-y-4 px-8 py-7">
+            {conversation.map((m, i) => {
+              const mine = m.from === "advisor";
+              return (
+                <Show
+                  key={i}
+                  show={talking}
+                  d={talking ? 1300 + i * 1500 : 0}
+                  from={mine ? "right" : "left"}
+                  className={cn("flex", mine ? "justify-end" : "justify-start")}
+                >
+                  <p
+                    className={cn(
+                      "max-w-[440px] rounded-3xl px-5 py-3.5 text-[17px] leading-relaxed",
+                      mine
+                        ? "rounded-br-md bg-pnc-blue-700 text-white"
+                        : "rounded-bl-md bg-pnc-surface text-pnc-ink",
+                    )}
+                  >
+                    {m.text}
+                  </p>
                 </Show>
-              ))}
+              );
+            })}
+          </div>
+        </Show>
+      </AppWindow>
+
+      {/* The moment the transfer starts, Maya's phone: a condolence first. */}
+      <Show
+        show={started}
+        from="right"
+        d={started ? 1500 : 0}
+        className="absolute left-[1190px] top-[110px]"
+      >
+        <Phone who="maya" title="Home" className="relative" style={{ position: "relative" }}>
+          <div className="flex items-start gap-3 rounded-2xl bg-attention-bg p-4 text-[15px] leading-snug ring-1 ring-attention-line">
+            <HeartHandshake className="size-5 shrink-0 text-attention" aria-hidden="true" />
+            <span>
+              <span className="font-semibold text-attention">{condolence.lead}</span>{" "}
+              {condolence.body}
+              <span className="mt-2 flex items-center gap-1 font-semibold text-attention">
+                {condolence.link} <ChevronRight className="size-4" aria-hidden="true" />
+              </span>
+            </span>
+          </div>
+          <div className="mt-4 rounded-2xl bg-white p-4 shadow-card">
+            <p className="text-[13px] font-semibold uppercase tracking-wide text-pnc-muted">
+              Your team
+            </p>
+            <div className="mt-2 flex items-center gap-3">
+              <Avatar who="advisor" className="size-10 rounded-full" />
+              <span className="text-[15px] font-semibold">{storyPeople.advisor.name}</span>
             </div>
           </div>
-        </Card>
+        </Phone>
       </Show>
-
-      {/* A note to Maya, before any of it. */}
-      <div
-        aria-hidden="true"
-        className="story-ease pointer-events-none absolute inset-0 bg-pnc-navy/25"
-        style={{ opacity: talking ? 1 : 0 }}
-      />
-      <Show
-        show={talking}
-        from="right"
-        d={talking ? 500 : 0}
-        focus="messages"
-        className="absolute bottom-0 right-0 top-0 w-[620px] bg-white shadow-[-20px_0_60px_-30px_rgb(11_35_64/0.5)]"
-      >
-        <div className="flex items-center gap-3.5 border-b border-pnc-line px-8 py-5">
-          <Avatar who="maya" className="size-12 rounded-full" />
-          <span>
-            <span className="block text-[19px] font-semibold">{storyPeople.maya.name}</span>
-            <span className="text-[14px] text-pnc-muted">John&apos;s spouse · executor</span>
-          </span>
-          <MessageCircle className="ml-auto size-5 text-pnc-muted" aria-hidden="true" />
-        </div>
-        <div className="space-y-4 px-8 py-7">
-          {conversation.map((m, i) => {
-            const mine = m.from === "advisor";
-            return (
-              <Show
-                key={i}
-                show={talking}
-                d={talking ? 1300 + i * 1500 : 0}
-                from={mine ? "right" : "left"}
-                className={cn("flex", mine ? "justify-end" : "justify-start")}
-              >
-                <p
-                  className={cn(
-                    "max-w-[440px] rounded-3xl px-5 py-3.5 text-[17px] leading-relaxed",
-                    mine
-                      ? "rounded-br-md bg-pnc-blue-700 text-white"
-                      : "rounded-bl-md bg-pnc-surface text-pnc-ink",
-                  )}
-                >
-                  {m.text}
-                </p>
-              </Show>
-            );
-          })}
-        </div>
-      </Show>
-    </AppWindow>
+    </>
   );
 }

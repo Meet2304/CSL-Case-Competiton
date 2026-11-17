@@ -41,7 +41,16 @@
   --color-chart-cash: #0f6bd0;
   --color-chart-retirement: #1d9a8a;
   --color-chart-investments: #ef6a00;
-  --color-story-paper: #f6f8fb; /* the product story's canvas */
+  --color-story-paper: #f7f9fc; /* the product story's canvas */
+  /*
+   * The product story's people: one soft color each, the same every time they
+   * appear (the glow behind their screen, their ring, the light of their scenes).
+   */
+  --color-person-john: #2fbf8f;
+  --color-person-maya: #9b7bf7;
+  --color-person-david: #f5a524;
+  --color-person-alexa: #ef6f9a;
+  --color-person-advisor: #3b9eff;
   --color-mock: #8a5a00; /* mock-data labelling */
   --color-mock-bg: #fff4d6;
   --color-mock-line: #f0c75e;
@@ -411,8 +420,70 @@ html:has(.story-stage) nextjs-portal {
   display: none;
 }
 .story-stage {
-  background: radial-gradient(120% 100% at 50% 40%, white, var(--color-story-paper) 70%);
-  transition: background-color 1.2s ease;
+  background: var(--color-story-paper);
+}
+
+/*
+ * The light of a scene: two soft washes of color behind the canvas, in the
+ * colors of whoever the scene is about. They drift to the next scene's colors
+ * as the camera moves, and go grey for the loss.
+ */
+@property --amb-a {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+@property --amb-b {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+.story-ambient {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      52% 62% at 14% 18%,
+      color-mix(in srgb, var(--amb-a) 30%, transparent),
+      transparent 72%
+    ),
+    radial-gradient(
+      58% 66% at 88% 86%,
+      color-mix(in srgb, var(--amb-b) 26%, transparent),
+      transparent 72%
+    ),
+    radial-gradient(
+      40% 40% at 60% 30%,
+      color-mix(in srgb, var(--amb-b) 10%, transparent),
+      transparent 70%
+    );
+  transition:
+    --amb-a 1.8s ease,
+    --amb-b 1.8s ease;
+}
+
+/* The soft color behind a person's screen: close, and a little heavier below, as light falls. */
+.story-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--glow) 28%, white),
+    0 0 40px 2px color-mix(in srgb, var(--glow) 26%, transparent),
+    0 34px 110px -10px color-mix(in srgb, var(--glow) 40%, transparent);
+  transition: opacity 2.4s ease;
+}
+/* A person who has died: the color drains from their screen and the glow behind it goes out. */
+[data-quiet="true"] > .story-glow {
+  opacity: 0;
+}
+.story-screen {
+  transition: filter 2.4s ease;
+}
+[data-quiet="true"] > .story-screen {
+  filter: grayscale(1) opacity(0.7);
 }
 
 /* A plate is lit while the camera is on it, and rests unseen otherwise. */
@@ -480,8 +551,8 @@ html:has(.story-stage) nextjs-portal {
   height: 72px;
   margin: -36px 0 0 -36px;
   border-radius: 9999px;
-  border: 2px solid var(--color-pnc-orange);
-  background: color-mix(in srgb, var(--color-pnc-orange) 20%, transparent);
+  border: 2px solid var(--tap, var(--color-pnc-orange));
+  background: color-mix(in srgb, var(--tap, var(--color-pnc-orange)) 22%, transparent);
   opacity: 0;
   pointer-events: none;
 }

@@ -81,20 +81,29 @@ sign-on page; go straight to `/story`.
 - **Keys only, nothing plays by itself.** → (or space, Enter, ↓, Page Down) moves on; ← (or ↑, Page
   Up, Backspace) steps back; Home and End jump to either end; F fills the screen. A presentation
   clicker works too. Each press plays one short, choreographed moment and then waits. The stop is
-  kept in the URL (`/story#loss`), so a refresh or a shared link opens at the same place.
+  kept in the URL (`/story#loss`), so a refresh or a shared link opens straight at that place.
 - **The canvas is a 3 × 3 grid of scenes with the family in the middle**, visited clockwise: the
-  family and John carrying everything alone; John's Home and Assets and Debts (including the life
-  policy outside PNC); adding a vintage car and fixing the gaps Findoe found by naming
-  beneficiaries; the will; the shared family dashboard, who sees what, and David's own phone; back to
-  the family with their advisor, then the loss and one record reaching everyone; the advisor's alert,
-  plan and Findoe's cited reasoning; the estate (a condolence before the transfer); Maya's
-  condolence, one claim and a cited answer about John's IRA; the children told gently. The last
-  stops pull back until the whole circle is on screen, then close.
-- **Light, PNC-styled and quiet.** One short line of words under the picture per stop and a
-  hairline of progress; no labels or hints around the edges.
-- In this telling John acts on Findoe's reminders before he dies (he names beneficiaries on Savings
-  and the brokerage account, following his will), so nothing at PNC waits on probate. Every other
-  figure comes from the shared household, estate and advisor mock data.
+  family and John carrying everything alone; John's Home and Assets and Debts (with the life policy
+  outside PNC); Add an asset, linking an account at another bank and adding a vintage car; Findoe
+  answering "What happens to my accounts if I die?" before and after John names his beneficiaries;
+  the will; the family dashboard beside David's own phone, which changes as John sets what David's
+  role can see; back to the family and their advisor, the loss, and one record reaching everyone;
+  the advisor's alert, plan and Findoe's chain of thought; the estate, a condolence to Maya, then
+  the transfer, with Maya's phone lighting up beside it; Maya's claim and Findoe's cited tax
+  answer; the children. The last stops pull back until the whole circle is on screen, then close.
+- **It looks like the product.** Screens are drawn after the working pages, and Findoe is drawn
+  with the app's own pieces (`Response`, `SourceMarker`, `ChainOfThought`). Its answers to John
+  and Maya are asked of the real answer engine (`customerReply`), so they are what Findoe says.
+- **Light and quiet.** A white canvas; each person's screen floats on a soft glow in their own
+  color, with their name and role above it (John green, Maya violet, David amber, Alexa rose, the
+  Bank Advisor blue), and the light of each scene drifts to the colors of whoever it is about. When
+  John dies his screens lose their color. One short line of words under the picture per stop and a
+  hairline of progress; no other labels or hints.
+- **No "nothing to do".** Nothing in the story tells a client there is nothing for them to do; a
+  test checks every word shown to them.
+- In this telling John acts on Findoe before he dies: he names David and Alexa on Savings (as his
+  will gives it to them) and Maya on the brokerage account, so nothing at PNC waits on probate.
+  Every other figure comes from the shared household, estate and advisor mock data.
 - Words and figures are in `src/data/story.ts`, the stops, camera and thread in `src/lib/story.ts`
   (tested in `src/lib/__tests__/story.test.ts`), and the stage and scenes in `src/components/story`.
 

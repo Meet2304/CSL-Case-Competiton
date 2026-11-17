@@ -10,6 +10,7 @@ import {
   Gem,
   House,
   Landmark,
+  Link2,
   Palette,
   PiggyBank,
   ScrollText,
@@ -19,6 +20,7 @@ import {
   Wallet,
   type LucideIcon,
 } from "lucide-react";
+import { FindoeLogo } from "@/components/brand/FindoeLogo";
 import { MockBadge } from "@/components/mock/Mock";
 import { Money } from "@/components/ui/Money";
 import { addAssetGroups } from "@/data/addAsset";
@@ -26,8 +28,11 @@ import {
   addElsewhere,
   addTiles,
   car,
+  findoe,
   johnTotals,
   johnsList,
+  linked,
+  lossFacts,
   named,
   reminders,
   storyAccounts,
@@ -38,9 +43,12 @@ import {
 } from "@/data/story";
 import { cn, formatDate } from "@/lib/format";
 import {
+  Answer,
   AppWindow,
+  Asked,
   Avatar,
   Card,
+  FindoePanel,
   Hero,
   Show,
   Tap,
@@ -53,9 +61,11 @@ import {
 } from "../parts";
 
 const A = storyAccounts;
+/** The years John lived, beside his name once his screens fall quiet. */
+export const years = `${lossFacts.born.slice(0, 4)} – ${lossFacts.died.slice(0, 4)}`;
 const label = (id: StoryAccountId) => (A[id].last4 ? `${A[id].name} x${A[id].last4}` : A[id].name);
 
-const accountIcons: Record<StoryAccountId, LucideIcon> = {
+export const accountIcons: Record<StoryAccountId, LucideIcon> = {
   joint: Wallet,
   savings: PiggyBank,
   ira: Landmark,
@@ -64,9 +74,10 @@ const accountIcons: Record<StoryAccountId, LucideIcon> = {
   card: CreditCard,
   mayaSavings: PiggyBank,
   mayaRoth: Landmark,
+  alexaSavings: PiggyBank,
 };
 
-function Chip({ icon: Icon, className }: { icon: LucideIcon; className?: string }) {
+export function Chip({ icon: Icon, className }: { icon: LucideIcon; className?: string }) {
   return (
     <span
       className={cn(
@@ -82,6 +93,45 @@ function Chip({ icon: Icon, className }: { icon: LucideIcon; className?: string 
 /** A layer of a window's page; several layers share the page and cross-fade. */
 const layer = "absolute inset-x-10 inset-y-7";
 
+/** Findoe's launcher, bottom right of every page, as in the app. */
+function AskFindoe() {
+  return (
+    <span className="absolute bottom-5 right-6 flex items-center gap-2.5 rounded-full bg-pnc-navy py-2 pl-2 pr-5 text-[15px] font-semibold text-white shadow-raised">
+      <FindoeLogo className="size-8" /> Ask Findoe
+    </span>
+  );
+}
+
+/** A side panel sliding over a page, with the page dimmed beneath it. */
+function SidePanel({
+  show,
+  focus,
+  children,
+}: {
+  show: boolean;
+  focus: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <>
+      <div
+        aria-hidden="true"
+        className="story-ease pointer-events-none absolute inset-0 bg-pnc-navy/25"
+        style={{ opacity: show ? 1 : 0 }}
+      />
+      <Show
+        show={show}
+        from="right"
+        d={show ? 250 : 0}
+        focus={focus}
+        className="absolute bottom-0 right-0 top-0 w-[560px] bg-white px-10 py-8 shadow-[-20px_0_60px_-30px_rgb(11_35_64/0.5)]"
+      >
+        {children}
+      </Show>
+    </>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // John's own view: Home, then Assets and Debts.
 
@@ -94,6 +144,7 @@ const notes: Record<StoryAccountId, { text: string; warn?: boolean }> = {
   card: { text: "Credit card" },
   mayaSavings: { text: "" },
   mayaRoth: { text: "" },
+  alexaSavings: { text: "" },
 };
 
 export function JohnPlate({ at }: PlateProps) {
@@ -103,6 +154,8 @@ export function JohnPlate({ at }: PlateProps) {
   return (
     <AppWindow
       who="john"
+      quiet={past(at, "loss")}
+      note={past(at, "loss") ? years : undefined}
       active={assets ? "Assets and Debts" : "Home"}
       hero={
         <>
@@ -168,7 +221,7 @@ export function JohnPlate({ at }: PlateProps) {
             </div>
           </Card>
         </div>
-        <Card className="flex-1 p-7">
+        <Card className="h-fit flex-1 p-7">
           <div className="flex items-center gap-2.5">
             <Bell className="size-5 text-pnc-blue-700" aria-hidden="true" />
             <p className="font-display text-[20px] font-semibold text-pnc-navy">Notifications</p>
@@ -209,13 +262,16 @@ export function JohnPlate({ at }: PlateProps) {
             <span className="flex-1 bg-chart-investments" />
           </div>
         </Card>
-        <Card className="flex-1 overflow-hidden">
+        <Card className="h-fit flex-1 overflow-hidden">
           <div className="flex items-center gap-7 border-b border-pnc-line px-7 pt-5 text-[16px]">
             <span className="border-b-[3px] border-pnc-orange pb-3.5 font-semibold">
               Assets <span className="ml-1 rounded-full bg-pnc-chip px-2 text-[13px]">5</span>
             </span>
             <span className="pb-3.5 text-pnc-muted">
               Debts <span className="ml-1 rounded-full bg-pnc-chip px-2 text-[13px]">1</span>
+            </span>
+            <span className="ml-auto mb-3 rounded-full bg-pnc-blue-700 px-4 py-1.5 text-[14px] font-semibold text-white">
+              + Add asset
             </span>
           </div>
           <ul>
@@ -227,7 +283,7 @@ export function JohnPlate({ at }: PlateProps) {
                   <li
                     data-focus={life ? "life-row" : undefined}
                     className={cn(
-                      "story-ease flex items-center gap-4 border-b border-pnc-line px-7 py-[15px]",
+                      "story-ease flex items-center gap-4 border-b border-pnc-line px-7 py-[14px] last:border-b-0",
                       life &&
                         outside &&
                         "bg-pnc-orange/[0.07] shadow-[inset_4px_0_0_var(--color-pnc-orange)]",
@@ -269,6 +325,7 @@ export function JohnPlate({ at }: PlateProps) {
           </ul>
         </Card>
       </Show>
+      <AskFindoe />
     </AppWindow>
   );
 }
@@ -296,16 +353,21 @@ const groups = [
   { label: "Add your own", options: addTiles },
 ];
 
+const money = (n: number) => `$${n.toLocaleString("en-US")}`;
+
 export function PreparePlate({ at }: PlateProps) {
   const adding = !past(at, "gaps");
+  const linking = during(at, "linked", "car");
   const form = during(at, "car", "gaps");
   const gaps = past(at, "gaps");
   const fixed = past(at, "named");
   const enter = on(at, "add") ? 1100 : 250;
-  const money = (n: number) => `$${n.toLocaleString("en-US")}`;
+  const ask = findoe.johnBefore;
   return (
     <AppWindow
       who="john"
+      quiet={past(at, "loss")}
+      note={past(at, "loss") ? years : undefined}
       active={adding ? "Assets and Debts" : "Home"}
       hero={
         <>
@@ -324,13 +386,15 @@ export function PreparePlate({ at }: PlateProps) {
             <p className="font-display text-[19px] font-semibold text-pnc-navy">{g.label}</p>
             <div className="mt-3 grid grid-cols-4 gap-4">
               {g.options.map((o, i) => {
-                const picked = o.id === "vehicles";
+                const picked =
+                  (o.id === "banks" && past(at, "linked")) ||
+                  (o.id === "vehicles" && past(at, "car"));
                 return (
                   <Show key={o.id} show={adding} d={adding ? enter + 200 + gi * 200 + i * 70 : 0}>
                     <Card
                       className={cn(
-                        "story-ease relative flex h-[118px] gap-3.5 p-5",
-                        picked && past(at, "car") && "ring-2 ring-pnc-blue-600",
+                        "story-ease relative flex h-[112px] gap-3.5 p-5",
+                        picked && "ring-2 ring-pnc-blue-600",
                       )}
                     >
                       <Chip icon={addIcons[o.id] ?? Wallet} />
@@ -342,7 +406,8 @@ export function PreparePlate({ at }: PlateProps) {
                           {o.description}
                         </span>
                       </span>
-                      {picked && <Tap show={on(at, "add")} d={2300} />}
+                      {o.id === "banks" && <Tap show={on(at, "linked")} d={150} />}
+                      {o.id === "vehicles" && <Tap show={on(at, "car")} d={150} />}
                     </Card>
                   </Show>
                 );
@@ -352,19 +417,57 @@ export function PreparePlate({ at }: PlateProps) {
         ))}
       </Show>
 
+      {/* An account at another institution, linked in one step. */}
+      <SidePanel show={linking} focus="linked-form">
+        <div className="flex items-center gap-4">
+          <Chip icon={Building} className="size-14" />
+          <div>
+            <p className="font-display text-[26px] font-semibold text-pnc-navy">
+              {linked.option.label}
+            </p>
+            <p className="text-[15px] text-pnc-muted">{linked.option.description}</p>
+          </div>
+        </div>
+        <div className="mt-7 flex items-center gap-3 rounded-xl bg-pnc-surface px-4 py-3 text-[16px]">
+          <Link2 className="size-5 text-pnc-blue-700" aria-hidden="true" />
+          <span className="font-semibold">{linked.institution}</span>
+          <Show show={linking} d={linking ? 1300 : 0} from="fade" className="ml-auto">
+            <span className="flex items-center gap-1.5 text-[14px] font-semibold text-pnc-positive">
+              <Check className="size-4" aria-hidden="true" /> Connected
+            </span>
+          </Show>
+        </div>
+        <Show show={linking} d={linking ? 1800 : 0} className="mt-6">
+          <p className="font-semibold text-pnc-ink">Found at {linked.institution}</p>
+          <ul className="mt-3 space-y-2.5">
+            {linked.found.map((f) => (
+              <li
+                key={f.last4}
+                className="flex items-center gap-3.5 rounded-xl px-4 py-3.5 ring-1 ring-pnc-line"
+              >
+                <span className="grid size-5 place-items-center rounded bg-pnc-blue-700 text-white">
+                  <Check className="size-3.5" aria-hidden="true" />
+                </span>
+                <span className="flex-1 text-[16px]">
+                  <span className="font-semibold">{f.name}</span>{" "}
+                  <span className="text-pnc-muted">x{f.last4}</span>
+                </span>
+                <Money value={f.balance} className="text-[16px] font-semibold" />
+              </li>
+            ))}
+          </ul>
+        </Show>
+        <Show show={linking} d={linking ? 2500 : 0} className="mt-7">
+          <span className="relative inline-flex h-[52px] items-center gap-2 rounded-full bg-pnc-blue-700 px-7 text-[17px] font-semibold text-white">
+            Add {linked.found.length} accounts{" "}
+            <ArrowRight className="size-4.5" aria-hidden="true" />
+            <Tap show={linking} d={3200} />
+          </span>
+        </Show>
+      </SidePanel>
+
       {/* A car is asked for what identifies a car, nothing else. */}
-      <div
-        aria-hidden="true"
-        className="story-ease pointer-events-none absolute inset-0 bg-pnc-navy/25"
-        style={{ opacity: form ? 1 : 0 }}
-      />
-      <Show
-        show={form}
-        from="right"
-        d={form ? 250 : 0}
-        focus="car-form"
-        className="absolute -bottom-0 -right-0 top-0 w-[560px] bg-white px-10 py-9 shadow-[-20px_0_60px_-30px_rgb(11_35_64/0.5)]"
-      >
+      <SidePanel show={form} focus="car-form">
         <div className="flex items-center gap-4">
           <Chip icon={Car} className="size-14" />
           <div>
@@ -404,105 +507,116 @@ export function PreparePlate({ at }: PlateProps) {
             <Tap show={form} d={4100} />
           </span>
         </Show>
-      </Show>
+      </SidePanel>
 
-      {/* Findoe's reminders, and the gaps closed one name at a time. */}
+      {/* Home again: the reminders, and Findoe on what would happen today. */}
       <Show
         show={gaps}
         d={gaps ? 300 : 0}
         from="fade"
-        className="story-ease absolute inset-y-7 left-10 w-[700px]"
-        style={{ transform: fixed ? "none" : "translateX(310px)", ...eased(fixed ? 0 : 0) }}
+        className="absolute inset-y-7 left-10 w-[680px]"
       >
-        <Card className="p-8">
-          <div className="flex items-center gap-2.5">
-            <Bell className="size-5.5 text-pnc-blue-700" aria-hidden="true" />
-            <p className="font-display text-[22px] font-semibold text-pnc-navy">Notifications</p>
-          </div>
-          <ul className="mt-6 space-y-3">
-            {reminders.map((r, i) => {
-              const done = fixed && r.id !== "will";
-              return (
-                <Show key={r.id} show={gaps} d={gaps ? 700 + i * 220 : 0}>
-                  <li
-                    className={cn(
-                      "story-ease flex gap-4 rounded-2xl p-5 ring-1",
-                      done ? "bg-pnc-positive-bg ring-transparent" : "bg-white ring-pnc-line",
-                    )}
-                    style={eased(done ? 900 + i * 250 : 0)}
-                  >
-                    <span
-                      className={cn(
-                        "story-ease grid size-10 shrink-0 place-items-center rounded-full",
-                        done
-                          ? "bg-pnc-positive text-white"
-                          : "bg-pnc-orange/12 text-pnc-orange-600",
-                      )}
-                      style={eased(done ? 900 + i * 250 : 0)}
-                    >
-                      {done ? (
-                        <Check className="size-5" aria-hidden="true" />
-                      ) : r.id === "will" ? (
-                        <ScrollText className="size-5" aria-hidden="true" />
-                      ) : (
-                        <Bell className="size-5" aria-hidden="true" />
-                      )}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-[18px] font-semibold text-pnc-ink">
-                        {r.title}
+        <div className="relative h-full">
+          <Show show={!fixed} d={!fixed ? 0 : 0} from="fade" className="absolute inset-x-0 top-0">
+            <Card className="p-7">
+              <div className="flex items-center gap-2.5">
+                <Bell className="size-5.5 text-pnc-blue-700" aria-hidden="true" />
+                <p className="font-display text-[22px] font-semibold text-pnc-navy">
+                  Notifications
+                </p>
+              </div>
+              <ul className="mt-5 space-y-3">
+                {reminders.map((r, i) => (
+                  <Show key={r.id} show={gaps} d={gaps ? 700 + i * 200 : 0}>
+                    <li className="flex gap-4 rounded-2xl bg-white p-5 ring-1 ring-pnc-line">
+                      <span className="grid size-10 shrink-0 place-items-center rounded-full bg-pnc-orange/12 text-pnc-orange-600">
+                        {r.id === "will" ? (
+                          <ScrollText className="size-5" aria-hidden="true" />
+                        ) : (
+                          <Bell className="size-5" aria-hidden="true" />
+                        )}
                       </span>
-                      <span className="text-[15px] text-pnc-muted">
-                        {done ? "Done. It now passes straight to the people you named." : r.body}
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-[17px] font-semibold text-pnc-ink">
+                          {r.title}
+                        </span>
+                        <span className="text-[15px] text-pnc-muted">{r.body}</span>
                       </span>
-                    </span>
-                  </li>
-                </Show>
-              );
-            })}
-          </ul>
-        </Card>
+                    </li>
+                  </Show>
+                ))}
+              </ul>
+            </Card>
+          </Show>
+          <Show
+            show={fixed}
+            from="fade"
+            d={fixed ? 300 : 0}
+            focus="beneficiaries"
+            className="absolute inset-x-0 top-0"
+          >
+            <Card className="p-7">
+              <p className="font-display text-[22px] font-semibold text-pnc-navy">Beneficiaries</p>
+              <p className="mt-1 text-[15px] text-pnc-muted">
+                Named in each account&apos;s Manage panel. They receive it directly.
+              </p>
+              <div className="mt-5 space-y-5">
+                {named.map((n, ni) => (
+                  <div key={n.account}>
+                    <p className="text-[16px] font-semibold text-pnc-link">{label(n.account)}</p>
+                    <ul className="mt-2 space-y-2">
+                      {n.to.map((t, i) => (
+                        <Show
+                          key={t.person}
+                          show={fixed}
+                          d={fixed ? 700 + ni * 450 + i * 160 : 0}
+                          from="left"
+                        >
+                          <li className="flex items-center gap-3.5 rounded-xl bg-pnc-surface px-4 py-2.5">
+                            <Avatar who={t.person} className="size-10 rounded-full" />
+                            <span className="flex-1 text-[17px] font-semibold text-pnc-ink">
+                              {storyPeople[t.person].name}
+                            </span>
+                            <span className="font-display text-[20px] font-semibold text-pnc-navy">
+                              {Math.round(t.share * 100)}%
+                            </span>
+                          </li>
+                        </Show>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </Show>
+        </div>
       </Show>
       <Show
-        show={fixed}
+        show={gaps}
         from="right"
-        d={fixed ? 450 : 0}
-        focus="beneficiaries"
-        className="absolute inset-y-7 right-10 w-[560px]"
+        d={gaps ? 500 : 0}
+        focus="john-findoe"
+        className="absolute inset-y-7 right-10 w-[600px]"
       >
-        <Card className="p-8">
-          <p className="font-display text-[22px] font-semibold text-pnc-navy">Beneficiaries</p>
-          <p className="mt-1 text-[15px] text-pnc-muted">
-            Who receives each account, outside probate
-          </p>
-          <div className="mt-6 space-y-6">
-            {named.map((n, ni) => (
-              <div key={n.account}>
-                <p className="text-[16px] font-semibold text-pnc-link">{label(n.account)}</p>
-                <ul className="mt-2.5 space-y-2">
-                  {n.to.map((t, i) => (
-                    <Show
-                      key={t.person}
-                      show={fixed}
-                      d={fixed ? 900 + ni * 500 + i * 160 : 0}
-                      from="left"
-                    >
-                      <li className="flex items-center gap-3.5 rounded-xl bg-pnc-surface px-4 py-2.5">
-                        <Avatar who={t.person} className="size-10 rounded-full" />
-                        <span className="flex-1 text-[17px] font-semibold text-pnc-ink">
-                          {storyPeople[t.person].name}
-                        </span>
-                        <span className="font-display text-[20px] font-semibold text-pnc-navy">
-                          {Math.round(t.share * 100)}%
-                        </span>
-                      </li>
-                    </Show>
-                  ))}
-                </ul>
-              </div>
-            ))}
+        <FindoePanel
+          className="h-full"
+          typed={ask.question}
+          typing={on(at, "gaps")}
+          sendTap={on(at, "gaps")}
+          thinking={on(at, "gaps") || on(at, "named")}
+        >
+          <Show show={gaps} d={gaps ? 2300 : 0} from="right">
+            <Asked>{ask.question}</Asked>
+          </Show>
+          <div className="relative">
+            <Show show={gaps && !fixed} d={gaps && !fixed ? 2900 : 0}>
+              <Answer text={findoe.johnBefore.text} sources={findoe.johnBefore.sources} />
+            </Show>
+            <Show show={fixed} d={fixed ? 2200 : 0} className="absolute inset-x-0 bottom-0">
+              <Answer text={findoe.johnAfter.text} sources={findoe.johnAfter.sources} />
+            </Show>
           </div>
-        </Card>
+        </FindoePanel>
       </Show>
     </AppWindow>
   );
@@ -530,6 +644,8 @@ export function WillPlate({ at }: PlateProps) {
   return (
     <AppWindow
       who="john"
+      quiet={past(at, "loss")}
+      note={past(at, "loss") ? years : undefined}
       active="Assets and Debts"
       hero={
         <Hero title="Your will" sub="Who inherits what you own, and who carries out your wishes." />
@@ -547,22 +663,21 @@ export function WillPlate({ at }: PlateProps) {
             }}
           />
           {willSteps.map((step, i) => {
-            const done = signed;
             const current = !signed && i === 0;
             return (
               <div key={step} className="relative flex w-[92px] flex-col items-center">
                 <span
                   className={cn(
                     "story-ease grid size-[45px] place-items-center rounded-full text-[17px] font-semibold ring-[3px]",
-                    done
+                    signed
                       ? "bg-pnc-blue-700 text-white ring-pnc-blue-700"
                       : current
                         ? "bg-white text-pnc-blue-700 ring-pnc-blue-700"
                         : "bg-white text-pnc-muted ring-pnc-line",
                   )}
-                  style={eased(done ? 500 + i * 170 : 0)}
+                  style={eased(signed ? 500 + i * 170 : 0)}
                 >
-                  {done ? <Check className="size-5" aria-hidden="true" /> : i + 1}
+                  {signed ? <Check className="size-5" aria-hidden="true" /> : i + 1}
                 </span>
                 <span className="mt-2 whitespace-nowrap text-[14px] text-pnc-muted">{step}</span>
               </div>
@@ -571,7 +686,7 @@ export function WillPlate({ at }: PlateProps) {
         </div>
       </div>
 
-      <div className="absolute inset-x-10 bottom-7 top-[150px] flex gap-7">
+      <div className="absolute inset-x-10 bottom-7 top-[140px] flex gap-7">
         <div className="relative w-[560px]">
           <Show show={!signed} d={enter} from="fade" className="absolute inset-0">
             <Card className="h-full p-9">
@@ -601,16 +716,16 @@ export function WillPlate({ at }: PlateProps) {
           <Show show={signed} d={signed ? 2200 : 0} from="fade" className="absolute inset-0">
             <Card className="h-full p-9">
               <span className="inline-flex items-center gap-2 rounded-full bg-pnc-positive-bg px-4 py-1.5 text-[15px] font-semibold text-pnc-positive">
-                <Check className="size-4" aria-hidden="true" /> On file with PNC
+                <Check className="size-4" aria-hidden="true" /> Your will is on file
               </span>
               <p className="mt-6 font-display text-[32px] font-medium text-pnc-navy">
-                Your will is signed
+                Signed, and with PNC
               </p>
               <dl className="mt-6 space-y-4 text-[17px]">
                 {[
                   ["Signed", formatDate(willFacts.signedOn, "medium")],
                   ["Executor", willFacts.executor],
-                  ["Covers", "Every account in Assets and Debts"],
+                  ["Who knows it is in place", "Maya and your advisor"],
                 ].map(([k, v]) => (
                   <div key={k} className="flex justify-between border-b border-pnc-line pb-3">
                     <dt className="text-pnc-muted">{k}</dt>
@@ -622,12 +737,12 @@ export function WillPlate({ at }: PlateProps) {
           </Show>
         </div>
 
-        <div className="relative flex-1 overflow-hidden rounded-[4px] bg-white px-14 py-11 font-[Georgia,'Times_New_Roman',serif] text-pnc-ink shadow-[0_30px_60px_-30px_rgb(11_35_64/0.45),0_0_0_1px_rgb(11_35_64/0.05)]">
+        <div className="relative flex-1 overflow-hidden rounded-[4px] bg-white px-14 py-10 font-[Georgia,'Times_New_Roman',serif] text-pnc-ink shadow-[0_30px_60px_-30px_rgb(11_35_64/0.45),0_0_0_1px_rgb(11_35_64/0.05)]">
           <p className="text-center text-[15px] uppercase tracking-[0.32em] text-pnc-muted">
             Last Will and Testament
           </p>
           <p className="mt-2 text-center text-[28px]">of {storyPeople.john.name}</p>
-          <div className="relative mt-8">
+          <div className="relative mt-7">
             <div
               className="story-ease absolute inset-x-0 top-0 space-y-4"
               style={{ opacity: signed ? 0 : 1 }}
@@ -655,7 +770,7 @@ export function WillPlate({ at }: PlateProps) {
             show={signed}
             d={signed ? 2500 : 0}
             from="fade"
-            className="absolute bottom-10 left-14 right-14 flex items-end justify-between"
+            className="absolute bottom-9 left-14 right-14 flex items-end justify-between"
           >
             <span>
               <span className="block font-['Brush_Script_MT','Snell_Roundhand',cursive] text-[40px] leading-none text-pnc-navy">

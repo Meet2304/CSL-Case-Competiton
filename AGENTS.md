@@ -148,7 +148,10 @@ and mobile views stay in one design language.
   `src/data/story.ts`, derived from the household, estate and advisor data; one canvas line per stop,
   at most 12 words, and no other captions, labels or hints on the stage. People are John, Maya,
   David and Alexa Smith and the Bank Advisor only, and legal citations are ids in
-  `rulebook.sources` (both tested).
+  `rulebook.sources` (both tested). Draw Findoe with the app's own AI-Elements pieces and take its
+  answers from the real engine (`customerReply`), not hand-written text. Each person keeps one color
+  (`--color-person-*` tokens; `Screen` gives their screen its glow and name). Never tell a client
+  there is nothing for them to do: offer what is in place instead (tested).
 - **Product film (`/film`, `routes.film`):** the working app filmed in a same-origin frame, open
   to every role like the tour. The script is data in `src/data/film.ts`: a scene is a page, who is
   signed in and whether the death is recorded yet; a shot is a caption (headline of at most 8

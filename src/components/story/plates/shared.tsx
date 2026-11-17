@@ -1,4 +1,4 @@
-import { Settings2 } from "lucide-react";
+import { ArrowLeft, Settings2 } from "lucide-react";
 import { MockBadge } from "@/components/mock/Mock";
 import { Money } from "@/components/ui/Money";
 import {
@@ -7,7 +7,6 @@ import {
   familyTotals,
   kidsAccounts,
   sharedList,
-  sightLabels,
   storyAccounts,
   storyPeople,
   type Sight,
@@ -29,6 +28,7 @@ import {
   past,
   type PlateProps,
 } from "../parts";
+import { years as johnYears } from "./before";
 
 const A = storyAccounts;
 
@@ -37,12 +37,6 @@ const roles: Record<string, string> = {
   maya: "Admin",
   david: "Older child",
   alexa: "Younger child",
-};
-
-const sightStyle: Record<Sight, string> = {
-  hidden: "bg-pnc-chip text-pnc-muted",
-  account: "bg-pnc-blue-50 text-pnc-blue-800",
-  balance: "bg-pnc-positive-bg text-pnc-positive",
 };
 
 /** Who can see an account on the family dashboard, once John has shared what he chose. */
@@ -57,22 +51,48 @@ function seenBy(id: StoryAccountId, granted: boolean): StoryPersonId[] {
   ];
 }
 
+/** When John's choice for a row lands, in ms after the press. */
+const landsAt = (i: number) => 700 + i * 380;
+
+/** One round radio button, as in the app's access matrix. */
+function Radio({ picked, d }: { picked: boolean; d: number }) {
+  return (
+    <span
+      className={cn(
+        "story-ease inline-grid size-[22px] place-items-center rounded-full ring-2",
+        picked ? "ring-pnc-blue-700" : "ring-pnc-line",
+      )}
+      style={eased(d)}
+    >
+      <span
+        className="story-ease size-[11px] rounded-full bg-pnc-blue-700"
+        style={{ transform: picked ? "scale(1)" : "scale(0)", ...eased(d) }}
+      />
+    </span>
+  );
+}
+
 /**
- * The shared family dashboard: one list for the whole family, and the
- * admin's control of what each child sees, account by account.
+ * The shared family dashboard, with David's own phone beside it: John
+ * decides, account by account, what David's role can see, and David's
+ * screen changes as he does.
  */
 export function SharedPlate({ at }: PlateProps) {
   const panel = during(at, "access", "david");
   const granted = past(at, "granted");
-  const phone = past(at, "david");
   const enter = on(at, "dashboard") ? 1100 : 250;
+  const sight = (r: (typeof accessRows)[number]): Sight => r.david[granted ? 1 : 0];
+
   return (
     <>
       <AppWindow
         who="john"
+        quiet={past(at, "loss")}
+        note={past(at, "loss") ? johnYears : undefined}
         active="Family"
         hero={<Hero title="Smith Family" sub="You're an Admin · 4 members" />}
-        className="story-ease"
+        left={40}
+        width={1090}
       >
         <Show
           show
@@ -88,51 +108,54 @@ export function SharedPlate({ at }: PlateProps) {
                 ["Members", String(familyTotals.members)],
               ] as const
             ).map(([k, v]) => (
-              <Card key={k} className="w-[250px] px-6 py-4">
+              <Card key={k} className="w-[190px] px-5 py-3.5">
                 <p className="text-[14px] text-pnc-muted">{k}</p>
                 {v ? (
-                  <p className="font-display text-[26px] font-semibold text-pnc-ink">{v}</p>
+                  <p className="font-display text-[24px] font-semibold text-pnc-ink">{v}</p>
                 ) : (
                   <Money
                     value={familyTotals.value}
                     compact
-                    className="font-display text-[26px] font-semibold text-pnc-ink"
+                    className="font-display text-[24px] font-semibold text-pnc-ink"
                   />
                 )}
               </Card>
             ))}
-            <MockBadge />
-            <span className="relative ml-auto inline-flex h-[50px] items-center gap-2 rounded-full bg-white px-6 text-[16px] font-semibold text-pnc-ink ring-1 ring-pnc-line">
+            <span className="relative ml-auto inline-flex h-[48px] items-center gap-2 rounded-full bg-white px-5 text-[15px] font-semibold text-pnc-ink ring-1 ring-pnc-line">
               <Settings2 className="size-4.5" aria-hidden="true" /> Manage family
               <Tap show={on(at, "access")} d={150} />
             </span>
           </div>
           <div className="flex min-h-0 flex-1 gap-5">
             <Card className="flex-1 overflow-hidden">
-              <p className="px-7 pb-1 pt-4 font-display text-[19px] font-semibold text-pnc-navy">
-                Shared assets and debts
-              </p>
+              <div className="flex items-center justify-between px-6 pb-1 pt-4">
+                <p className="font-display text-[19px] font-semibold text-pnc-navy">
+                  Shared assets and debts
+                </p>
+                <MockBadge />
+              </div>
               <ul>
                 {sharedList.map((id, i) => (
                   <Show key={id} show d={enter + 250 + i * 80}>
-                    <li className="flex items-center gap-4 border-b border-pnc-line px-7 py-[5px] last:border-b-0">
+                    <li className="flex items-center gap-3 border-b border-pnc-line px-6 py-[5px] last:border-b-0">
                       <span className="min-w-0 flex-1">
                         <span className="text-[16px] font-semibold text-pnc-link">
                           {A[id].name}
                           {A[id].last4 && (
-                            <span className="ml-1.5 text-[14px] font-normal text-pnc-muted">
+                            <span className="ml-1.5 text-[13px] font-normal text-pnc-muted">
                               x{A[id].last4}
                             </span>
                           )}
                         </span>
                         <span className="block text-[13px] leading-tight text-pnc-muted">
-                          Owned by {A[id].owners.map((o) => storyPeople[o].name).join(" & ")}
+                          {A[id].owners.map((o) => storyPeople[o].first).join(" & ")}
                           {A[id].external && " · Outside PNC"}
                         </span>
                       </span>
                       <span className="flex -space-x-2">
                         {familyIds.map((p) => {
                           const sees = seenBy(id, granted).includes(p);
+                          const row = accessRows.findIndex((r) => r.account === id);
                           return (
                             <span
                               key={p}
@@ -140,34 +163,38 @@ export function SharedPlate({ at }: PlateProps) {
                               style={{
                                 opacity: sees ? 1 : 0,
                                 transform: sees ? "none" : "scale(0.6)",
-                                ...eased(sees && granted ? 1500 : 0),
+                                ...eased(sees && granted ? landsAt(row) + 300 : 0),
                               }}
                             >
-                              <Avatar who={p} className="size-8 rounded-full ring-2 ring-white" />
+                              <Avatar who={p} className="size-7 rounded-full ring-2 ring-white" />
                             </span>
                           );
                         })}
                       </span>
                       <Money
                         value={A[id].balance}
-                        className="w-[170px] text-right font-display text-[18px] font-semibold text-pnc-ink"
+                        compact
+                        className="w-[84px] text-right font-display text-[17px] font-semibold text-pnc-ink"
                       />
                     </li>
                   </Show>
                 ))}
               </ul>
             </Card>
-            <Card className="w-[360px] p-6">
+            <Card className="w-[250px] p-5">
               <p className="font-display text-[19px] font-semibold text-pnc-navy">People</p>
-              <ul className="mt-3">
+              <ul className="mt-2">
                 {familyIds.map((p) => (
-                  <li key={p} className="flex items-center gap-3.5 border-b border-pnc-line py-3.5">
-                    <Avatar who={p} className="size-11 rounded-full" />
+                  <li
+                    key={p}
+                    className="flex items-center gap-3 border-b border-pnc-line py-3 last:border-b-0"
+                  >
+                    <Avatar who={p} className="size-10 rounded-full" />
                     <span>
-                      <span className="block text-[17px] font-semibold text-pnc-ink">
-                        {storyPeople[p].name}
+                      <span className="block text-[16px] font-semibold text-pnc-ink">
+                        {storyPeople[p].first}
                       </span>
-                      <span className="text-[14px] text-pnc-muted">{roles[p]}</span>
+                      <span className="text-[13px] text-pnc-muted">{roles[p]}</span>
                     </span>
                   </li>
                 ))}
@@ -176,6 +203,7 @@ export function SharedPlate({ at }: PlateProps) {
           </div>
         </Show>
 
+        {/* Manage family › Roles & access › Older child: the app's own access matrix. */}
         <div
           aria-hidden="true"
           className="story-ease pointer-events-none absolute inset-0 bg-pnc-navy/25"
@@ -186,109 +214,131 @@ export function SharedPlate({ at }: PlateProps) {
           from="right"
           d={panel ? 400 : 0}
           focus="access-panel"
-          className="absolute bottom-0 right-0 top-0 w-[700px] bg-white px-10 py-7 shadow-[-20px_0_60px_-30px_rgb(11_35_64/0.5)]"
+          className="absolute bottom-0 right-0 top-0 w-[640px] bg-white px-9 py-6 shadow-[-20px_0_60px_-30px_rgb(11_35_64/0.5)]"
         >
-          <p className="font-display text-[26px] font-semibold text-pnc-navy">
+          <p className="font-display text-[24px] font-semibold text-pnc-navy">
             Manage Smith Family
           </p>
-          <p className="text-[15px] text-pnc-muted">
-            Only admins can see or change these settings.
-          </p>
-          <div className="mt-5 flex gap-7 border-b border-pnc-line text-[16px]">
-            <span className="pb-3 text-pnc-muted">Members</span>
-            <span className="border-b-[3px] border-pnc-orange pb-3 font-semibold">
+          <div className="mt-3 flex gap-7 border-b border-pnc-line text-[15px]">
+            <span className="pb-2.5 text-pnc-muted">Members</span>
+            <span className="border-b-[3px] border-pnc-orange pb-2.5 font-semibold">
               Roles &amp; access
             </span>
           </div>
-          <div className="mt-5 grid grid-cols-[1fr_190px_190px] items-center gap-y-2 text-[16px]">
-            <span />
-            {(["david", "alexa"] as const).map((p) => (
-              <span key={p} className="flex items-center gap-2.5 pb-2">
-                <Avatar who={p} className="size-9 rounded-full" />
-                <span>
-                  <span className="block text-[15px] font-semibold">{storyPeople[p].first}</span>
-                  <span className="block text-[13px] text-pnc-muted">{roles[p]}</span>
-                </span>
-              </span>
-            ))}
-            {accessRows.map((r, i) => (
-              <div key={r.account} className="contents">
-                <span className="border-t border-pnc-line py-2.5 font-semibold text-pnc-ink">
-                  {A[r.account].name}
-                  <span className="ml-1.5 text-[13px] font-normal text-pnc-muted">
-                    {A[r.account].last4 ? `x${A[r.account].last4}` : "Outside PNC"}
-                  </span>
-                </span>
-                {(["david", "alexa"] as const).map((p) => {
-                  const [before, after] = r[p];
-                  const changes = before !== after;
-                  const sight = granted ? after : before;
-                  const d = 600 + i * 260;
-                  return (
-                    <span key={p} className="border-t border-pnc-line py-2">
-                      <span
-                        className={cn(
-                          "story-ease relative inline-flex h-[34px] items-center rounded-full px-3.5 text-[14px] font-semibold",
-                          sightStyle[sight],
-                        )}
-                        style={eased(granted && changes ? d + 350 : 0)}
-                      >
-                        {sightLabels[sight]}
-                        {changes && <Tap show={on(at, "granted")} d={d} />}
-                      </span>
-                    </span>
-                  );
-                })}
-              </div>
-            ))}
-          </div>
-          <p className="mt-4 text-[15px] leading-snug text-pnc-muted">
+          <p className="mt-4 flex items-center gap-1.5 text-[14px] font-semibold text-pnc-link">
+            <ArrowLeft className="size-4" aria-hidden="true" /> All roles
+          </p>
+          <p className="mt-2 flex items-center gap-3 text-[21px] font-semibold text-pnc-ink">
+            Edit role · Older child
+            <span className="flex items-center gap-2 text-[14px] font-normal text-pnc-muted">
+              <Avatar who="david" className="size-7 rounded-full" /> David
+            </span>
+          </p>
+          <p className="mt-4 text-[16px] font-semibold text-pnc-ink">What this role can see</p>
+          <p className="text-[14px] text-pnc-muted">
             Only an account&apos;s owners can move money or change it.
           </p>
+          <table className="mt-3 w-full table-fixed text-[15px]">
+            <colgroup>
+              <col />
+              <col className="w-[110px]" />
+              <col className="w-[150px]" />
+            </colgroup>
+            <thead>
+              <tr className="border-b border-pnc-line bg-pnc-surface text-left">
+                <th className="rounded-tl-md px-3 py-2 font-semibold">Shared assets</th>
+                <th className="border-l border-pnc-line px-2 py-2 text-center text-[13px] font-semibold text-pnc-muted">
+                  Account
+                </th>
+                <th className="rounded-tr-md border-l border-pnc-line px-2 py-2 text-center text-[13px] font-semibold text-pnc-muted">
+                  Account and balances
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {accessRows.map((r, i) => {
+                const now = sight(r);
+                const changes = r.david[0] !== r.david[1];
+                const d = granted && changes ? landsAt(i) : 0;
+                return (
+                  <tr key={r.account} className="border-b border-pnc-line last:border-b-0">
+                    <th className="truncate px-3 py-[9px] text-left font-normal text-pnc-ink">
+                      {A[r.account].name}
+                      {A[r.account].last4 && (
+                        <span className="text-pnc-muted"> x{A[r.account].last4}</span>
+                      )}
+                    </th>
+                    {(["account", "balance"] as const).map((level) => (
+                      <td
+                        key={level}
+                        className="relative border-l border-pnc-line px-2 py-[9px] text-center"
+                      >
+                        <Radio picked={now === level} d={d} />
+                        {changes && r.david[1] === level && (
+                          <Tap show={on(at, "granted")} d={landsAt(i) - 350} />
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </Show>
       </AppWindow>
 
-      {/* What David sees on his own phone: only what he was given, and nothing about the rest. */}
-      <Show
-        show={phone}
-        from="right"
-        d={phone ? 500 : 0}
-        className="absolute left-[1130px] top-[70px]"
+      {/* David's own phone: only what he was given, and nothing about the rest. */}
+      <Phone
+        who="david"
+        title="Assets and Debts"
+        focus="david-phone"
+        className="left-[1190px] top-[110px]"
       >
-        <Phone who="david" title="Assets and Debts" className="relative">
-          <p className="px-2 text-[13px] font-semibold uppercase tracking-wide text-pnc-muted">
-            Yours
-          </p>
-          <div className="mt-2 rounded-2xl bg-white p-4 shadow-card">
-            <p className="text-[16px] font-semibold text-pnc-link">
-              {kidsAccounts.david.name}{" "}
-              <span className="text-[13px] font-normal text-pnc-muted">
-                x{kidsAccounts.david.last4}
-              </span>
-            </p>
-            <Money value={kidsAccounts.david.balance} className="text-[16px] text-pnc-ink" />
-          </div>
-          <p className="mt-5 px-2 text-[13px] font-semibold uppercase tracking-wide text-pnc-muted">
-            Shared with you · Smith Family
-          </p>
-          <ul className="mt-2 divide-y divide-pnc-line rounded-2xl bg-white shadow-card">
-            {accessRows
-              .filter((r) => r.david[1] !== "hidden")
-              .map((r, i) => (
-                <Show key={r.account} show={phone} d={phone ? 1100 + i * 160 : 0}>
-                  <li className="flex items-center justify-between px-4 py-3.5">
+        <p className="px-1 text-[13px] font-semibold uppercase tracking-wide text-pnc-muted">
+          Yours
+        </p>
+        <div className="mt-2 flex items-center justify-between rounded-2xl bg-white p-4 shadow-card">
+          <span className="text-[16px] font-semibold text-pnc-link">
+            {kidsAccounts.david.name}{" "}
+            <span className="text-[13px] font-normal text-pnc-muted">
+              x{kidsAccounts.david.last4}
+            </span>
+          </span>
+          <Money value={kidsAccounts.david.balance} className="text-[15px] text-pnc-ink" />
+        </div>
+        <p className="mt-5 px-1 text-[13px] font-semibold uppercase tracking-wide text-pnc-muted">
+          Shared with you · Smith Family
+        </p>
+        <ul className="mt-2 overflow-hidden rounded-2xl bg-white shadow-card">
+          {accessRows.map((r, i) => {
+            const now = sight(r);
+            const shown = now !== "hidden";
+            const fresh = granted && r.david[0] === "hidden";
+            return (
+              <li
+                key={r.account}
+                className="story-ease grid overflow-hidden"
+                style={{
+                  gridTemplateRows: shown ? "1fr" : "0fr",
+                  opacity: shown ? 1 : 0,
+                  ...eased(fresh ? landsAt(i) + 250 : 0),
+                }}
+              >
+                <span className="min-h-0 overflow-hidden">
+                  <span className="flex items-center justify-between border-b border-pnc-line px-4 py-3.5">
                     <span className="text-[16px] font-semibold text-pnc-ink">
                       {A[r.account].name}
                     </span>
-                    {r.david[1] === "balance" && (
+                    {now === "balance" && (
                       <Money value={A[r.account].balance} className="text-[15px] text-pnc-ink" />
                     )}
-                  </li>
-                </Show>
-              ))}
-          </ul>
-        </Phone>
-      </Show>
+                  </span>
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      </Phone>
     </>
   );
 }

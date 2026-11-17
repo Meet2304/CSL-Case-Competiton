@@ -5,18 +5,24 @@
  * so the story and the prototype never disagree. The family is John, Maya,
  * David and Alexa Smith, with the Bank Advisor.
  *
- * In this telling John acts on Findoe's reminders before he dies: he names a
- * beneficiary on the two accounts that had none, following his will. That is
- * the story's one departure from the seeded household, and it is why nothing
- * here waits on probate.
+ * In this telling John acts on Findoe's reminders before he dies: he names
+ * David and Alexa on his Savings (as his will gives it to them) and Maya on
+ * the brokerage account. That is the story's one departure from the seeded
+ * household, and it is why nothing here waits on probate. Findoe's answers
+ * are the product's own: they are asked of the real answer engine
+ * (`customerReply`) over the household before and after John names them.
  */
 import { sectionMeta } from "@/components/will/sections";
-import { addAssetGroups, sampleEstimates } from "./addAsset";
+import { customerContext, customerReply } from "@/lib/findoe/customer";
+import { currentAccounts, type HouseholdState } from "@/lib/household";
+import type { StopId } from "@/lib/story";
+import { addAssetGroups, sampleConnectedAccounts, sampleEstimates } from "./addAsset";
 import { advisor, advisorCustomers } from "./advisor";
 import { deathCertificates, willsOnFile } from "./estate";
-import { accounts, people } from "./household";
+import { accounts, people, seedFamilies } from "./household";
+import { MOCK_AS_OF } from "./mock";
+import { RULEBOOK_VERSION } from "./settlement";
 import type { AvatarLook, BankAccount } from "./types";
-import type { StopId } from "@/lib/story";
 
 // ---------------------------------------------------------------------------
 // People
@@ -27,8 +33,10 @@ export type StoryPerson = {
   id: StoryPersonId;
   name: string;
   first: string;
-  /** How they relate to the story, shown under their name. */
+  /** Their age, or for the advisor their title, shown under their name in the family scene. */
   role: string;
+  /** Who they are in the story, beside their name above their screen. */
+  tag: string;
   look: AvatarLook;
 };
 
@@ -39,21 +47,23 @@ const member = (
   id: Exclude<StoryPersonId, "advisor">,
   householdId: string,
   role: string,
+  tag: string,
 ): StoryPerson => {
   const p = householdPerson(householdId);
-  return { id, name: p.name, first: first(p.name), role, look: p.avatar! };
+  return { id, name: p.name, first: first(p.name), role, tag, look: p.avatar! };
 };
 
 export const storyPeople: Record<StoryPersonId, StoryPerson> = {
-  john: member("john", "p-jordan", "52"),
-  maya: member("maya", "p-casey", "49"),
-  david: member("david", "p-avery", "17"),
-  alexa: member("alexa", "p-riley", "14"),
+  john: member("john", "p-jordan", "52", "Husband"),
+  maya: member("maya", "p-casey", "49", "Wife"),
+  david: member("david", "p-avery", "17", "Son, 17"),
+  alexa: member("alexa", "p-riley", "14", "Daughter, 14"),
   advisor: {
     id: "advisor",
     name: "Bank Advisor",
     first: "Advisor",
     role: advisor.title,
+    tag: "John's advisor",
     look: "service",
   },
 };
@@ -71,7 +81,15 @@ const personByHousehold: Record<string, Exclude<StoryPersonId, "advisor">> = {
 // Accounts
 
 export type StoryAccountId =
-  "joint" | "savings" | "ira" | "brokerage" | "life" | "card" | "mayaSavings" | "mayaRoth";
+  | "joint"
+  | "savings"
+  | "ira"
+  | "brokerage"
+  | "life"
+  | "card"
+  | "mayaSavings"
+  | "mayaRoth"
+  | "alexaSavings";
 
 const householdIds: Record<StoryAccountId, string> = {
   joint: "acct-joint-checking",
@@ -82,7 +100,12 @@ const householdIds: Record<StoryAccountId, string> = {
   card: "acct-jordan-card",
   mayaSavings: "acct-casey-savings",
   mayaRoth: "acct-casey-roth",
+  alexaSavings: "acct-riley-savings",
 };
+
+const storyIdOf = Object.fromEntries(
+  Object.entries(householdIds).map(([id, householdId]) => [householdId, id]),
+) as Record<string, StoryAccountId>;
 
 export type StoryAccount = {
   id: StoryAccountId;
@@ -174,12 +197,20 @@ const will = willsOnFile["p-jordan"];
 const shares = (list: { personId: string; share: number }[]) =>
   list.map((g) => ({ person: personByHousehold[g.personId], share: g.share }));
 
-/** Who inherits each account that had no beneficiary, once John names them as his will says. */
-export const named: { account: StoryAccountId; to: { person: StoryPersonId; share: number }[] }[] =
-  [
-    { account: "savings", to: shares(will.gifts["acct-jordan-savings"]) },
-    { account: "brokerage", to: shares(will.residuary) },
-  ];
+/**
+ * The beneficiaries John names once Findoe shows him the gaps: his Savings to
+ * David and Alexa, as his will gives it to them, and the brokerage account to
+ * Maya. Named beneficiaries share an account equally.
+ */
+export const designations: Record<string, string[]> = {
+  "acct-jordan-savings": will.gifts["acct-jordan-savings"].map((g) => g.personId),
+  "acct-jordan-brokerage": [will.executor],
+};
+
+export const named = Object.entries(designations).map(([accountId, ids]) => ({
+  account: storyIdOf[accountId],
+  to: ids.map((id) => ({ person: personByHousehold[id], share: 1 / ids.length })),
+}));
 
 /** What Findoe reminds John of on his Home page. */
 export const reminders = [
@@ -213,6 +244,13 @@ export const addTiles = ["real-estate", "vehicles", "jewelry", "art"].map(option
 export const addElsewhere = ["banks", "workplace", "insurance"].map(option);
 
 const vehicle = option("vehicles");
+
+/** The account John links at another institution, and what it turns up. */
+export const linked = {
+  option: option("banks"),
+  institution: "Demo Brokerage",
+  found: sampleConnectedAccounts,
+};
 
 /** The car John adds: the fields the app asks for a vehicle, and what he types. */
 export const car = {
@@ -285,8 +323,8 @@ export const lossFacts = {
 /** What each person is told once the bank records John's death. */
 export const word = {
   record: "The bank records John's passing",
-  maya: "We're so sorry for the loss of John. There's nothing you need to do today.",
-  children: "We're so sorry about John. There's nothing you need to do here.",
+  maya: "We're so sorry for the loss of John. Everything he set up for you is in one place.",
+  children: "We're so sorry about John. Your family and PNC are here for you.",
   advisor: "John Smith passed away. Call Maya to offer condolences.",
 };
 
@@ -339,26 +377,6 @@ export const planSteps = [
 /** A record the bank holds, or an entry in the legal library (an id in `rulebook.sources`). */
 export type StorySource = { kind: "record"; label: string } | { kind: "law"; id: string };
 
-/** How Findoe decided what happens to one account, a step at a time. */
-export const decision = {
-  opening:
-    "I walked the 6 accounts John was part of through the settlement rulebook. One thing I need you to confirm.",
-  account: A.joint,
-  path: [
-    {
-      text: "Two owners: John and Maya",
-      source: { kind: "record", label: "Account record" } as StorySource,
-    },
-    {
-      text: "Joint, with right of survivorship",
-      source: { kind: "law", id: "pa-6304" } as StorySource,
-    },
-    { text: "Maya owns it now, outside probate", source: null },
-  ],
-  question: "Did John receive Social Security or other federal benefits by direct deposit?",
-  answers: ["Yes", "No", "Not sure yet"],
-};
-
 // ---------------------------------------------------------------------------
 // The estate: who receives what, following the will and the beneficiaries on file
 
@@ -377,28 +395,25 @@ function inheritance(
   return { person, note, items, total: items.reduce((s, i) => s + i.amount, 0) };
 }
 
-const shareOf = (account: StoryAccountId, person: StoryPersonId) =>
-  named.find((n) => n.account === account)!.to.find((t) => t.person === person)!.share;
-const part = (account: StoryAccountId, person: StoryPersonId, basis: string) => {
-  const share = shareOf(account, person);
+const namedShare = (account: StoryAccountId, person: StoryPersonId) => {
+  const share = named
+    .find((n) => n.account === account)!
+    .to.find((t) => t.person === person)!.share;
   return {
     account,
-    basis: `${basis} · ${Math.round(share * 100)}%`,
+    basis: share === 1 ? "Named beneficiary" : `Named beneficiary · ${Math.round(share * 100)}%`,
     amount: A[account].balance * share,
   };
 };
 const child = (person: "david" | "alexa") =>
-  inheritance(person, "Held by Maya until 18", [
-    part("savings", person, "Named beneficiary"),
-    part("brokerage", person, "Named beneficiary"),
-  ]);
+  inheritance(person, "Held by Maya until 18", [namedShare("savings", person)]);
 
 export const inheritances: Inheritance[] = [
   inheritance("maya", "John's spouse · executor", [
     { account: "joint", basis: "Joint owner", amount: A.joint.balance },
     { account: "ira", basis: "Named beneficiary", amount: A.ira.balance },
+    namedShare("brokerage", "maya"),
     { account: "life", basis: "Paid by the insurer", amount: A.life.balance },
-    part("brokerage", "maya", "Named beneficiary"),
   ]),
   child("david"),
   child("alexa"),
@@ -418,7 +433,7 @@ export const estateSteps = [
 export const conversation = [
   {
     from: "advisor" as StoryPersonId,
-    text: "Maya, I'm so sorry about John. There is nothing you need to do today. When you feel ready, I'm here, and so is everything John set up for you.",
+    text: "Maya, I'm so sorry about John. I'm here whenever you're ready, and so is everything John set up for you.",
   },
   { from: "maya" as StoryPersonId, text: "Thank you. Could we talk on Thursday?" },
   { from: "advisor" as StoryPersonId, text: "Thursday at ten. I'll call you." },
@@ -429,14 +444,21 @@ export const conversation = [
 
 export const condolence = {
   lead: "We're so sorry for the loss of John.",
-  body: "When you feel ready, John's accounts that pass to you are in one place. There's nothing you need to do today.",
+  body: "John's accounts that pass to you are in one place, each with its steps laid out.",
   link: "See what passes to you",
 };
 
 export const unclaimed = {
   title: "John's accounts that can pass to you",
   today: "Upload John's death certificate. We use it for every account.",
-  rows: inheritances[0].items,
+  rows: [
+    ...inheritances[0].items,
+    {
+      account: "alexaSavings" as StoryAccountId,
+      basis: "New custodian",
+      amount: A.alexaSavings.balance,
+    },
+  ],
 };
 
 export const claimDocs = [
@@ -449,42 +471,9 @@ export const claimDocs = [
   { title: "Survivorship form", ask: "The bank's form", filled: "Filled in for you" },
 ];
 
-export const mayaChat = {
-  question: "What should I do with John's IRA?",
-  steps: [
-    {
-      label: "Looking up your accounts",
-      detail: `${A.ira.name} x${A.ira.last4} · you are the beneficiary`,
-      kind: "record" as const,
-    },
-    {
-      label: "Searching the legal library",
-      detail: "Distributions from IRAs",
-      kind: "law" as const,
-    },
-  ],
-  intro: "You have a choice, and no deadline this week.",
-  claims: [
-    {
-      text: "As John's spouse, you can take it as your own IRA.",
-      source: { kind: "law", id: "irs-pub-590b" } as StorySource,
-    },
-    {
-      text: "Or keep it as an inherited account.",
-      source: { kind: "law", id: "irs-pub-590b" } as StorySource,
-    },
-    {
-      text: "You are the only beneficiary named on it.",
-      source: { kind: "record", label: "Your accounts" } as StorySource,
-    },
-  ],
-  close: "Each is taxed differently when you withdraw, so ask before you choose.",
-  action: "Talk it through with your advisor",
-};
-
-/** What the children see: a gentle word, and nothing to do. */
+/** What the children see: a gentle word, and their own accounts as before. */
 export const childrenNote = {
-  title: "Nothing here needs you",
+  title: "We're here for you",
   body: "The adults in your family and PNC are looking after John's accounts. Your own accounts keep working just as before.",
 };
 
@@ -496,10 +485,11 @@ export const lines: Partial<Record<StopId, string>> = {
   carries: "John looks after the money. The whole picture lives with him.",
   home: "It starts with one view.",
   assets: "Everything they own. Everything they owe.",
-  outside: "Even what PNC doesn't hold.",
-  add: "The house. The car. The things a bank never sees.",
-  car: "Each asks only for what it needs.",
-  gaps: "Findoe finds the gaps while there is time.",
+  outside: "Even the policy held outside PNC.",
+  add: "Everything they own, wherever it is held.",
+  linked: "Accounts at other banks join in one step.",
+  car: "And the things a bank never sees.",
+  gaps: "Findoe shows what would happen today.",
   named: "A name today. No probate later.",
   will: "The conversation nobody wants to have.",
   signed: "Twenty minutes. Done before it is needed.",
@@ -513,13 +503,13 @@ export const lines: Partial<Record<StopId, string>> = {
   plan: "A plan, in order. People first.",
   sources: "It shows its work, and asks instead of guessing.",
   estate: "John's will, carried out as he wrote it.",
-  transfer: "Everyone he named is told what comes to them.",
+  transfer: "Everyone he named is told. Maya, gently.",
   message: "A person, not a process.",
   condolence: "Maya is met with care.",
   claim: "One certificate, used for every account.",
-  sent: "Sent. Nothing more today.",
-  ask: "Her question, in her own words.",
-  answer: "Her accounts. The actual rule.",
+  sent: "Sent. PNC takes it from here.",
+  ask: "The question that keeps her up at night.",
+  answer: "Her own accounts. The actual law. Cited.",
   children: "The children are told gently.",
   circle: "The right information. The right people. The right time.",
 };
@@ -528,4 +518,79 @@ export const closing = {
   line: "Somebody has their back.",
   memorial: "Husband to Maya. Father to David and Alexa.",
   mock: "A concept prototype. Every name and figure is mock data.",
+};
+
+// ---------------------------------------------------------------------------
+// Findoe: the product's own answers, asked of its answer engine
+
+const john = householdPerson("p-jordan");
+const before: HouseholdState = { families: seedFamilies, designations: {} };
+const after: HouseholdState = { families: seedFamilies, designations };
+
+function ask(state: HouseholdState, personId: string, question: string, afterLoss: boolean) {
+  const reply = customerReply(
+    customerContext({
+      person: householdPerson(personId),
+      household: state,
+      accounts: currentAccounts(state),
+      deceasedIds: afterLoss ? [john.id] : [],
+      will: afterLoss ? "on-file" : "none",
+      nudges: [],
+      loss: afterLoss
+        ? {
+            id: loss.id,
+            personName: john.name,
+            date: loss.date,
+            reportedVia: loss.reportedVia,
+            recordedOn: loss.date,
+          }
+        : undefined,
+      today: MOCK_AS_OF,
+    }),
+    question,
+  );
+  return { question, ...reply };
+}
+
+export type StoryReply = ReturnType<typeof ask>;
+
+/** The lines of an answer worth reading on stage, word for word, with their own source markers. */
+function excerpt(reply: StoryReply, keep: (line: string, i: number, all: string[]) => boolean) {
+  const lines = reply.text.split("\n");
+  return { ...reply, text: lines.filter((l, i) => keep(l, i, lines)).join("\n") };
+}
+
+export const findoe = {
+  /** John asks what would happen if he died: first with the gaps, then once he has named everyone. */
+  johnBefore: ask(before, john.id, "What happens to my accounts if I die?", false),
+  johnAfter: ask(after, john.id, "What happens to my accounts if I die?", false),
+  /** Maya's question after the loss. */
+  maya: ask(after, "p-casey", "Will I owe tax on what John left me?", true),
+};
+
+/** Maya's answer on stage: how it opens, the two taxes, and how it closes. */
+export const mayaShown = excerpt(findoe.maya, (_, i, all) => i < 3 || i === all.length - 1);
+
+/** What the advisor's Findoe worked out, step by step, and what it needs from the advisor. */
+export const advisorFindoe = {
+  opening: "I walked the 6 accounts John was part of through the settlement rulebook.",
+  steps: [
+    {
+      label: "Read John's accounts",
+      kind: "bank" as const,
+      results: [`${johnsList.length} accounts`, "A beneficiary on each"],
+    },
+    {
+      label: "Read the will on file",
+      kind: "bank" as const,
+      results: [`Executor: ${householdPerson(will.executor).name}`],
+    },
+    {
+      label: `Walked each account through rulebook v${RULEBOOK_VERSION}`,
+      kind: "law" as const,
+      results: ["20 Pa.C.S. § 6304", "IRS Publication 590-B"],
+    },
+  ],
+  need: "Did John receive Social Security or other federal benefits by direct deposit?",
+  answers: ["Yes", "No", "Not sure yet"],
 };

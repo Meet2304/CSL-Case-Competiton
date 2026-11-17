@@ -72,9 +72,10 @@ export const stops = [
 
   // Getting ready: more than bank accounts, and no gaps.
   stop("add", "prepare"),
+  stop("linked", "prepare", "linked-form"),
   stop("car", "prepare", "car-form"),
-  stop("gaps", "prepare"),
-  stop("named", "prepare", "beneficiaries"),
+  stop("gaps", "prepare", "john-findoe"),
+  stop("named", "prepare"),
 
   // The will.
   stop("will", "will"),
@@ -84,7 +85,7 @@ export const stops = [
   stop("dashboard", "shared"),
   stop("access", "shared", "access-panel"),
   stop("granted", "shared", "access-panel"),
-  stop("david", "shared"),
+  stop("david", "shared", "david-phone"),
 
   // Back with the family: ready, then the loss.
   stop("together", "family"),

@@ -2,15 +2,21 @@ import { describe, expect, it } from "vitest";
 import { rulebook } from "@/data/settlement";
 import {
   accessRows,
+  advisorFindoe,
+  childrenNote,
+  claimDocs,
   closing,
-  decision,
+  condolence,
+  conversation,
+  findoe,
   inheritances,
+  mayaShown,
   lines,
-  mayaChat,
   named,
   storyAccounts,
   storyPeople,
-  willFacts,
+  unclaimed,
+  word,
 } from "@/data/story";
 import {
   PLATE,
@@ -133,22 +139,50 @@ describe("the story's words", () => {
   });
 
   it("names nobody outside the family and their advisor", () => {
-    const said = JSON.stringify([storyPeople, lines, closing, decision, mayaChat]);
+    const said = JSON.stringify([storyPeople, lines, closing, advisorFindoe, word, conversation]);
     expect(said).not.toMatch(/\bAlex\b|Dana|Morgan|Avery|Jamie|Taylor|Placeholder|Example|Sample/);
   });
 
-  it("cites only sources in the legal library", () => {
-    const cited = [...decision.path.map((p) => p.source), ...mayaChat.claims.map((c) => c.source)];
-    for (const s of cited)
-      if (s?.kind === "law") expect(rulebook.sources[s.id], s.id).toBeDefined();
+  it("never tells a client there is nothing for them to do", () => {
+    const toClients = JSON.stringify([
+      word,
+      condolence,
+      childrenNote,
+      conversation,
+      unclaimed,
+      claimDocs,
+      lines,
+      closing,
+      findoe,
+    ]);
+    expect(toClients).not.toMatch(/nothing (you|to do|here)|need to do|have to do|no rush/i);
+  });
+
+  it("cites only sources in the legal library, and every marker has its source", () => {
+    for (const r of [findoe.johnBefore, findoe.johnAfter, findoe.maya, mayaShown]) {
+      const markers = [...r.text.matchAll(/\[(\d+)\]/g)].map((m) => Number(m[1]));
+      for (const n of markers) expect(r.sources[n - 1], r.text).toBeDefined();
+      for (const s of r.sources)
+        if (s.kind === "law") expect(rulebook.sources[s.key], s.key).toBeDefined();
+    }
+  });
+
+  it("asks the real Findoe, which sees the gaps close once John names his beneficiaries", () => {
+    expect(findoe.johnBefore.text).toMatch(/would go through probate/);
+    expect(findoe.johnAfter.text).not.toMatch(/probate/);
+    expect(findoe.maya.text).toMatch(/^Most likely very little/);
   });
 });
 
 describe("the family's money", () => {
-  it("names beneficiaries the way John's will divides things", () => {
+  it("names beneficiaries the way John's will gives his Savings, and Maya on the brokerage", () => {
     const shares = (list: { share: number }[]) => list.reduce((s, t) => s + t.share, 0);
     for (const n of named) expect(shares(n.to)).toBeCloseTo(1);
-    expect(named.find((n) => n.account === "brokerage")!.to).toEqual(willFacts.rest);
+    expect(named.find((n) => n.account === "savings")!.to.map((t) => t.person)).toEqual([
+      "david",
+      "alexa",
+    ]);
+    expect(named.find((n) => n.account === "brokerage")!.to.map((t) => t.person)).toEqual(["maya"]);
   });
 
   it("passes on every dollar of each account it divides, and no more", () => {
