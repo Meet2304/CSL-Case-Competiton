@@ -1,33 +1,87 @@
 /**
- * MOCK DATA and script for the guided tour (`/tour`): a short walk through one
- * family's story that shows the problem and what Findoe does about it.
- * Balances come from the shared household so the tour and the prototype never
- * disagree. People are John, Maya, David, Alexa
- * and the Bank Advisor; the tour introduces no other names.
+ * MOCK DATA and script for the guided tour (`/tour`): a presenter-led walk
+ * through one family's story, moved along one arrow press at a time. Balances
+ * and dates come from the shared household, estate and advisor data so the
+ * tour and the prototype never disagree. The family is John, Maya, David and
+ * Alexa Smith, with the Bank Advisor; the tour's own words introduce no other
+ * names.
  */
-import { accounts } from "./household";
-import type { AvatarLook } from "./types";
+import { advisor, advisorCustomers } from "./advisor";
+import { deathCertificates, willsOnFile } from "./estate";
+import { accounts, people } from "./household";
+import type { AccountKind, AvatarLook } from "./types";
 
 // ---------------------------------------------------------------------------
 // People
 
 export type TourPersonId = "husband" | "wife" | "child1" | "child2" | "advisor";
 
-export const tourPeople: Record<
-  TourPersonId,
-  { id: TourPersonId; name: string; look?: AvatarLook }
-> = {
-  husband: { id: "husband", name: "John Smith", look: "husband" },
-  wife: { id: "wife", name: "Maya Smith", look: "wife" },
-  child1: { id: "child1", name: "David Smith", look: "teen" },
-  child2: { id: "child2", name: "Alexa Smith", look: "child" },
-  advisor: { id: "advisor", name: "Bank Advisor" },
+export type TourPerson = {
+  id: TourPersonId;
+  name: string;
+  first: string;
+  /** How they relate to the story, shown beside the name on their screen. */
+  role: string;
+  /** What they type at sign-on. */
+  userId: string;
+  look?: AvatarLook;
+};
+
+export const tourPeople: Record<TourPersonId, TourPerson> = {
+  husband: {
+    id: "husband",
+    name: "John Smith",
+    first: "John",
+    role: "Husband",
+    userId: "john",
+    look: "husband",
+  },
+  wife: {
+    id: "wife",
+    name: "Maya Smith",
+    first: "Maya",
+    role: "Wife",
+    userId: "maya",
+    look: "wife",
+  },
+  child1: {
+    id: "child1",
+    name: "David Smith",
+    first: "David",
+    role: "Son, 17",
+    userId: "david",
+    look: "teen",
+  },
+  child2: {
+    id: "child2",
+    name: "Alexa Smith",
+    first: "Alexa",
+    role: "Daughter, 14",
+    userId: "alexis",
+    look: "child",
+  },
+  advisor: {
+    id: "advisor",
+    name: "Bank Advisor",
+    first: "Advisor",
+    role: "John's advisor",
+    userId: "advisor",
+    look: "service",
+  },
 };
 
 export const familyIds: TourPersonId[] = ["husband", "wife", "child1", "child2"];
 
-export type ChildId = "child1" | "child2";
-export const childIds: ChildId[] = ["child1", "child2"];
+/** Each person's screen has its own glow, the same one every time they appear. */
+export const tourGlow: Record<Exclude<TourPersonId, "child2">, [string, string]> = {
+  husband: ["var(--tour-husband)", "var(--tour-husband-2)"],
+  wife: ["var(--tour-wife)", "var(--tour-wife-2)"],
+  child1: ["var(--tour-child1)", "var(--tour-child1-2)"],
+  advisor: ["var(--tour-advisor)", "var(--tour-advisor-2)"],
+};
+
+const person = (id: string) => people.find((p) => p.id === id)!;
+const john = person("p-jordan");
 
 // ---------------------------------------------------------------------------
 // Accounts
@@ -41,14 +95,15 @@ export type TourAccountId =
   | "life"
   | "wifeSavings"
   | "wifeRoth"
-  | "studentChecking"
-  | "teenSavings";
+  | "studentChecking";
 
 export type TourAccount = {
   id: TourAccountId;
   name: string;
   last4?: string;
+  kind: AccountKind;
   balance: number;
+  owners: TourPersonId[];
   /** Held at another institution (the life policy). */
   external?: boolean;
 };
@@ -63,7 +118,13 @@ const householdIds: Record<TourAccountId, string> = {
   wifeSavings: "acct-casey-savings",
   wifeRoth: "acct-casey-roth",
   studentChecking: "acct-avery-checking",
-  teenSavings: "acct-riley-savings",
+};
+
+const personIds: Record<string, TourPersonId> = {
+  "p-jordan": "husband",
+  "p-casey": "wife",
+  "p-avery": "child1",
+  "p-riley": "child2",
 };
 
 function build(id: TourAccountId): TourAccount {
@@ -71,9 +132,11 @@ function build(id: TourAccountId): TourAccount {
   if (!source) throw new Error(`Tour account ${id} is missing from the household`);
   return {
     id,
-    name: id === "teenSavings" ? "Alexa's Teen Savings" : source.name,
+    name: source.name,
     last4: source.last4,
+    kind: source.kind,
     balance: source.balance,
+    owners: source.owners.map((o) => personIds[o]),
     external: source.external,
   };
 }
@@ -82,225 +145,391 @@ export const tourAccounts = Object.fromEntries(
   (Object.keys(householdIds) as TourAccountId[]).map((id) => [id, build(id)]),
 ) as Record<TourAccountId, TourAccount>;
 
-/** "Savings x0002"; the life policy has no number. */
-export function accountLabel(id: TourAccountId): string {
-  const a = tourAccounts[id];
-  return a.last4 ? `${a.name} x${a.last4}` : a.name;
-}
+/** What each person sees on their own Assets and Debts, in their own order. */
+export const ownLists: Record<"husband" | "wife" | "child1", TourAccountId[]> = {
+  husband: ["joint", "savings", "ira", "brokerage", "life", "card"],
+  wife: ["wifeRoth", "wifeSavings", "joint", "studentChecking"],
+  child1: ["studentChecking"],
+};
 
-/** John's money at PNC, by kind. */
-export const glanceGroups: { label: string; ids: TourAccountId[]; tone: string }[] = [
-  { label: "Cash", ids: ["joint", "savings"], tone: "bg-pnc-blue-600" },
-  { label: "Retirement", ids: ["ira"], tone: "bg-pnc-navy" },
-  { label: "Investments", ids: ["brokerage"], tone: "bg-pnc-orange" },
-];
-
-/** The accounts John leaves, in the order the tour lists them. */
-export const husbandAccountIds: TourAccountId[] = ["joint", "ira", "savings", "brokerage", "life"];
-
-/** Accounts shared into the family dashboard. */
-export const sharedAccountIds: TourAccountId[] = [
+/** The family dashboard's shared list: both parents' accounts, assets then debts. */
+export const familyList: TourAccountId[] = [
   "joint",
   "savings",
   "wifeSavings",
-  "brokerage",
   "ira",
   "wifeRoth",
-  "life",
+  "card",
 ];
 
-/** Each child's own account. */
-export const ownAccount: Record<ChildId, TourAccountId> = {
-  child1: "studentChecking",
-  child2: "teenSavings",
-};
+/** Accounts an admin can switch on for David, in the order the panel lists them. */
+export const shareable: TourAccountId[] = ["joint", "savings", "ira", "card"];
 
-/** What each child can see when the tour starts. */
-export const initialChildAccess: Record<ChildId, TourAccountId[]> = {
-  child1: ["joint"],
-  child2: [],
-};
+/** The order John switches them on in the tour: two assets, then a debt. */
+export const shareOrder: TourAccountId[] = ["joint", "savings", "card"];
 
-// ---------------------------------------------------------------------------
-// Maya's claim for the IRA
-
-export type ClaimStepId = "certificate" | "form" | "identity" | "receive" | "withholding";
-
-export const claimSteps: { id: ClaimStepId; title: string; note: string }[] = [
-  { id: "certificate", title: "Death certificate", note: "Upload once, reused for every claim" },
-  { id: "form", title: "Beneficiary claim form", note: "Filled in for you" },
-  { id: "identity", title: "Photo ID and tax details", note: "Filled in from your profile" },
-  { id: "receive", title: "How to receive it", note: "Your choice" },
-  { id: "withholding", title: "Tax withholding", note: "Your choice" },
+/** John's accounts that name Maya, so she can claim them herself. */
+export const claimable: { account: TourAccountId; why: string; note: string }[] = [
+  { account: "joint", why: "Joint owner", note: "Owned together, so it is already yours." },
+  { account: "ira", why: "Named beneficiary", note: "John named you as the beneficiary." },
+  {
+    account: "life",
+    why: "Beneficiary · outside PNC",
+    note: "Paid by the insurer, not by PNC.",
+  },
 ];
 
 // ---------------------------------------------------------------------------
-// Findoe
+// John's death, his will and the bank's record of both
 
-export type FindoeQuestionId = "claim-ira" | "savings";
+const loss = advisorCustomers.find((c) => c.id === "c-sample")!.lossEvents[0];
+const will = willsOnFile["p-jordan"];
+const certificate = deathCertificates["p-jordan"];
 
-export const findoeQuestions: Record<FindoeQuestionId, string> = {
-  "claim-ira": "How do I claim the 401(k) Rollover IRA?",
-  savings: "What happens to Savings x0002?",
+export const tourFacts = {
+  born: john.birthdate,
+  died: loss.date,
+  willSigned: will.signedOn,
+  executor: person(will.executor).name,
+  certificateNumber: certificate.certificateNumber,
+  certificateIssuer: certificate.issuedBy,
+  certificateSender: person(certificate.receivedFrom.personId).name,
+  certificateVerifier: certificate.verifiedBy,
+  advisorTitle: advisor.title,
+  advisorTeam: advisor.team,
 };
 
-/** The rulebook's path for the IRA, as the Bank Advisor sees it. */
-export const iraDecisionPath: { question: string; answer: string }[] = [
-  { question: "John's role", answer: "Sole owner" },
-  { question: "Account type", answer: "IRA" },
-  { question: "Beneficiary named", answer: "Yes" },
-  { question: "Beneficiary", answer: "Surviving spouse" },
-];
-export const iraOutcome = "Maya chooses how to take over the IRA";
+/** How ready John's affairs were, as his advisor sees it on the Client tab. */
+export const readiness = {
+  score: 86,
+  label: "Well prepared",
+  checks: [
+    { label: "Will on file", detail: "Signed and stored with PNC", state: "done" },
+    { label: "Executor named", detail: tourFacts.executor, state: "done" },
+    { label: "Family dashboard set up", detail: "4 members", state: "done" },
+    {
+      label: "Beneficiaries named",
+      detail: "IRA and life policy",
+      state: "partial",
+    },
+  ] satisfies { label: string; detail: string; state: "done" | "partial" }[],
+};
 
-export const benefitsQuestion =
-  "Did John receive Social Security or other federal benefits by direct deposit?";
+/** The advisor's immediate actions to begin carrying out the will. */
+export const advisorSteps = [
+  { title: "Offer condolences to Maya Smith", detail: "Before anything else.", when: "Today" },
+  {
+    title: "Confirm Maya Smith as executor",
+    detail: "She is named in John's will.",
+    when: "Today",
+  },
+  {
+    title: "Initiate the asset transfer",
+    detail: "Tells every beneficiary what passes to them.",
+    when: "This week",
+  },
+  {
+    title: "Brief the beneficiaries' advisors",
+    detail: "Happens together with the transfer.",
+    when: "This week",
+  },
+];
+
+/** The other clients on the advisor's home screen, from the advisor's book. */
+export const otherClients = advisorCustomers.filter((c) => c.id !== "c-sample").slice(0, 4);
+export const johnAsClient = advisorCustomers.find((c) => c.id === "c-sample")!;
 
 // ---------------------------------------------------------------------------
-// The script
+// The claim Maya sends for an account held at PNC
 
-export type TourChapterId = "problem" | "before" | "advisor" | "widow" | "findoe" | "close";
+export const claimDocs = [
+  {
+    title: "Certified death certificate",
+    ask: "A photo or scan of the certified copy",
+    filled: `No. ${tourFacts.certificateNumber} · verified by ${tourFacts.certificateVerifier}`,
+  },
+  {
+    title: "Your photo ID",
+    ask: "A current government ID",
+    filled: "Driver's license ending 0000 · on file",
+  },
+  {
+    title: "Survivorship form",
+    ask: "The bank's form, signed by you",
+    filled: "Filled in for you · signed electronically",
+  },
+];
+
+/** How to claim the life policy, which its insurer pays. */
+export const policySteps = [
+  {
+    title: "Call the insurer to open a claim",
+    detail: "Have the policy number and John's date of death ready.",
+  },
+  {
+    title: "Send a certified death certificate",
+    detail: "The insurer needs its own certified copy.",
+  },
+  {
+    title: "Complete the insurer's claim form",
+    detail: "It confirms who you are and that you are the beneficiary.",
+  },
+  { title: "Choose how to be paid", detail: "A lump sum, or instalments over time." },
+];
+
+// ---------------------------------------------------------------------------
+// Findoe: what is asked, how it works it out and what it answers
+
+/** A sentence in an answer, with the record or law it rests on. */
+export type TourClaim = {
+  text: string;
+  /** An id in `rulebook.sources`. */
+  law?: string;
+  /** A record the bank holds. */
+  record?: string;
+};
+
+export type TourChat = {
+  question: string;
+  steps: { label: string; detail: string; kind: "record" | "law" }[];
+  intro: string;
+  claims: TourClaim[];
+  close: string;
+};
+
+export const advisorChat: TourChat & { action: string; done: string } = {
+  question: "Based on John's will, what do I need to do to start the asset transfer to his spouse?",
+  steps: [
+    { label: "Reading the will on file", detail: "Executor: Maya Smith", kind: "record" },
+    {
+      label: "Checking how each account passes",
+      detail: "3 pass to Maya outside probate",
+      kind: "record",
+    },
+    {
+      label: "Reviewing the legal documents",
+      detail: "Survivorship and beneficiary rules",
+      kind: "law",
+    },
+  ],
+  intro: "Maya Smith is the executor. Three assets can pass to her now, outside probate:",
+  claims: [
+    { text: "Joint Checking x0001 is hers as the surviving owner.", law: "pa-6304" },
+    { text: "The 401(k) Rollover IRA names her as beneficiary.", law: "irs-pub-590b" },
+    { text: "The Term Life Policy is paid to her by the insurer.", record: "Beneficiary on file" },
+  ],
+  close: "The death certificate is approved, so her claim can start today.",
+  action: "Initiate claim",
+  done: "Claim initiated · Maya notified",
+};
+
+export const mayaChat: TourChat = {
+  question: "For step 4, if I choose a lump sum, will I owe tax on it?",
+  steps: [
+    {
+      label: "Looking up your assets and debts",
+      detail: "Term Life Policy · you are the beneficiary",
+      kind: "record",
+    },
+    {
+      label: "Searching the legal library",
+      detail: "Federal income tax · Pennsylvania inheritance tax",
+      kind: "law",
+    },
+    { label: "Checking what applies to a spouse", detail: "Pennsylvania", kind: "law" },
+  ],
+  intro: "No. A lump sum from this policy reaches you without tax:",
+  claims: [
+    {
+      text: "Life insurance paid because the insured died is generally not income.",
+      law: "irs-pub-559",
+    },
+    {
+      text: "Pennsylvania's inheritance tax rate for a spouse is 0%.",
+      law: "pa-inheritance-tax",
+    },
+    { text: "You are the only beneficiary on the policy.", record: "Your assets and debts" },
+  ],
+  close: "If you choose instalments instead, the interest they earn is taxable.",
+};
+
+// ---------------------------------------------------------------------------
+// Captions: one headline (at most 8 words) and one sentence (at most 20) per stop
+
+export type TourChapterId = "views" | "family" | "access" | "loss" | "advisor" | "claims";
 
 export const tourChapters: { id: TourChapterId; label: string }[] = [
-  { id: "problem", label: "The problem" },
-  { id: "before", label: "Before a loss" },
-  { id: "advisor", label: "The day it happens" },
-  { id: "widow", label: "After the loss" },
-  { id: "findoe", label: "Findoe AI" },
-  { id: "close", label: "Summary" },
+  { id: "views", label: "Two views" },
+  { id: "family", label: "One family" },
+  { id: "access", label: "Access" },
+  { id: "loss", label: "A loss" },
+  { id: "advisor", label: "The advisor" },
+  { id: "claims", label: "Maya's claims" },
 ];
 
-export type TourVisualId =
-  | "family"
-  | "today"
-  | "one-view"
-  | "gaps"
-  | "sharing"
-  | "preview"
-  | "notice"
-  | "plan"
-  | "transfer"
-  | "condolence"
-  | "unclaimed"
-  | "claim"
-  | "ask"
-  | "tree"
-  | "asks"
-  | "close";
+export type TourCaption = { chapter: TourChapterId; title: string; body: string };
 
-/** One step: a headline, one plain sentence and one visual. The presenter says the rest. */
-export type TourStep = {
-  /** Also the step's URL hash and the visual it shows. */
-  id: TourVisualId;
-  chapter: TourChapterId;
-  title: string;
-  body: string;
-  /** Something the viewer can click on this step. */
-  tryIt?: string;
-};
-
-export const tourSteps: TourStep[] = [
-  {
-    id: "family",
-    chapter: "problem",
-    title: "One person holds the whole picture",
-    body: "John manages the family's money. He is also the only one the Bank Advisor knows.",
+export const tourCaptions = {
+  signin: {
+    chapter: "views",
+    title: "Two people, two sign-ins",
+    body: "John and Maya each sign on to PNC Private Bank with their own User ID.",
   },
-  {
-    id: "today",
-    chapter: "problem",
-    title: "When he dies, three things break",
-    body: "Each one is a reason for the family to move its money to another bank.",
+  assets: {
+    chapter: "views",
+    title: "Two separate dashboards",
+    body: "Each lands on Assets and Debts and sees only their own accounts, in their own order.",
   },
-  {
-    id: "one-view",
-    chapter: "before",
-    title: "Every asset in one view",
-    body: "John sees everything he owns, including the life policy he holds outside PNC.",
+  family: {
+    chapter: "family",
+    title: "One family dashboard",
+    body: "Their two views come together as the Smith Family.",
   },
-  {
-    id: "gaps",
-    chapter: "before",
-    title: "Gaps are found early",
-    body: "Two accounts have no beneficiary. Naming Maya now keeps the account out of probate later.",
-    tryIt: "Select Name Maya.",
+  shared: {
+    chapter: "family",
+    title: "Shared assets and debts",
+    body: "What John and Maya own and owe, alone or jointly, sits in one list.",
   },
-  {
-    id: "sharing",
-    chapter: "before",
-    title: "The whole family, inside the bank",
-    body: "John shares his accounts with the family and decides who sees each one.",
-    tryIt: "Select a circle under David or Alexa.",
+  children: {
+    chapter: "family",
+    title: "The children belong here too",
+    body: "David and Alexa are members of the family, each with their own sign-in.",
   },
-  {
-    id: "preview",
-    chapter: "before",
-    title: "The children are already customers",
-    body: "Each child has a login and sees only what the family shares with them.",
-    tryIt: "Switch between David and Alexa.",
+  admin: {
+    chapter: "access",
+    title: "A parent decides what a child sees",
+    body: "John is an admin. David, 17, starts with only his own account.",
   },
-  {
-    id: "notice",
-    chapter: "advisor",
-    title: "The Bank Advisor knows right away",
-    body: "When the bank records the death, the Bank Advisor is told and a plan is ready.",
+  manage: {
+    chapter: "access",
+    title: "Manage family",
+    body: "John opens the family's settings and chooses what David can see.",
   },
-  {
-    id: "plan",
-    chapter: "advisor",
-    title: "A plan that starts with condolences",
-    body: "People come first. The account work follows at Maya's pace.",
-    tryIt: "Tick a step.",
+  share1: {
+    chapter: "access",
+    title: "Share an asset",
+    body: "John turns on Joint Checking. It appears on David's dashboard at once.",
   },
-  {
-    id: "transfer",
-    chapter: "advisor",
-    title: "A transfer plan for every account",
-    body: "Each account shows where it goes and the law behind it.",
+  share2: {
+    chapter: "access",
+    title: "Then another",
+    body: "Savings follows, the moment John switches it on.",
   },
-  {
-    id: "condolence",
-    chapter: "widow",
+  share3: {
+    chapter: "access",
+    title: "Debts work the same way",
+    body: "The credit card becomes visible to David too.",
+  },
+  loss: {
+    chapter: "loss",
+    title: "John passes away",
+    body: "The family tells the bank. From here, the bank carries the work.",
+  },
+  three: {
+    chapter: "loss",
+    title: "One event reaches three screens",
+    body: "The bank records John's death, and each person's view changes.",
+  },
+  closed: {
+    chapter: "loss",
+    title: "John's sign-in is closed",
+    body: "His access ends and his accounts are secured.",
+  },
+  condolence: {
+    chapter: "loss",
     title: "Maya is met with care",
-    body: "The first screen has no forms and no deadlines. There is one link, for when she is ready.",
+    body: "A condolence first, then a quiet notification. Nothing is due today.",
   },
-  {
-    id: "unclaimed",
-    chapter: "widow",
-    title: "One list of everything he left",
-    body: "Each account that passes to Maya is listed with the reason. The estate handles the rest.",
+  alert: {
+    chapter: "loss",
+    title: "His advisor is alerted",
+    body: "One of his clients has died, and the next step is one click away.",
   },
-  {
-    id: "claim",
-    chapter: "widow",
-    title: "Each claim is a short checklist",
-    body: "The forms are filled in for her, and the death certificate is uploaded once.",
-    tryIt: "Select each step, then send the claim.",
+  advHome: {
+    chapter: "advisor",
+    title: "The advisor's view",
+    body: "John is at the top of his list, flagged for attention.",
   },
-  {
-    id: "ask",
-    chapter: "findoe",
-    title: "Answers from her records and the law",
-    body: "Findoe shows where every answer comes from.",
-    tryIt: "Ask the second question.",
+  client: {
+    chapter: "advisor",
+    title: "John's client page",
+    body: "Everything the bank knows about John, with Findoe alongside.",
   },
-  {
-    id: "tree",
-    chapter: "findoe",
-    title: "Same facts, same answer",
-    body: "Fixed rules decide what happens to each account. The AI only explains the result.",
+  readiness: {
+    chapter: "advisor",
+    title: "John was ready",
+    body: "A strong readiness score: a will on file, an executor named, beneficiaries chosen.",
   },
-  {
-    id: "asks",
-    chapter: "findoe",
-    title: "When unsure, Findoe asks",
-    body: "It never guesses a fact it cannot see.",
-    tryIt: "Answer the question.",
+  certificate: {
+    chapter: "advisor",
+    title: "The death certificate is approved",
+    body: "The bank has verified it, so no one asks Maya for it again.",
   },
-  {
-    id: "close",
-    chapter: "close",
-    title: "Clarity for families. Context for advisors.",
-    body: "The family stays with PNC because it was already there.",
+  nextSteps: {
+    chapter: "advisor",
+    title: "The next steps are laid out",
+    body: "The immediate actions needed to start carrying out John's will.",
   },
-];
+  ask: {
+    chapter: "advisor",
+    title: "The advisor asks Findoe",
+    body: "A plain question about the will and the transfer to Maya.",
+  },
+  thinking: {
+    chapter: "advisor",
+    title: "Findoe shows its work",
+    body: "It reads the will, checks each account, then reviews the legal documents it needs.",
+  },
+  answer: {
+    chapter: "advisor",
+    title: "An answer, with a way forward",
+    body: "Every statement is cited, and one button starts Maya's claim.",
+  },
+  maya: {
+    chapter: "claims",
+    title: "Now, Maya's view",
+    body: "She sees only the assets that name her, and can ask Findoe for help.",
+  },
+  claim: {
+    chapter: "claims",
+    title: "Claiming an account held at PNC",
+    body: "The claim for Joint Checking asks for three documents.",
+  },
+  fills: {
+    chapter: "claims",
+    title: "The form is filled for her",
+    body: "The death certificate, her ID and the bank's form. Now she can submit it.",
+  },
+  processing: {
+    chapter: "claims",
+    title: "Submitted, and now processing",
+    body: "On her list, Joint Checking has moved from Start claim to Processing.",
+  },
+  howto: {
+    chapter: "claims",
+    title: "An asset held outside PNC",
+    body: "The life policy is paid by its insurer, so each step is spelled out.",
+  },
+  mayaAsk: {
+    chapter: "claims",
+    title: "Maya asks about a step",
+    body: "She wonders what choosing a lump sum would mean for her.",
+  },
+  mayaThinking: {
+    chapter: "claims",
+    title: "Findoe looks it up",
+    body: "It checks her own assets and debts, then searches the legal library.",
+  },
+  mayaAnswer: {
+    chapter: "claims",
+    title: "An answer rooted in fact",
+    body: "Her own records and the law, both cited. No guesswork.",
+  },
+  end: {
+    chapter: "claims",
+    title: "From loss to clarity",
+    body: "One family view, a prepared advisor and guided claims.",
+  },
+} satisfies Record<string, TourCaption>;
+
+export type TourCaptionId = keyof typeof tourCaptions;
