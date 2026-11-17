@@ -118,26 +118,24 @@ and mobile views stay in one design language.
   Flow content is data in `src/data/bereavement.ts`; completion is derived in
   `src/lib/transfer.ts` — don't store "done" flags. Customer-facing copy about a
   loss must stay gentle: condolence first, no pressure, nothing urgent today.
-- **Guided tour (`/tour`, `routes.tour`):** a presenter-led story on a dark stage, open to every
-  role, so it lives at `src/app/tour` and `src/proxy.ts` lets it through untouched. It is the one
-  demo linked from the sign-on page. **Nothing moves unless a key is pressed**: the script is the
-  list of beats in `src/lib/tour.ts`; a beat without `auto` is a stop that waits, and a beat with
-  `auto` runs on into the next, so one press can move a pointer, click and show the result. Never
-  add a timer, loop or autoplay that advances the story by itself. Every beat only changes
-  `TourState`, and the stage is drawn from that state alone (`tourStates`), so Back and a link to
-  any stop (`/tour#<beat>`) just work; nothing a beat changes may be stored in a component.
-  People, accounts and all words are data in `src/data/tour.ts`; a caption is a headline of at
-  most 8 words and a body of at most 20. Each person's screen is a `Frame`
-  (`src/components/tour/Frame.tsx`) that glides between the slots placed by `stageLayout`, and
-  wears that person's glow and name: one fixed color per person (`--tour-*` tokens in
-  `globals.css`, via `tourGlow`), on whenever their own screen shows and off for the shared family
-  dashboard. Pages are in `src/components/tour/screens`; they are drawn for the tour at a fixed
-  layout width (`layoutWidth`) and scaled to the frame, so nothing may scroll or be cut off with
-  an ellipsis. Mark anything the pointer clicks or the camera closes in on with `data-tour`, and
-  refer to it by that id from a beat (`cursor`, `zoom`). People are named John Smith, Maya Smith,
-  David Smith, Alexa Smith and Bank Advisor only (a test checks this), and legal citations must be
-  ids in `rulebook.sources` (also tested). The readiness score is mock data that exists only in
-  the tour. After editing `globals.css`, restart `next dev`: it can keep serving the old styles.
+- **Guided tour (`/tour`, `routes.tour`):** a presenter-led story told on the working app, open
+  to every role, so it lives at `src/app/tour` and `src/proxy.ts` lets it through untouched. It is
+  the one demo linked from the sign-on page. The stage is plain white and shows only the people's
+  screens: no titles, captions or controls. **Nothing moves unless a key is pressed**: the script
+  is the list of stops in `src/data/tour.ts`; a press plays one stop's steps (`click`, `type`,
+  `wait`, `look`, found by visible words as in the film) and then rests. Never add a timer, loop
+  or autoplay that advances the story by itself. A stop is reached by loading its scene's pages
+  and replaying the earlier stops of that scene at once (`planStop` in `src/lib/tour.ts`), so Back
+  and a link to any stop (`/tour#<id>`) just work. Each person's screen is a `Frame`
+  (`src/components/tour/Frame.tsx`): the app in a same-origin frame, signed in as them, laid out
+  at a fixed width and scaled to a card that `stageLayout` places, with one soft glow color per
+  person behind it (`--tour-*` tokens in `globals.css`, via `tourGlow`) and their avatar, name and
+  role above it. As with the film, the app must not know the tour exists: no tour-only props,
+  classes or branches in app components. John's answered will is seeded from `tourWillDraft` (a
+  test checks it is complete). People are named John Smith, Maya Smith, David Smith, Alexa Smith
+  and Bank Advisor only (a test checks this). When you rename a label the tour clicks, update
+  the script and replay `/tour`. After editing `globals.css`, restart `next dev`: it can keep
+  serving the old styles.
 - **Product film (`/film`, `routes.film`):** the working app filmed in a same-origin frame, open
   to every role like the tour. The script is data in `src/data/film.ts`: a scene is a page, who is
   signed in and whether the death is recorded yet; a shot is a caption (headline of at most 8

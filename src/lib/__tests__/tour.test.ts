@@ -1,262 +1,150 @@
 import { describe, expect, it } from "vitest";
-import { rulebook } from "@/data/settlement";
-import {
-  advisorChat,
-  advisorSteps,
-  claimable,
-  claimDocs,
-  mayaChat,
-  policySteps,
-  readiness,
-  shareOrder,
-  tourAccounts,
-  tourCaptions,
-  tourChapters,
-  tourGlow,
-  tourPeople,
-} from "@/data/tour";
-import {
-  frameIds,
-  initialTourState,
-  lastBeat,
-  layoutWidth,
-  nextBeat,
-  previousStop,
-  slotWidth,
-  stageLayout,
-  stopAt,
-  tourBeats,
-  tourStates,
-  tourStops,
-  visibleToDavid,
-  type SlotId,
-} from "@/lib/tour";
+import { findDemoUser } from "@/data/users";
+import { tourGlow, tourPeople, tourScenes, tourStops, tourWillDraft } from "@/data/tour";
+import { cameraFor, frameIds, planStop, stageLayout, viewportFor, type TourStop } from "@/lib/tour";
+import { incompleteScreens } from "@/lib/will/flow";
 
-const words = (text: string) => text.trim().split(/\s+/).length;
-const captions = Object.values(tourCaptions);
-const at = (caption: keyof typeof tourCaptions) =>
-  tourStates[tourStops.find((stop) => tourStates[stop].caption === caption)!];
+const sizes: [number, number][] = [
+  [1280, 720],
+  [1366, 768],
+  [1440, 900],
+  [1920, 1080],
+  [2560, 1440],
+];
 
-describe("the tour's words", () => {
-  it("keeps every caption short enough to read at a glance", () => {
-    for (const c of captions) {
-      expect(words(c.title), c.title).toBeLessThanOrEqual(8);
-      expect(words(c.body), c.body).toBeLessThanOrEqual(20);
+describe("the tour's script", () => {
+  it("has unique stop ids and only known scenes", () => {
+    expect(new Set(tourStops.map((s) => s.id)).size).toBe(tourStops.length);
+    for (const s of tourStops) if (s.scene) expect(tourScenes[s.scene], s.id).toBeDefined();
+  });
+
+  it("opens on a scene and ends on its closing line", () => {
+    expect(tourStops[0].scene).toBeDefined();
+    expect(tourStops.at(-1)!.scene).toBeUndefined();
+    expect(tourStops.filter((s) => !s.scene)).toHaveLength(1);
+  });
+
+  it("acts only on screens that are on stage", () => {
+    for (const s of tourStops) {
+      const on = s.scene ? tourScenes[s.scene].frames : {};
+      for (const step of s.steps ?? []) if ("in" in step) expect(on[step.in], s.id).toBeDefined();
+      for (const id of Object.keys(s.focus ?? {}))
+        expect(on[id as keyof typeof on], s.id).toBeDefined();
+      if (s.quiet) expect(on[s.quiet], s.id).toBeDefined();
     }
   });
 
-  it("introduces nobody outside the family and their advisor", () => {
-    const said = JSON.stringify([
-      tourPeople,
-      captions,
-      advisorChat,
-      mayaChat,
-      advisorSteps,
-      claimDocs,
-      policySteps,
-      claimable,
-      readiness,
-    ]);
+  it("signs in only as people the app knows", () => {
+    for (const id of frameIds) expect(findDemoUser(tourPeople[id].userId), id).toBeDefined();
+  });
+
+  it("names only the family and the Bank Advisor", () => {
+    const said = JSON.stringify([tourPeople, tourStops.map((s) => s.say)]);
     expect(said).not.toMatch(/\bAlex\b|Dana|Morgan|Avery|Jamie|Taylor|Placeholder|Example|Sample/);
   });
 
-  it("shows every caption, in chapter order", () => {
-    // Some captions belong to a run (Findoe working), so every beat counts, not only the stops.
-    const shown = tourStates.map((state) => state.caption);
-    expect(new Set(shown)).toEqual(new Set(Object.keys(tourCaptions)));
-    const order = shown.map((id) =>
-      tourChapters.findIndex((c) => c.id === tourCaptions[id].chapter),
-    );
-    expect(order).toEqual([...order].sort((a, b) => a - b));
+  it("tells John's family only after the advisor starts passing on his estate", () => {
+    // Before the transfer the family has heard nothing; the handover scene starts it on stage.
+    const handover = tourStops.findIndex((s) => s.id === "notified");
+    tourStops.forEach((s, i) => {
+      if (!s.scene) return;
+      expect(tourScenes[s.scene].world, s.id).toBe(i <= handover ? "before" : "after");
+    });
   });
 
-  it("cites only sources that exist in the rulebook", () => {
-    const laws = [...advisorChat.claims, ...mayaChat.claims].flatMap((c) => c.law ?? []);
-    expect(laws.length).toBeGreaterThan(0);
-    for (const id of laws) expect(rulebook.sources[id], id).toBeDefined();
-    for (const claim of [...advisorChat.claims, ...mayaChat.claims])
-      expect(claim.law ?? claim.record, claim.text).toBeTruthy();
+  it("gives John a will with every question answered, so he can put it on file on stage", () => {
+    expect(incompleteScreens(tourWillDraft)).toEqual([]);
+  });
+
+  it("gives every person their own color", () => {
+    expect(new Set(frameIds.map((id) => tourGlow[id])).size).toBe(frameIds.length);
   });
 });
 
 describe("moving through the tour", () => {
-  it("only ever moves on a key press", () => {
-    // Every run of automatic beats ends at a stop, and the tour starts and ends on one.
-    expect(tourBeats[0].auto).toBeUndefined();
-    expect(tourBeats[lastBeat].auto).toBeUndefined();
-    expect(tourStops[0]).toBe(0);
-    expect(tourStops.at(-1)).toBe(lastBeat);
+  const stops: TourStop[] = [
+    { id: "a", say: "", scene: "one" },
+    { id: "b", say: "", scene: "one" },
+    { id: "c", say: "", scene: "one" },
+    { id: "d", say: "", scene: "two" },
+    { id: "e", say: "" },
+  ];
+
+  it("plays the next stop of the same scene on the pages already there", () => {
+    expect(planStop(stops, 0, 1)).toEqual({ kind: "continue" });
   });
 
-  it("plays the next beat from a stop, and skips to the stop when pressed mid-run", () => {
-    expect(nextBeat(0)).toBe(1);
-    expect(tourBeats[1].auto).toBeDefined();
-    expect(nextBeat(1)).toBe(tourStops[1]);
-    expect(nextBeat(lastBeat)).toBe(lastBeat);
+  it("loads a new scene when moving into it, and plays its first stop out", () => {
+    expect(planStop(stops, 2, 3)).toEqual({ kind: "enter", replay: [], animate: true });
   });
 
-  it("steps back a whole stop at a time", () => {
-    expect(previousStop(0)).toBe(0);
-    expect(previousStop(tourStops[1])).toBe(0);
-    expect(previousStop(tourStops[1] - 1)).toBe(0);
-    expect(previousStop(lastBeat)).toBe(tourStops.at(-2));
+  it("rebuilds a stop from its scene's start when stepping back or jumping in", () => {
+    expect(planStop(stops, 2, 1)).toEqual({ kind: "enter", replay: [0], animate: false });
+    expect(planStop(stops, null, 2)).toEqual({ kind: "enter", replay: [0, 1], animate: false });
   });
 
-  it("opens part-way through at a stop, never mid-run", () => {
-    expect(stopAt(1)).toBe(0);
-    expect(stopAt(tourStops[3])).toBe(tourStops[3]);
-    expect(stopAt(9999)).toBe(lastBeat);
-    expect(stopAt(Number.NaN)).toBe(0);
-  });
-
-  it("does not change the state it starts from", () => {
-    expect(initialTourState.shared).toEqual([]);
-    expect(tourStates[0]).toEqual(initialTourState);
-  });
-});
-
-describe("whose screens are on stage", () => {
-  it("gives every person their own glow", () => {
-    const colors = frameIds.map((id) => tourGlow[id][0]);
-    expect(new Set(colors).size).toBe(frameIds.length);
-  });
-
-  it("opens on John and Maya, side by side, each signing on", () => {
-    const { frames } = tourStates[0];
-    expect([frames.husband.slot, frames.wife.slot]).toEqual(["left", "right"]);
-    expect([frames.husband.page, frames.wife.page]).toEqual(["signin", "signin"]);
-    expect(frames.husband.border && frames.wife.border).toBe(true);
-    expect(frames.child1.shown || frames.advisor.shown).toBe(false);
-  });
-
-  it("drops the borders for the one family dashboard", () => {
-    const { frames } = at("family");
-    expect(frames.husband.page).toBe("family");
-    expect(frames.husband.border).toBe(false);
-    expect(frames.wife.shown).toBe(false);
-  });
-
-  it("shows three bordered screens when John dies, then only the advisor's", () => {
-    const three = at("three").frames;
-    expect(
-      (["husband", "wife", "advisor"] as const).map((id) => [
-        three[id].shown,
-        three[id].border,
-        three[id].page,
-      ]),
-    ).toEqual([
-      [true, true, "closed"],
-      [true, true, "condolence"],
-      [true, true, "alert"],
-    ]);
-    const after = at("advHome").frames;
-    expect(frameIds.filter((id) => after[id].shown)).toEqual(["advisor"]);
-    expect(after.advisor.slot).toBe("full");
-  });
-
-  it("ends on Maya's screen alone, with her border", () => {
-    const maya = at("maya").frames;
-    expect(frameIds.filter((id) => maya[id].shown)).toEqual(["wife"]);
-    expect(maya.wife.border).toBe(true);
-    expect(maya.wife.page).toBe("unclaimed");
-  });
-});
-
-describe("what a click changes", () => {
-  it("shows David one more account each time John shares one", () => {
-    expect(visibleToDavid(at("admin"))).toEqual(["studentChecking"]);
-    expect(visibleToDavid(at("share1"))).toEqual(["studentChecking", shareOrder[0]]);
-    expect(visibleToDavid(at("share3"))).toEqual(["studentChecking", ...shareOrder]);
-    // Assets and a debt, as the story promises.
-    const shared = shareOrder.map((id) => tourAccounts[id].balance);
-    expect(shared.some((b) => b > 0) && shared.some((b) => b < 0)).toBe(true);
-  });
-
-  it("lets Maya send the claim only once every document is in", () => {
-    expect(at("claim").docs).toBe(0);
-    expect(at("fills").docs).toBe(claimDocs.length);
-    expect(at("fills").jointClaim).toBe("start");
-    expect(at("processing").jointClaim).toBe("processing");
-    expect(at("processing").frames.wife.page).toBe("unclaimed");
-  });
-
-  it("offers Maya only what names her", () => {
-    for (const { account } of claimable) {
-      const a = tourAccounts[account];
-      expect(a.owners.includes("husband"), a.name).toBe(true);
-    }
-    expect(claimable.filter((c) => tourAccounts[c.account].external)).toHaveLength(1);
-  });
-
-  it("has Findoe work before it answers", () => {
-    expect(at("ask").advChat).toMatchObject({ typed: true, sent: false, answered: false });
-    // Its working is a stop of its own, with every step done, so it can be read and narrated.
-    expect(at("thinking").advChat).toMatchObject({
-      sent: true,
-      thought: advisorChat.steps.length + 1,
-      answered: false,
-    });
-    expect(at("answer").advChat).toMatchObject({ sent: true, answered: true });
-    expect(at("mayaThinking").mayaChat).toMatchObject({
-      thought: mayaChat.steps.length + 1,
-      answered: false,
-    });
-    expect(at("mayaAnswer").mayaChat.answered).toBe(true);
-    expect(at("maya").claimStarted).toBe(true);
+  it("needs nothing loaded for the closing line", () => {
+    expect(planStop(stops, 3, 4)).toEqual({ kind: "card" });
   });
 });
 
 describe("the stage", () => {
-  const sizes: [number, number][] = [
-    [1280, 720],
-    [1440, 900],
-    [1920, 1080],
-    [2560, 1440],
-  ];
-
-  it("keeps every screen on the stage and above the caption", () => {
+  it("keeps every card, and the name above it, on the stage", () => {
     for (const [w, h] of sizes) {
-      const { slots, captionH } = stageLayout(w, h);
+      const { slots, nameH } = stageLayout(w, h);
       for (const [id, r] of Object.entries(slots)) {
-        expect(r.x, `${id} ${w}x${h}`).toBeGreaterThanOrEqual(0);
-        expect(r.x + r.w, `${id} ${w}x${h}`).toBeLessThanOrEqual(w);
-        expect(r.y + r.h, `${id} ${w}x${h}`).toBeLessThanOrEqual(h - captionH);
+        expect(r.x, `${id} ${w}x${h}`).toBeGreaterThan(0);
+        expect(r.y - nameH, `${id} ${w}x${h}`).toBeGreaterThan(0);
+        expect(r.x + r.w, `${id} ${w}x${h}`).toBeLessThan(w);
+        expect(r.y + r.h, `${id} ${w}x${h}`).toBeLessThan(h);
       }
     }
   });
 
-  it("gives every page the height it was designed for", () => {
-    // Pages are laid out `slotWidth` rem wide; these are the shortest they may become.
-    const least: Record<string, number> = { full: 37, left: 38.5, third1: 33 };
+  it("does not let side-by-side cards overlap", () => {
     for (const [w, h] of sizes) {
       const { slots } = stageLayout(w, h);
-      for (const [id, min] of Object.entries(least)) {
-        const r = slots[id as SlotId];
-        const rems = r.h / (r.w / slotWidth[id as SlotId]);
-        expect(rems, `${id} ${w}x${h}`).toBeGreaterThanOrEqual(min);
-      }
+      expect(slots.left.x + slots.left.w, `${w}x${h}`).toBeLessThan(slots.right.x);
     }
   });
 
-  it("draws sparse pages larger, and still fits them", () => {
-    const narrow = layoutWidth({ slot: "left", page: "admin" });
-    expect(narrow).toBeLessThan(slotWidth.left);
-    expect(layoutWidth({ slot: "left", page: "kid" })).toBe(narrow);
-    // Only side by side: the same page alone on the stage would use the full width.
-    expect(layoutWidth({ slot: "full", page: "admin" })).toBe(slotWidth.full);
-    expect(layoutWidth({ slot: "left", page: "assets" })).toBe(slotWidth.left);
+  it("gives a lone screen most of the stage", () => {
     for (const [w, h] of sizes) {
-      const r = stageLayout(w, h).slots.left;
-      expect(r.h / (r.w / narrow), `${w}x${h}`).toBeGreaterThanOrEqual(33);
+      const { solo } = stageLayout(w, h).slots;
+      expect(solo.w * solo.h, `${w}x${h}`).toBeGreaterThan(w * h * 0.6);
     }
   });
 
-  it("does not let side-by-side screens overlap", () => {
+  it("lays every page out at least as tall as a short laptop window", () => {
     for (const [w, h] of sizes) {
       const { slots } = stageLayout(w, h);
-      expect(slots.left.x + slots.left.w).toBeLessThan(slots.right.x);
-      expect(slots.third1.x + slots.third1.w).toBeLessThan(slots.third2.x);
-      expect(slots.third2.x + slots.third2.w).toBeLessThan(slots.third3.x);
+      for (const scene of Object.values(tourScenes))
+        for (const f of Object.values(scene.frames)) {
+          const page = viewportFor(slots[f!.slot], f!.width);
+          expect(page.h, `${f!.path} ${w}x${h}`).toBeGreaterThanOrEqual(560);
+        }
     }
+  });
+});
+
+describe("the camera", () => {
+  const view = { w: 1280, h: 800 };
+
+  it("shows the whole page when nothing is in focus", () => {
+    expect(cameraFor(view)).toEqual({ x: 0, y: 0, scale: 1 });
+  });
+
+  it("closes in on what is in focus, no further than allowed", () => {
+    const cam = cameraFor(view, { x: 900, y: 100, w: 300, h: 200 });
+    expect(cam.scale).toBe(1.7);
+    expect(cameraFor(view, { x: 900, y: 100, w: 300, h: 200 }, { maxZoom: 1.2 }).scale).toBe(1.2);
+  });
+
+  it("never shows past the page's edge", () => {
+    const cam = cameraFor(view, { x: 1200, y: 760, w: 60, h: 30 });
+    expect(cam.x).toBeGreaterThanOrEqual(view.w - view.w * cam.scale);
+    expect(cam.y).toBeGreaterThanOrEqual(view.h - view.h * cam.scale);
+    expect(cam.x).toBeLessThanOrEqual(0);
+    expect(cam.y).toBeLessThanOrEqual(0);
   });
 });

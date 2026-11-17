@@ -19,3 +19,11 @@ export async function filmSignIn(userId: string): Promise<boolean> {
   else jar.delete(PERSON_COOKIE);
   return true;
 }
+
+/** Signs the browser out without leaving the page, so the guided tour can open on the sign-on page. */
+export async function filmSignOut(): Promise<boolean> {
+  const jar = await cookies();
+  jar.delete(SESSION_COOKIE);
+  jar.delete(PERSON_COOKIE);
+  return true;
+}
