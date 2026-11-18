@@ -1026,7 +1026,7 @@ export function answerQuestion(f: ClientFacts, question: string, answers: Answer
   if (/will|probate|executor|trust/.test(q)) {
     return {
       paragraphs: [
-        `Will on file at PNC: ${c.will.status === "on-file" ? `yes${c.will.updated ? `, saved ${formatDate(c.will.updated, "medium")}` : ""}` : c.will.status === "in-progress" ? "started, not finished" : "no"}.`,
+        `Will on file at PNC: ${c.will.status === "on-file" ? `yes${c.will.updated ? `, saved ${formatDate(c.will.updated, "medium")}` : ""}` : c.will.status === "in-review" ? "signed, under review by PNC" : c.will.status === "in-progress" ? "started, not finished" : "no"}.`,
         ...p.members.filter((m) => m.roles.length).map((m) => `${m.name}: ${m.roles.join("; ")}.`),
         ...recs
           .filter((r) => r.category === "Estate")

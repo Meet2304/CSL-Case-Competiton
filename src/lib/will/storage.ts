@@ -7,9 +7,9 @@ import { emptyDraft, type WillDraft, type WillProgress } from "./types";
  * Demo persistence for each household member's will, keyed by their person id
  * (the will's owner). There is no backend, so drafts live in this browser's
  * localStorage, where every login and the advisor can see them: finish a will
- * as `john`, sign in as `advisor` and John shows "Will on file". After the
- * bank records the owner's death, the executor's progress settling the estate
- * is stored here too.
+ * as `john`, sign in as `advisor` and John shows "Will under review", then
+ * "Will on file" once PNC has reviewed it. After the bank records the owner's
+ * death, the executor's progress settling the estate is stored here too.
  */
 const DRAFT_KEY = "pnc-will-draft-v2";
 const STATUS_KEY = "pnc-will-status-v2";
@@ -77,7 +77,7 @@ export function saveWill(owner: string, saved: SavedWill) {
 
 export function readWillStatus(owner: string): WillStatus | null {
   const v = read(key(STATUS_KEY, owner));
-  return v === "in-progress" || v === "on-file" ? v : null;
+  return v === "in-progress" || v === "in-review" || v === "on-file" ? v : null;
 }
 
 export function setWillStatus(owner: string, status: WillStatus) {

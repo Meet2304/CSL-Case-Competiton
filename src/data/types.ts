@@ -215,8 +215,11 @@ export type HouseholdMember = {
   relationship: FamilyRelationship;
 };
 
-/** Where a customer is with adding a will to their account. */
-export type WillStatus = "none" | "in-progress" | "on-file";
+/**
+ * Where a customer is with adding a will to their account: not started, being
+ * written, signed and sent to PNC for review, or reviewed and kept on file.
+ */
+export type WillStatus = "none" | "in-progress" | "in-review" | "on-file";
 
 export type WillRecord = {
   status: WillStatus;

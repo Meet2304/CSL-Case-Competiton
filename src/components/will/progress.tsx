@@ -19,14 +19,18 @@ export function statusText(p: SectionProgress): string {
   return "Not started";
 }
 
-/** One section's marker: a check once done, otherwise its number. */
+/**
+ * One section's marker: a check once done, otherwise its number. When a
+ * section is finished its disc fills and the check springs in (quick enough
+ * for sections finished a fraction of a second apart; still under reduced motion).
+ */
 export function StepDot({ part, current = false }: { part: SectionProgress; current?: boolean }) {
   const complete = part.status === "complete";
   return (
     <span
       aria-hidden="true"
       className={cn(
-        "grid size-7 shrink-0 place-items-center rounded-full text-xs font-semibold transition-colors",
+        "grid size-7 shrink-0 place-items-center rounded-full text-xs font-semibold transition-[background-color,color,box-shadow] duration-300 ease-out motion-reduce:transition-none",
         current
           ? "bg-pnc-blue-700 text-white ring-2 ring-pnc-orange ring-offset-2 ring-offset-white"
           : complete
@@ -36,7 +40,15 @@ export function StepDot({ part, current = false }: { part: SectionProgress; curr
               : "bg-white text-pnc-muted ring-1 ring-pnc-line",
       )}
     >
-      {complete ? <Check className="size-4" strokeWidth={3} /> : part.section + 1}
+      {complete ? (
+        <Check
+          key="done"
+          strokeWidth={3}
+          className="size-4 transition-[opacity,scale,rotate] duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] starting:-rotate-45 starting:scale-25 starting:opacity-0 motion-reduce:transition-none"
+        />
+      ) : (
+        <span key="todo">{part.section + 1}</span>
+      )}
     </span>
   );
 }

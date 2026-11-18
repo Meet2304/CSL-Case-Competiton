@@ -1,7 +1,7 @@
 /**
  * Asks Findoe (src/app/api/findoe) and streams the reply. Resolves to
- * "offline" when no API key is configured, so the caller can fall back to the
- * simulated assistant.
+ * "offline" when no API key is configured or Claude can't be reached before it
+ * starts replying, so the caller can fall back to the simulated assistant.
  */
 export type FindoeTurn = { role: "user" | "assistant"; content: string };
 

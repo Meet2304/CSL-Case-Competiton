@@ -181,6 +181,7 @@ function profileRow(c: Citations, ctx: CustomerContext): string {
 const willLabels: Record<WillStatus, string> = {
   none: "No will on file",
   "in-progress": "Started, not finished",
+  "in-review": "Signed, with PNC for review",
   "on-file": "On file",
 };
 
@@ -345,13 +346,14 @@ function whatHappens(ctx: CustomerContext): Reply {
     lines.push(
       `**${gaps.length === 1 ? "One account" : `${gaps.length} accounts`} (${formatMoney(total(gaps))}) would go through probate.** Naming a beneficiary passes ${them(gaps.length)} directly to that person instead.${c.law("pnc-death-claims")}`,
     );
-  if (ctx.will !== "on-file")
+  const signed = ctx.will === "on-file" || ctx.will === "in-review";
+  if (!signed)
     lines.push(
       `You also ${ctx.will === "none" ? "don't have a will on file" : "haven't finished your will"}${willRow(c, ctx)}, so you haven't yet chosen who settles your estate. Without one, the court appoints an administrator.${c.law("pa-register-of-wills")}`,
     );
   return c.reply(
     lines,
-    [...gaps.map(nameBeneficiary), ...(ctx.will !== "on-file" ? [willAction(ctx.will)] : [])],
+    [...gaps.map(nameBeneficiary), ...(signed ? [] : [willAction(ctx.will)])],
     ["Do I need a will?", "Who should I contact for help?", "Will my family owe taxes?"],
   );
 }
@@ -396,6 +398,15 @@ function needWill(ctx: CustomerContext): Reply {
   const row = willRow(c, ctx);
   const gaps = gapsOf(ctx);
   const kids = minorChildren(ctx);
+  if (ctx.will === "in-review")
+    return c.reply(
+      [
+        `Your will is signed and with PNC for review.${row} Once PNC has checked it, we keep it on file and your executor can find it when the time comes.`,
+        `It's worth reviewing after big changes: a marriage, a new child, a move, or a death in the family.${c.law("pa-register-of-wills")}`,
+      ],
+      [{ label: "See your will", href: routes.will, icon: "will" }],
+      ["What happens to my accounts if I die?"],
+    );
   if (ctx.will === "on-file")
     return c.reply(
       [
@@ -444,7 +455,7 @@ function planFirst(ctx: CustomerContext): Reply {
   if (!due.length)
     return c.reply(
       [
-        `You're in good shape.${willRow(c, ctx)}${rows(c, owned(ctx).filter(takesBeneficiary))} Your will is on file and every account that can name a beneficiary has one. Review both after any big change in the family.`,
+        `You're in good shape.${willRow(c, ctx)}${rows(c, owned(ctx).filter(takesBeneficiary))} ${ctx.will === "in-review" ? "Your will is signed and with PNC for review," : "Your will is on file"} and every account that can name a beneficiary has one. Review both after any big change in the family.`,
       ],
       [{ label: "Review Assets and Debts", href: routes.assets, icon: "assets" }],
       ["What happens to my accounts if I die?"],

@@ -101,6 +101,14 @@ describe("Findoe for customers", () => {
     expect(r.actions.some((a) => a.href === routes.will)).toBe(false);
   });
 
+  it("treats a signed will with PNC for review as done", () => {
+    const ctx = ctxFor("p-jordan", { will: "in-review" });
+    const r = customerReply(ctx, "What happens if I die?");
+    expect(r.actions.some((a) => a.href === routes.will)).toBe(false);
+    const need = customerReply(ctx, "Do I need a will?");
+    expect(need.text).toContain("Your will is signed and with PNC for review.");
+  });
+
   it("walks Maya through what to do first after John dies, gently", () => {
     const r = customerReply(ctxFor("p-casey", { loss: true }), "What should I do first?");
     expect(r.text).toMatch(/^I'm so sorry about John/);

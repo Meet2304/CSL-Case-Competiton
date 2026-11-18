@@ -43,6 +43,11 @@ export type SceneFrame = {
   ready: Target;
   /** The width the page is laid out at, in pixels, before it is scaled to its card. */
   width: number;
+  /**
+   * Moving forward from the scene before (`TourScene.from`), keep the page this
+   * person already has on screen, as they left it, rather than opening `path`.
+   */
+  keep?: boolean;
 };
 
 /** The screens on stage together. Stops in a scene share one load of each page. */
@@ -51,10 +56,27 @@ export type TourScene = {
   frames: Partial<Record<FrameId, SceneFrame>>;
   /** The part of Findoe the scene shows, unless a stop says otherwise. */
   product: ProductId | null;
+  /**
+   * The scene this one grows out of. Moving forward from it, everyone already
+   * on stage stays there: their card glides to its new place and their page
+   * changes behind the one showing, so nothing goes blank.
+   */
+  from?: string;
+  /** Whose card, leaving, glides into whose as it fades: two views becoming one. */
+  merge?: Partial<Record<FrameId, FrameId>>;
+  /**
+   * Run at once when the scene is opened directly (a jump, or a step back), to
+   * put the pages where the scene before would have left them.
+   */
+  setup?: TourStep[];
 };
 
-/** Something done on one person's screen, or a held moment. */
-export type TourStep = (Action & { in: FrameId }) | { do: "pause"; ms: number };
+/**
+ * Something done on one person's screen, or a held moment. A `quick` click is
+ * part of a run of clicks the viewer sees as one motion (a form's steps ticking
+ * off one by one): no pointer travels to it and the camera stays where it is.
+ */
+export type TourStep = (Action & { in: FrameId; quick?: boolean }) | { do: "pause"; ms: number };
 
 /**
  * What a card's camera frames once a stop's steps are done. Unless `spot` is
@@ -67,6 +89,8 @@ export type TourFocus = {
   spot?: boolean;
   /** Scroll this to the top of whatever holds it first, e.g. the start of an answer. */
   top?: Target;
+  /** Room left around it inside the spotlight, in page pixels (10 unless set). */
+  pad?: number;
 };
 
 /** A moment with the family, between the acts that show their screens. */
@@ -88,7 +112,9 @@ export type TourCast =
   /** Everyone, at the end. */
   | "circle"
   /** The four parts of Findoe gather around them. */
-  | "vision";
+  | "vision"
+  /** The four parts become one: PNC's AI ecosystem, powered by Findoe. Everyone else fades. */
+  | "finale";
 
 /**
  * A note beside a card that explains what the app is doing, tied by a line to
@@ -140,9 +166,11 @@ export function productOf(stop: TourStop, scenes: Record<string, TourScene>): Pr
   return stop.scene ? scenes[stop.scene].product : null;
 }
 
-/** The number of clicks and typings a stop plays out: one press, at most one of each pointer move. */
+/** The clicks and typings a stop plays out with the pointer: one press, at most one of each. */
 export function pointerMoves(stop: TourStop): number {
-  return (stop.steps ?? []).filter((s) => s.do === "click" || s.do === "type").length;
+  return (stop.steps ?? []).filter(
+    (s) => (s.do === "click" && !("quick" in s && s.quick)) || s.do === "type",
+  ).length;
 }
 
 // ---------------------------------------------------------------------------
@@ -154,22 +182,46 @@ export type StopPlan =
   /** The next stop of the scene already on stage: play its steps as they are. */
   | { kind: "continue" }
   /**
+   * A step back within a scene over stops that only moved the camera: the
+   * pages are already as this stop left them, so only the camera moves.
+   */
+  | { kind: "refocus" }
+  /**
    * Load the scene's pages, then run the steps of these earlier stops at once
    * so the pages are in the state this stop starts from. `animate` says
    * whether this stop's own steps play out on screen (moving forward) or are
-   * also run at once (jumping in, or stepping back).
+   * also run at once (jumping in, or stepping back). `carry` lists who stays
+   * on stage from the scene before, keeping their card (moving forward only).
    */
-  | { kind: "enter"; replay: number[]; animate: boolean };
+  | { kind: "enter"; replay: number[]; animate: boolean; carry: FrameId[] };
 
-export function planStop(stops: TourStop[], from: number | null, to: number): StopPlan {
+export function planStop(
+  stops: TourStop[],
+  scenes: Record<string, TourScene>,
+  from: number | null,
+  to: number,
+): StopPlan {
   const stop = stops[to];
   if (!stop.scene) return { kind: "cast" };
   const forward = from !== null && to === from + 1;
-  if (forward && stops[from].scene === stop.scene) return { kind: "continue" };
+  const prev = from !== null ? stops[from].scene : undefined;
+  if (forward && prev === stop.scene) return { kind: "continue" };
+  if (
+    from !== null &&
+    to < from &&
+    stops.slice(to, from + 1).every((s) => s.scene === stop.scene) &&
+    stops.slice(to + 1, from + 1).every((s) => !s.steps?.length)
+  )
+    return { kind: "refocus" };
   let start = to;
   while (start > 0 && stops[start - 1].scene === stop.scene) start--;
   const replay = Array.from({ length: to - start }, (_, i) => start + i);
-  return { kind: "enter", replay, animate: forward };
+  const scene = scenes[stop.scene];
+  const carry =
+    forward && prev && scene.from === prev
+      ? frameIds.filter((id) => scene.frames[id] && scenes[prev].frames[id])
+      : [];
+  return { kind: "enter", replay, animate: forward, carry };
 }
 
 // ---------------------------------------------------------------------------

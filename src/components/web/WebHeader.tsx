@@ -83,9 +83,11 @@ export function WebHeader({ variant = "customer" }: { variant?: Role }) {
                     detail:
                       will.status === "on-file"
                         ? "On file"
-                        : will.status === "in-progress"
-                          ? `${will.percent}% done`
-                          : "Not started yet",
+                        : will.status === "in-review"
+                          ? "Under review by PNC"
+                          : will.status === "in-progress"
+                            ? `${will.percent}% done`
+                            : "Not started yet",
                     badge: nav.willReminders,
                   },
                 ]

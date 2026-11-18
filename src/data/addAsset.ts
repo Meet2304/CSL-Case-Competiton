@@ -126,7 +126,7 @@ export const addAssetGroups: AddGroup[] = [
   },
   {
     id: "manual",
-    label: "Add your own",
+    label: "Manually Add Assets and Debts",
     intro: "Property, valuables and anything else you enter yourself",
     options: [
       {

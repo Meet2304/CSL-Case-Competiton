@@ -290,7 +290,12 @@ export function DpoaFlow() {
   );
 }
 
-/** The five steps across the top, with the ones behind you checked. */
+/**
+ * The five steps across the top, with the ones behind you checked. Each connecting line runs
+ * from one circle's edge to the next, behind the circles. Finishing a step plays in order: its
+ * circle fills and its check pops in, then the line to the next step fills, then the next
+ * circle lights up, so moving quickly through the steps reads as one run of checks.
+ */
 function Stepper({ current }: { current: number }) {
   return (
     <ol className="flex items-start px-4 pb-4 pt-5 @2xl:px-8">
@@ -302,26 +307,42 @@ function Stepper({ current }: { current: number }) {
             {i > 0 && (
               <span
                 aria-hidden="true"
-                className="absolute right-1/2 top-3.5 h-0.5 w-full -translate-x-4 bg-pnc-line"
+                className="absolute right-[calc(50%+0.875rem)] top-3.5 h-0.5 w-[calc(100%-1.75rem)] -translate-y-1/2 overflow-hidden bg-pnc-line"
               >
                 <span
-                  className="block h-full origin-left bg-pnc-blue-700 transition-transform duration-700 ease-out"
-                  style={{ transform: `scaleX(${done || now ? 1 : 0})` }}
+                  className={cn(
+                    "block h-full origin-left bg-pnc-blue-700 transition-transform duration-300 ease-out motion-reduce:transition-none",
+                    done || now ? "scale-x-100 delay-200" : "scale-x-0",
+                  )}
                 />
               </span>
             )}
             <span
               aria-hidden="true"
               className={cn(
-                "relative grid size-7 place-items-center rounded-full text-xs font-semibold transition-colors duration-500",
+                "relative z-10 grid size-7 place-items-center rounded-full text-xs font-semibold transition-[background-color,color,box-shadow] duration-300 ease-out motion-reduce:transition-none",
                 done
                   ? "bg-pnc-blue-700 text-white"
                   : now
-                    ? "bg-white text-pnc-blue-700 ring-2 ring-pnc-blue-700"
+                    ? "bg-white text-pnc-blue-700 ring-2 ring-pnc-blue-700 delay-500"
                     : "bg-white text-pnc-muted ring-1 ring-pnc-line",
               )}
             >
-              {done ? <Check className="size-4" strokeWidth={3} /> : i + 1}
+              <Check
+                className={cn(
+                  "col-start-1 row-start-1 size-4 transition-[opacity,scale] duration-300 ease-out motion-reduce:transition-none",
+                  done ? "scale-100 opacity-100" : "scale-50 opacity-0",
+                )}
+                strokeWidth={3}
+              />
+              <span
+                className={cn(
+                  "col-start-1 row-start-1 transition-opacity duration-150 motion-reduce:transition-none",
+                  done && "opacity-0",
+                )}
+              >
+                {i + 1}
+              </span>
             </span>
             <span
               className={cn(

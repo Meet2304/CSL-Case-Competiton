@@ -38,6 +38,7 @@ import {
   type FrameId,
   type StageLayout,
   type TourFocus,
+  type TourCast,
   type TourStep,
   type TourStop,
   type TourWorld,
@@ -45,6 +46,7 @@ import {
 import { REVIEW_SCREEN, screens } from "@/lib/will/flow";
 import { saveWill, setWillStatus } from "@/lib/will/storage";
 import { Cast } from "./Cast";
+import { Ecosystem } from "./Ecosystem";
 import { Frame, GLIDE_MS, hiddenFrame, MOVE_MS, VEIL_MS, type FrameView } from "./Frame";
 import { Memorial } from "./Memorial";
 import { Notes, type PlacedNote } from "./Notes";
@@ -68,8 +70,16 @@ const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() 
 type Views = Record<FrameId, FrameView>;
 const allHidden = Object.fromEntries(frameIds.map((id) => [id, hiddenFrame])) as Views;
 
-/** Puts John's will where the story needs it: every answer given, or already on file. */
-function seedWill(status: "in-progress" | "on-file") {
+/**
+ * Puts John's will where the story needs it: not started yet (what the bank
+ * knows already filled in, for him to go through), or signed and on file.
+ */
+function seedWill(status: "none" | "on-file") {
+  if (status === "none") {
+    saveWill(tourLoss.personId, { draft: tourWillDraft });
+    setWillStatus(tourLoss.personId, "none");
+    return;
+  }
   saveWill(tourLoss.personId, {
     draft: tourWillDraft,
     progress: {
@@ -87,14 +97,15 @@ function seedWill(status: "in-progress" | "on-file") {
  * affairs in order, everything starts clean. After that, his will is on file
  * and his Savings names the children. Once he has died the bank has recorded
  * it and has Maya's copy of the certificate; after that his advisor has begun
- * the transfer. Moving
- * forward these are what the people on stage just did, so this only fills in
- * what is missing; jumping in or stepping back (`fresh`), it rebuilds them.
+ * the transfer. Moving forward these are what the people on stage just did,
+ * so this only fills in what is missing; jumping in or stepping back
+ * (`fresh`), it rebuilds them.
  */
 function prepareWorld(world: TourWorld, fresh: boolean) {
   if (world === "before") {
+    if (!fresh) return;
     resetDemo();
-    seedWill("in-progress");
+    seedWill("none");
     return;
   }
   if (fresh) resetDemo();
@@ -131,7 +142,7 @@ async function reveal(el: HTMLElement, smooth: boolean) {
   });
   let last = Number.NaN;
   for (let i = 0; i < 16; i++) {
-    await sleep(90);
+    await sleep(smooth ? 90 : 16);
     if (view.scrollY === last) break;
     last = view.scrollY;
   }
@@ -141,13 +152,24 @@ async function reveal(el: HTMLElement, smooth: boolean) {
   frame?.ownerDocument.defaultView?.scrollTo(0, 0);
 }
 
+/** The first stop after `at` that shows screens, if only moments with the family lie between. */
+function nextScreens(at: number): number | null {
+  for (let n = at + 1; n < tourStops.length; n++) if (tourStops[n].scene) return n;
+  return null;
+}
+
 /**
  * The guided tour: one family's story on a plain white stage. Between acts
  * the stage shows the family themselves; within an act, the working app, one
  * card per person, with a spotlight on the one thing that matters. Four small
  * dots at the top say which part of Findoe is on stage. The stop lives in the
  * URL hash; the arrow keys step through it, and each press plays one stop
- * (at most one click) and then rests.
+ * and then rests.
+ *
+ * Every press answers at once. Pressing on while a stop is still playing
+ * finishes it straight away and moves on; pressing back always works. The
+ * screens of the next act are loaded, out of sight, while the family is on
+ * stage, and a card never goes blank: a new page fades in over the old one.
  */
 export function GuidedTour() {
   const [stopId, setStopId] = useHashTab(stopIds);
@@ -165,6 +187,8 @@ export function GuidedTour() {
   /** The stop that has finished playing; the stage is at rest only while it is the one showing. */
   const [settledAt, setSettledAt] = useState<number | null>(null);
   const settled = settledAt === index;
+  /** The moment with the family on stage. It stays until the screens that replace it are ready. */
+  const [castOn, setCastOn] = useState<TourCast | null>(stop.cast ?? null);
 
   const iframes = useRef<Partial<Record<FrameId, HTMLIFrameElement | null>>>({});
   const loaded = useRef<Partial<Record<FrameId, () => void>>>({});
@@ -173,15 +197,28 @@ export function GuidedTour() {
   const stage = useRef<StageLayout | null>(null);
   /** Who the browser is signed in as; the app's pages share one session. */
   const session = useRef<FrameId | "nobody" | null>(null);
+  /** Sign-ins happen one at a time, in the order they were asked for. */
+  const signing = useRef<Promise<void>>(Promise.resolve());
   /** Counts the runs, so a run that has been overtaken by a newer stop stops. */
   const run = useRef(0);
   const previous = useRef<number | null>(null);
   /** Whether the stop on stage finished playing (a ref, so a run can read it as it starts). */
   const finished = useRef(false);
+  /** The presenter pressed on while the stop was playing: finish it at once... */
+  const hurry = useRef(false);
+  /** ...and then move on, once for every press. */
+  const queued = useRef(0);
+  /** Each page loaded gets its own key, so an old page and its replacement never share one. */
+  const pageKeys = useRef(0);
+  /** The next act's screens, loaded out of sight while the family is on stage. */
+  const staged = useRef<{ scene: string; ready: Promise<boolean> } | null>(null);
+  const stageRun = useRef(0);
 
   useEffect(() => {
     stage.current = layout;
   });
+
+  const go = (n: number) => setStopId(stopIds[Math.min(Math.max(n, 0), lastStop)]);
 
   const settle = (done: number | null) => {
     finished.current = done !== null;
@@ -194,6 +231,8 @@ export function GuidedTour() {
   };
 
   const doc = (id: FrameId) => () => iframes.current[id]?.contentDocument;
+  /** Whether steps should be run at once rather than played out. */
+  const brisk = (fast: boolean) => fast || hurry.current;
 
   /** The size of a card's page, for clipping what the camera frames. */
   const pageSize = (id: FrameId) => {
@@ -202,18 +241,34 @@ export function GuidedTour() {
     return rect ? viewportFor(rect, view.width) : { w: view.width, h: 800 };
   };
 
-  const signInAs = async (id: FrameId | "nobody") => {
-    if (session.current === id) return;
-    if (id === "nobody") await filmSignOut();
-    else await filmSignIn(tourPeople[id].userId);
-    session.current = id;
+  /** A card's page as it looks now (its width and camera), to keep on screen while the next loads. */
+  const freeze = (id: FrameId): FrameView["old"] => {
+    const view = live.current[id];
+    if (!view.shown || !view.page) return undefined;
+    const cam = cameraFor(pageSize(id), view.focus, { maxZoom: view.maxZoom, fit: view.fit });
+    return {
+      key: view.page.key,
+      src: view.page.src,
+      width: view.width,
+      transform: `translate(${cam.x}px, ${cam.y}px) scale(${cam.scale})`,
+    };
   };
 
-  /** Loads a page of the app in a card and waits for it. */
-  const load = (id: FrameId, path: string) =>
+  const signInAs = (id: FrameId | "nobody") => {
+    signing.current = signing.current.then(async () => {
+      if (session.current === id) return;
+      if (id === "nobody") await filmSignOut();
+      else await filmSignIn(tourPeople[id].userId);
+      session.current = id;
+    });
+    return signing.current;
+  };
+
+  /** Loads a page of the app in a card and waits for it; the page it replaces stays until then. */
+  const load = (id: FrameId, path: string, old?: FrameView["old"]) =>
     new Promise<void>((resolve) => {
       loaded.current[id] = resolve;
-      patch(id, { page: { key: (live.current[id].page?.key ?? 0) + 1, src: path } });
+      patch(id, { old, page: { key: ++pageKeys.current, src: path }, veil: true });
       setTimeout(resolve, 20_000);
     });
 
@@ -224,6 +279,7 @@ export function GuidedTour() {
       maxZoom: focus?.maxZoom,
       fit: focus?.fit,
       spot: el !== null && focus !== undefined && focus.spot !== false,
+      pad: focus?.pad,
       cut,
     });
 
@@ -234,9 +290,9 @@ export function GuidedTour() {
     const field = el.matches("input, textarea");
     const at = { x: field ? r.x + Math.min(40, r.w / 4) : r.x + r.w / 2, y: r.y + r.h / 2 };
     patch(id, { pointer: { ...at, shown: true, down: false } });
-    await sleep(720);
+    await sleep(hurry.current ? 0 : 680);
     patch(id, { pointer: { ...at, shown: true, down: true } });
-    await sleep(190);
+    await sleep(hurry.current ? 0 : 180);
     patch(id, { pointer: { ...at, shown: true, down: false } });
   };
 
@@ -246,12 +302,13 @@ export function GuidedTour() {
     return !f || (r.x >= f.x && r.y >= f.y && r.x + r.w <= f.x + f.w && r.y + r.h <= f.y + f.h);
   };
 
-  /** Runs a stop's steps: played out with the pointer, or at once when `fast`. */
+  /** Runs a stop's steps: played out with the pointer, or at once when `fast` (or hurried). */
   const act = async (steps: TourStep[] | undefined, fast: boolean, alive: () => boolean) => {
     for (const step of steps ?? []) {
       if (!alive()) return;
       if (step.do === "pause") {
-        if (!fast) await sleep(step.ms);
+        // Run at once, a run of quick clicks still leaves the page a moment to keep up.
+        await sleep(brisk(fast) ? Math.min(step.ms, 100) : step.ms);
         continue;
       }
       const id = step.in;
@@ -260,19 +317,20 @@ export function GuidedTour() {
         continue;
       }
       if (step.do === "look") {
-        if (fast) continue;
+        if (brisk(fast)) continue;
         const el = await waitFor(doc(id), step.at);
         if (!el || !alive()) continue;
         await reveal(el, true);
         frame(id, el, false, { on: step.at, maxZoom: 1.35 });
-        await sleep(MOVE_MS + 500);
+        await sleep(MOVE_MS + 300);
         continue;
       }
       const target: Target = step.do === "click" ? step.on : step.into;
       const el = await waitFor(doc(id), target, 12_000);
       if (!alive()) return;
       if (!el) continue;
-      if (!fast) {
+      const quick = "quick" in step && step.quick;
+      if (!brisk(fast) && !quick) {
         await reveal(el, true);
         // Pull back when the control is outside what the camera is showing.
         if (!inFrame(id, rectOf(el))) {
@@ -289,15 +347,19 @@ export function GuidedTour() {
         el.click();
       } else {
         el.focus({ preventScroll: true });
-        if (fast) setValue(el, step.text);
+        if (brisk(fast)) setValue(el, step.text);
         else
           for (let i = 1; i <= step.text.length; i++) {
             setValue(el, step.text.slice(0, i));
-            await sleep(step.text.length > 24 ? 22 : 70);
+            await sleep(step.text.length > 24 ? 22 : 60);
             if (!alive()) return;
+            if (hurry.current) {
+              setValue(el, step.text);
+              break;
+            }
           }
       }
-      await sleep(fast ? 90 : 480);
+      if (!quick) await sleep(brisk(fast) ? 60 : 420);
     }
   };
 
@@ -306,35 +368,43 @@ export function GuidedTour() {
     const scene = tourScenes[target.scene!];
     const ids = frameIds.filter((id) => scene.frames[id]);
     for (const id of ids) patch(id, { dim: target.spot !== undefined && target.spot !== id });
+    const jump = (id: FrameId) =>
+      cut || hurry.current || !live.current[id].shown || live.current[id].veil;
     // What the notes explain must be on screen before the camera settles.
     if (target.notes) {
       const page = doc(target.notes.in)();
       const el = page ? find(page, target.notes.items[0].at) : null;
-      if (el) await reveal(el, !cut);
+      if (el) await reveal(el, !jump(target.notes.in));
       if (!alive()) return;
     }
-    const apply = async (id: FrameId, jump: boolean) => {
+    const apply = async (id: FrameId) => {
       const focus = target.focus?.[id];
       const view = doc(id)()?.defaultView;
+      const instant = jump(id);
       if (!focus) {
         if (!view) return;
         // The whole page, from the top.
-        if (view.scrollY > 0) view.scrollTo({ top: 0, behavior: jump ? "instant" : "smooth" });
-        frame(id, null, jump);
+        if (view.scrollY > 0) view.scrollTo({ top: 0, behavior: instant ? "instant" : "smooth" });
+        frame(id, null, instant);
         return;
       }
       if (focus.top) {
         const start = await waitFor(doc(id), focus.top, 6000);
-        start?.scrollIntoView({ block: "start", behavior: jump ? "instant" : "smooth" });
-        if (start && !jump) await sleep(500);
+        start?.scrollIntoView({ block: "start", behavior: instant ? "instant" : "smooth" });
+        if (start && !instant) await sleep(450);
       }
       const el = await waitFor(doc(id), focus.on, 6000);
       if (!alive()) return;
-      if (el) await reveal(el, !jump);
-      frame(id, el, jump, focus);
+      if (el) await reveal(el, !instant);
+      frame(id, el, instant, focus);
     };
-    await Promise.all(ids.map((id) => apply(id, cut)));
-    // Follow the page if it is still settling (late content, an answer being written).
+    await Promise.all(ids.map(apply));
+  };
+
+  /** Keeps the cameras on what they frame while the pages settle (late content, an answer). */
+  const follow = async (target: TourStop, alive: () => boolean) => {
+    const scene = tourScenes[target.scene!];
+    const ids = frameIds.filter((id) => scene.frames[id]);
     for (const ms of [450, 900]) {
       await sleep(ms);
       if (!alive()) return;
@@ -369,80 +439,181 @@ export function GuidedTour() {
     setNotes({ at: to, placed });
   };
 
+  /**
+   * Opens a scene's pages in the cards that are not kept from the scene
+   * before: the demo state first, then each page, signed in as its person.
+   * Cards on stage keep showing their old page until the new one is ready.
+   */
+  const openScene = async (
+    sceneId: string,
+    fresh: boolean,
+    keep: Set<FrameId>,
+    olds: Partial<Record<FrameId, FrameView["old"]>>,
+    alive: () => boolean,
+  ) => {
+    const scene = tourScenes[sceneId];
+    prepareWorld(scene.world, fresh);
+    for (const id of frameIds) {
+      const next = scene.frames[id];
+      if (!next || keep.has(id)) continue;
+      await signInAs(id);
+      if (!alive()) return false;
+      await load(id, next.path, olds[id]);
+      if (!alive()) return false;
+      await waitFor(doc(id), next.ready, 20_000);
+      await doc(id)()?.fonts.ready;
+      if (!alive()) return false;
+    }
+    return true;
+  };
+
+  /** While the family is on stage, quietly loads the screens of the act that follows. */
+  const stageAhead = (at: number) => {
+    const n = nextScreens(at);
+    if (n === null) return;
+    const sceneId = tourStops[n].scene!;
+    if (staged.current?.scene === sceneId) return;
+    const token = ++stageRun.current;
+    const scene = tourScenes[sceneId];
+    for (const id of frameIds) {
+      const next = scene.frames[id];
+      if (next) patch(id, { slot: next.slot, width: next.width, glide: false, focus: undefined });
+    }
+    staged.current = {
+      scene: sceneId,
+      ready: openScene(sceneId, scene.world === "before", new Set(), {}, () => {
+        return stageRun.current === token;
+      }),
+    };
+  };
+
+  const dropStaged = () => {
+    stageRun.current++;
+    staged.current = null;
+  };
+
   const play = useEffectEvent(async (from: number | null, to: number, alive: () => boolean) => {
     const target = tourStops[to];
     setNotes(null);
     // Leaving a stop before its steps finished: the pages are in an unknown state, so start over.
     const interrupted = from !== null && !finished.current;
-    const plan = planStop(tourStops, interrupted ? null : from, to);
+    const plan = planStop(tourStops, tourScenes, interrupted ? null : from, to);
+    // More presses still to come: this stop is passed through at once too.
+    hurry.current = queued.current > 0;
     settle(null);
 
     if (plan.kind === "cast") {
       for (const id of frameIds)
-        patch(id, { shown: false, pointer: { ...live.current[id].pointer, shown: false } });
-      await sleep(from === null ? 300 : 1300);
-      if (alive()) settle(to);
+        if (live.current[id].shown)
+          patch(id, {
+            shown: false,
+            dim: false,
+            glide: false,
+            pointer: { ...live.current[id].pointer, shown: false },
+          });
+      setCastOn(target.cast ?? null);
+      settle(to);
+      if (queued.current > 0) {
+        queued.current--;
+        go(to + 1);
+        return;
+      }
+      stageAhead(to);
       return;
     }
-    const world = tourScenes[target.scene!].world;
 
     if (plan.kind === "enter") {
       const scene = tourScenes[target.scene!];
       const ids = frameIds.filter((id) => scene.frames[id]);
+      const carry = new Set(plan.carry);
+      const keep = new Set(plan.carry.filter((id) => scene.frames[id]!.keep));
+      const world = scene.world;
+      // John's name rises over the three screens while they load; any other moment waits for them.
+      if (target.memorial) setCastOn(null);
+      const ready = staged.current?.scene === target.scene && plan.animate ? staged.current : null;
+      if (!ready) dropStaged();
+
+      const olds: Partial<Record<FrameId, FrameView["old"]>> = {};
       let moves = false;
       for (const id of frameIds) {
         const next = scene.frames[id];
         const was = live.current[id];
         if (!next) {
-          patch(id, { shown: false, pointer: { ...was.pointer, shown: false } });
+          if (!was.shown) continue;
+          // Two views becoming one: the card that leaves glides into the one that stays.
+          const into = scene.merge?.[id] && scene.frames[scene.merge[id]!];
+          patch(id, {
+            shown: false,
+            dim: false,
+            glide: Boolean(into),
+            slot: into ? into.slot : was.slot,
+            pointer: { ...was.pointer, shown: false },
+          });
+          moves ||= Boolean(into);
           continue;
         }
+        // On stage already: the card stays, glides to its place, and keeps its page until the next is ready.
+        if (was.shown && !keep.has(id)) olds[id] = freeze(id);
         const glide = was.shown && was.slot !== next.slot;
         moves ||= glide;
         const third = ["third1", "third2", "third3"].indexOf(next.slot);
         patch(id, {
-          shown: true,
           slot: next.slot,
           width: next.width,
           glide,
-          veil: true,
           // Once John has died, his own screen has lost its color.
           quiet: id === "husband" && (world === "loss" || world === "after"),
           dim: false,
-          // Three screens arrive one by one, once John's name has risen above them.
-          delay: third >= 0 && plan.animate ? 1500 + third * 450 : 0,
+          // Three screens arrive one by one under John's name.
+          delay: !was.shown && third >= 0 && plan.animate ? 250 + third * 300 : 0,
+          from: next.slot === "right" ? "right" : "below",
           pointer: { ...was.pointer, shown: false },
         });
+        if (!carry.has(id) && was.shown) patch(id, { focus: undefined, spot: false, cut: true });
       }
-      // The page changes behind white, once the card has reached its place.
-      await sleep(from === null ? 0 : moves ? GLIDE_MS : VEIL_MS);
       if (!alive()) return;
-      for (const id of ids) patch(id, { focus: undefined, spot: false, cut: true });
-      prepareWorld(scene.world, !plan.animate);
-      for (const id of ids) {
-        const next = scene.frames[id]!;
-        await signInAs(id);
-        if (!alive()) return;
-        await load(id, next.path);
-        if (!alive()) return;
-        await waitFor(doc(id), next.ready, 20_000);
-        await doc(id)()?.fonts.ready;
+
+      let opened: boolean;
+      if (ready) {
+        opened = await ready.ready;
+        staged.current = null;
+        // Moving forward, the state the people on stage made carries on; fill in what is missing.
+        if (opened) prepareWorld(world, false);
+      } else {
+        const fresh = !plan.animate || (world === "before" && carry.size === 0);
+        opened = await openScene(target.scene!, fresh, keep, olds, alive);
       }
+      if (!alive()) return;
+      if (!opened) {
+        // The staged pages were dropped on the way; open them now.
+        if (!(await openScene(target.scene!, false, keep, olds, alive))) return;
+      }
+      // Opened directly (a jump, or a step back): put the pages where the scene before left them.
+      if (carry.size === 0 && scene.setup) await act(scene.setup, true, alive);
       for (const earlier of plan.replay) {
         if (!alive()) return;
         await act(tourStops[earlier].steps, true, alive);
       }
       if (!alive()) return;
+
       const unveil = async () => {
         await nextFrame();
         await nextFrame();
-        for (const id of ids) patch(id, { veil: false });
+        for (const id of ids) patch(id, { veil: false, shown: true });
+        setCastOn(null);
+        // Once the new page has faded in, the one it replaced can go.
+        const gone = Object.fromEntries(ids.map((id) => [id, live.current[id].old?.key]));
+        void sleep(VEIL_MS + 80).then(() => {
+          for (const id of ids)
+            if (gone[id] !== undefined && live.current[id].old?.key === gone[id])
+              patch(id, { old: undefined });
+        });
       };
       if (plan.animate && target.steps?.length) {
         // Open on the pages as they are, then play the steps out.
         if (plan.replay.length) await aim(tourStops[plan.replay.at(-1)!], true, alive);
         await unveil();
-        await sleep(700);
+        await sleep(hurry.current ? 0 : moves ? GLIDE_MS * 0.6 : 450);
         await act(target.steps, false, alive);
         if (!alive()) return;
         await aim(target, false, alive);
@@ -453,6 +624,8 @@ export function GuidedTour() {
         if (!alive()) return;
         await unveil();
       }
+    } else if (plan.kind === "refocus") {
+      await aim(target, false, alive);
     } else {
       await act(target.steps, false, alive);
       if (!alive()) return;
@@ -462,16 +635,28 @@ export function GuidedTour() {
     for (const id of frameIds)
       if (live.current[id].pointer.shown)
         patch(id, { pointer: { ...live.current[id].pointer, shown: false } });
+    // Keys go to the stage, not to a field the app focused inside a card.
+    if (document.activeElement instanceof HTMLIFrameElement) document.activeElement.blur();
+    settle(to);
+    if (queued.current > 0) {
+      queued.current--;
+      go(to + 1);
+      return;
+    }
+    void follow(target, alive);
     if (target.notes) {
       // Notes are placed once the camera has come to rest.
       await sleep(MOVE_MS);
-      if (!alive()) return;
-      placeNotes(target, to);
+      if (alive()) placeNotes(target, to);
     }
-    // Keys go to the stage, not to a field the app focused inside a card.
-    if (document.activeElement instanceof HTMLIFrameElement) document.activeElement.blur();
-    if (alive()) settle(to);
   });
+
+  // A stop typed into the address bar: tell the app's router, or its next sign-in puts the old one back.
+  useEffect(() => {
+    const sync = () => window.history.replaceState(window.history.state, "", window.location.href);
+    window.addEventListener("hashchange", sync);
+    return () => window.removeEventListener("hashchange", sync);
+  }, []);
 
   const ready = layout !== null;
   useEffect(() => {
@@ -482,19 +667,32 @@ export function GuidedTour() {
     void play(from, index, () => run.current === token);
   }, [index, ready]);
 
-  const go = (n: number) => setStopId(stopIds[Math.min(Math.max(n, 0), lastStop)]);
   const exit = async () => {
     run.current++;
+    dropStaged();
     await filmSignOut();
     window.location.assign(routes.signOn);
   };
 
+  /** On to the next stop; if this one is still playing, it finishes at once first. */
+  const forward = () => {
+    if (index + queued.current >= lastStop) return;
+    if (settled) go(index + 1);
+    else {
+      hurry.current = true;
+      queued.current++;
+    }
+  };
+  /** Anywhere but forward: presses still waiting are dropped. */
+  const jump = (n: number) => {
+    queued.current = 0;
+    go(n);
+  };
+
   const onKey = useEffectEvent((key: string) => {
-    // Every stop is its own press: a press while a stop is still playing is not kept for later.
-    if (key === "ArrowRight" || key === "PageDown" || key === " ") {
-      if (settled) go(index + 1);
-    } else if (key === "ArrowLeft" || key === "PageUp") go(index - 1);
-    else if (key === "Home") go(0);
+    if (key === "ArrowRight" || key === "PageDown" || key === " ") forward();
+    else if (key === "ArrowLeft" || key === "PageUp") jump(index - 1);
+    else if (key === "Home") jump(0);
     else if (key === "Escape") void exit();
     else return false;
     return true;
@@ -538,10 +736,10 @@ export function GuidedTour() {
     iframes.current[id] = el;
   };
 
-  const cast = stop.cast ?? null;
-  const years = `${tourLoss.born.slice(0, 4)} – ${tourLoss.date.slice(0, 4)}`;
+  const cast = castOn;
   const product = productOf(stop, tourScenes);
-  const memorial = cast === "memorial" ? "center" : stop.memorial ? "top" : "off";
+  // John's name: where the family moment shows it once he has died, then risen above the three screens.
+  const memorial = cast === "loss" ? "cast" : stop.memorial ? "top" : "off";
   const shownNotes = notes && notes.at === index && settled ? notes.placed : [];
 
   return (
@@ -549,7 +747,8 @@ export function GuidedTour() {
       data-settled={settled}
       data-stop={stop.id}
       onClick={(e) => {
-        if (settled && !(e.target as HTMLElement).closest("button, a")) go(index + 1);
+        // A click on the stage is a press of →.
+        if (!(e.target as HTMLElement).closest("button, a")) forward();
       }}
       onScroll={(e) => e.currentTarget.scrollTo(0, 0)}
       className="tour-stage fixed inset-0 overflow-hidden bg-white text-pnc-ink"
@@ -561,13 +760,27 @@ export function GuidedTour() {
       {layout && (
         <Products
           active={product}
-          vision={cast === "vision"}
+          mode={
+            cast === "title"
+              ? "diagram"
+              : cast === "vision"
+                ? "vision"
+                : cast === "finale"
+                  ? "finale"
+                  : "dots"
+          }
           dotsH={layout.dotsH}
           area={layout.cast}
         />
       )}
 
+      {/* The opening: the ecosystem's labels and brackets, and the product's name, small, at the upper right. */}
+      {layout && <Ecosystem shown={cast === "title"} layout={layout} />}
+
       {layout && <Memorial state={memorial} layout={layout} />}
+
+      {/* Beneath the screens, so the family fades away behind them as they arrive. */}
+      {layout && <Cast cast={cast} area={layout.cast} />}
 
       {layout &&
         frameIds.map((id) => (
@@ -576,13 +789,10 @@ export function GuidedTour() {
             id={id}
             view={views[id]}
             rect={layout.slots[views[id].slot]}
-            years={id === tourLoss.frame ? years : undefined}
             register={register}
             onLoad={onPageLoad}
           />
         ))}
-
-      {layout && <Cast cast={cast} area={layout.cast} />}
 
       {layout && <Notes placed={shownNotes} stageH={h} />}
 

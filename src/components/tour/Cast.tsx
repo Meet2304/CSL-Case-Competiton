@@ -1,12 +1,10 @@
 "use client";
 
-import type { CSSProperties, ReactNode } from "react";
+import { useState, type CSSProperties } from "react";
 import { CreditCard, Landmark, PiggyBank, TrendingUp, Umbrella, Wallet } from "lucide-react";
-import { FindoeLogo } from "@/components/brand/FindoeLogo";
-import { PrivateBankLogo } from "@/components/brand/PncLogo";
 import { Money } from "@/components/ui/Money";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
-import { carried, familyIds, familyTotals, tourGlow, tourLoss, tourPeople } from "@/data/tour";
+import { carried, familyIds, familyTotals, tourGlow, tourPeople } from "@/data/tour";
 import type { Rect } from "@/lib/film";
 import { cn } from "@/lib/format";
 import type { FrameId, TourCast } from "@/lib/tour";
@@ -91,6 +89,11 @@ function places(cast: TourCast): Record<FrameId, Place> {
       family(closing, closingCentre.y, 0.9);
       out.advisor = at(830, closingCentre.y, 0.9);
       break;
+    case "finale":
+      // The four parts become one; everyone else steps back and fades.
+      family(closing, closingCentre.y, 0.84, 0);
+      out.advisor = at(830, closingCentre.y, 0.84, 0);
+      break;
   }
   return out;
 }
@@ -120,19 +123,23 @@ function tie(fromX: number, toX: number, i: number, rowY: number, low: boolean) 
 
 /**
  * The family themselves, between the acts that show their screens: the
- * product's name, the Smiths, John holding everything alone, their accounts
+ * Smiths, John holding everything alone, their accounts
  * gathered into one family view, their advisor in touch with each of them,
  * the tie to John breaking, and everyone at the end. Drawn from the moment
  * alone, so any stop can be opened directly.
  */
 export function Cast({ cast, area }: { cast: TourCast | null; area: Rect }) {
   const shown = cast !== null && cast !== "memorial";
+  // Coming from the opening, the family rises once the diagram's circles have flown clear.
+  const [seen, setSeen] = useState({ now: cast, before: cast });
+  if (seen.now !== cast) setSeen({ now: cast, before: seen.now });
+  const fromTitle = cast === "family" && seen.before === "title";
   const now = cast ?? "family";
   const scale = castScale(area);
   const spots = places(now);
-  const gone = now === "loss" || now === "memorial" || now === "circle" || now === "vision";
+  const closing = now === "circle" || now === "vision" || now === "finale";
+  const gone = now === "loss" || now === "memorial" || closing;
   const advisorTies = now === "advisor" || now === "loss" || now === "circle" || now === "vision";
-  const years = `${tourLoss.born.slice(0, 4)} – ${tourLoss.date.slice(0, 4)}`;
   const xs = (["husband", "wife", "child1", "child2"] as const).map((id) => spots[id].x);
 
   return (
@@ -152,20 +159,6 @@ export function Cast({ cast, area }: { cast: TourCast | null; area: Rect }) {
           transform: `translate(-50%, -50%) scale(${scale})`,
         }}
       >
-        {/* The product's name. */}
-        <Fade on={now === "title"} className="absolute inset-x-0 top-[150px] text-center">
-          <div className="flex justify-center">
-            <PrivateBankLogo tone="dark" size="sm" product={false} />
-          </div>
-          <p className="mt-7 flex items-center justify-center gap-5">
-            <FindoeLogo className="size-20" />
-            <span className="font-display text-[5.5rem] font-semibold leading-none tracking-tight text-pnc-navy">
-              Findoe
-            </span>
-          </p>
-          <p className="mt-6 text-2xl text-pnc-muted">Care that carries on.</p>
-        </Fade>
-
         <svg
           className="pointer-events-none absolute inset-0 overflow-visible"
           width={BOX.w}
@@ -197,13 +190,7 @@ export function Cast({ cast, area }: { cast: TourCast | null; area: Rect }) {
             return (
               <path
                 key={id}
-                d={tie(
-                  spots.advisor.x,
-                  xs[i],
-                  i,
-                  spots.advisor.y,
-                  now === "circle" || now === "vision",
-                )}
+                d={tie(spots.advisor.x, xs[i], i, spots.advisor.y, closing)}
                 pathLength={1}
                 fill="none"
                 strokeWidth={2.5}
@@ -296,16 +283,8 @@ export function Cast({ cast, area }: { cast: TourCast | null; area: Rect }) {
           </div>
         </div>
 
-        {/* John, remembered: small, above the family. */}
-        <Fade on={now === "loss"} slow className="absolute inset-x-0 top-[40px] text-center">
-          <p className="font-[Georgia,'Times_New_Roman',serif] text-[1.75rem] leading-tight text-pnc-navy">
-            {tourLoss.personName}
-          </p>
-          <p className="mt-1 text-sm tracking-[0.35em] text-pnc-muted">{years}</p>
-        </Fade>
-
         {/* The people. */}
-        {(["husband", "wife", "child1", "child2", "advisor"] as const).map((id) => {
+        {(["husband", "wife", "child1", "child2", "advisor"] as const).map((id, i) => {
           const p = tourPeople[id];
           const spot = spots[id];
           const dead = id === "husband" && gone;
@@ -319,6 +298,7 @@ export function Cast({ cast, area }: { cast: TourCast | null; area: Rect }) {
                 zIndex: spot.back ? 0 : 1,
                 opacity: dead && spot.opacity ? 0.5 : spot.opacity,
                 transform: `translate(-50%, -50%) translateY(${dead ? -8 : 0}px) scale(${spot.scale})`,
+                transitionDelay: fromTitle ? `${380 + i * 70}ms` : undefined,
               }}
             >
               <span
@@ -336,39 +316,7 @@ export function Cast({ cast, area }: { cast: TourCast | null; area: Rect }) {
             </div>
           );
         })}
-
-        {/* The close: what Findoe is for, in its own words. */}
-        <Fade on={now === "vision"} slow className="absolute inset-x-0 top-[598px] text-center">
-          <p className="font-display text-lg font-medium text-pnc-navy">Care that carries on.</p>
-        </Fade>
       </div>
-    </div>
-  );
-}
-
-function Fade({
-  on,
-  slow = false,
-  className,
-  children,
-}: {
-  on: boolean;
-  slow?: boolean;
-  className?: string;
-  children: ReactNode;
-}) {
-  return (
-    <div
-      aria-hidden={!on}
-      className={cn(
-        "transition-[opacity,transform] ease-out",
-        slow ? "duration-[1400ms]" : "duration-700",
-        on ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-2 opacity-0",
-        on && slow && "delay-500",
-        className,
-      )}
-    >
-      {children}
     </div>
   );
 }
