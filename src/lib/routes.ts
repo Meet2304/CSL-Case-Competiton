@@ -5,9 +5,10 @@
  * `/web/...` or `/mobile/...` directly.
  */
 export const routes = {
-  signOn: "/",
-  /** Guided tour of the concept: open to everyone, one layout for every device. */
-  tour: "/tour",
+  /** Sign on to the working app (the technical implementation behind the tour). */
+  signOn: "/dev",
+  /** Guided tour of the concept, at the site's root: open to everyone, one layout for every device. */
+  tour: "/",
   /** Product film: a movie-style walk through the working app. Open to everyone. */
   film: "/film",
   /** Customer home: portfolio summary and analysis, notifications, families and team. */

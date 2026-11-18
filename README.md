@@ -24,7 +24,7 @@ mobile app, laptops/desktops/tablets get online banking**, on the same URL.
 
 | URL                 | Laptop / desktop (`app/web`)     | Phone (`app/mobile`)            |
 | ------------------- | -------------------------------- | ------------------------------- |
-| `/`                 | Sign-on                          | Sign-on (Image 1)               |
+| `/dev`              | Sign-on                          | Sign-on (Image 1)               |
 | `/accounts`         | Accounts dashboard (Image 7)     | Home / Virtual Wallet (Image 2) |
 | `/pay-transfer`     | Pay & Transfer + payment history | Pay & Transfer list (Image 3)   |
 | `/rewards`          | TotalRewards                     | TotalRewards (Images 4–5)       |
@@ -38,11 +38,12 @@ phone user-agent) and reload. For demos/recordings you can also pin a view with
 `?view=mobile` or `?view=web` on any URL (stored in a cookie; `?view=auto` clears
 it). A pinned mobile view on a wide screen is shown inside an iPhone frame.
 
-## Guided tour — `/tour`
+## Guided tour — `/`
 
 A presenter-led walk through one family's story, told on the working app and made to be talked
 over in a pitch or a customer conversation. It needs no sign-on. Open it with **Take the guided
-tour** on the sign-on page or go straight to `/tour`.
+tour** on the sign-on page (`/dev`) or go straight to the site's root, `/` (the old `/tour`
+redirects there).
 
 The stage is plain white. Between acts it shows the family themselves: the Smiths, John with
 everything he looks after around him, their advisor beside them, John's memorial and the close.
@@ -55,7 +56,7 @@ one short line under the stage says what it means. There are no titles, arrows o
 - **Nothing moves by itself.** Each press of → (or Page Down, the space bar or a click on the
   stage) plays one stop and then rests: a pointer clicks the app's own controls, the camera and
   spotlight settle. A press while a stop is still playing is ignored. ← steps back a stop, Home
-  starts again and Esc leaves. The current stop is kept in the URL (`/tour#named`), so a refresh
+  starts again and Esc leaves. The current stop is kept in the URL (`/#named`), so a refresh
   or a shared link opens at the same place.
 - **The story, in 31 stops:** The Smiths, and John carrying the whole picture alone. John's
   Home and Assets and Debts, including the life policy outside PNC; he adds the family home
@@ -312,10 +313,10 @@ General guidance under federal and Pennsylvania rules as reviewed on Oct 26, 202
 ```
 src/
   app/
-    web/              internal: laptop view. page.tsx = sign-on
+    web/              internal: laptop view. dev/page.tsx = sign-on (/dev)
       (signed-in)/    customer pages (customer nav + footer)
       advisor/        advisor pages (advisor nav + footer)
-    mobile/           internal: phone view. page.tsx = sign-on
+    mobile/           internal: phone view. dev/page.tsx = sign-on (/dev)
       (tabs)/         customer screens (5-tab bar)
       advisor/        advisor screens (Home-only tab bar)
   proxy.ts            device detection -> rewrites public URLs into web/ or mobile/

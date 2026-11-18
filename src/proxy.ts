@@ -76,7 +76,14 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // The guided tour and the product film are open to every role and have one layout each.
+  // The tour used to live at /tour; it is the site's root now. The browser keeps the #stop.
+  if (publicPath === "/tour") {
+    url.pathname = routes.tour;
+    return NextResponse.redirect(url, 308);
+  }
+
+  // The guided tour (the site's root) and the product film are open to every role and have one
+  // layout each.
   if (publicPath === routes.tour || publicPath === routes.film) return NextResponse.next();
 
   // Server Action POSTs (sign-in) must reach the page they were posted from.
@@ -93,7 +100,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  url.pathname = `/${view}${publicPath === "/" ? "" : publicPath}`;
+  url.pathname = `/${view}${publicPath}`;
   const res = NextResponse.rewrite(url);
   res.headers.set("Vary", "User-Agent, Cookie");
   return res;
