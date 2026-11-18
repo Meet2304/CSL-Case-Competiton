@@ -194,7 +194,7 @@ html[data-scale] {
 }
 
 /*
- * Guided tour (/tour). The stage is plain white. Each person's screen is a
+ * Guided tour (the site's root, /). The stage is plain white. Each person's screen is a
  * white card with one color glowing softly behind it: the same color every
  * time that person appears.
  */

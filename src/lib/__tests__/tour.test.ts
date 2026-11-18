@@ -5,6 +5,7 @@ import {
   tourGlow,
   tourPeople,
   tourScenes,
+  tourSections,
   tourStops,
   tourWillDraft,
 } from "@/data/tour";
@@ -38,6 +39,14 @@ describe("the tour's script", () => {
       expect(Boolean(s.scene) !== Boolean(s.cast), s.id).toBe(true);
       if (s.scene) expect(tourScenes[s.scene], s.id).toBeDefined();
     }
+  });
+
+  it("indexes the tour in order, from its first stop, each section starting at a stop", () => {
+    const at = tourSections.map((section) => tourStops.findIndex((s) => s.id === section.start));
+    for (const [i, n] of at.entries()) expect(n, tourSections[i].title).toBeGreaterThanOrEqual(0);
+    expect(at[0]).toBe(0);
+    expect(at).toEqual([...at].sort((a, b) => a - b));
+    expect(new Set(at).size).toBe(at.length);
   });
 
   it("opens on the ecosystem and closes on the family, the four parts of Findoe becoming one", () => {

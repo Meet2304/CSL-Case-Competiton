@@ -51,6 +51,7 @@ import { Frame, GLIDE_MS, hiddenFrame, MOVE_MS, VEIL_MS, type FrameView } from "
 import { Memorial } from "./Memorial";
 import { Notes, type PlacedNote } from "./Notes";
 import { Products } from "./Products";
+import { TourIndex } from "./TourIndex";
 
 const stopIds = tourStops.map((s) => s.id);
 /** The keys the stage answers to; inside a card they are handed back to it. */
@@ -771,13 +772,18 @@ export function GuidedTour() {
   }, []);
 
   const ready = layout !== null;
+  /** Bumped to play the stop on stage again from scratch (the index picked the section it starts). */
+  const [restarts, setRestarts] = useState(0);
+  const anew = useRef(false);
   useEffect(() => {
     if (!ready) return;
     const token = ++run.current;
-    const from = previous.current;
+    // Starting over: rebuild the stop's pages, as if arriving from elsewhere.
+    const from = anew.current ? null : previous.current;
+    anew.current = false;
     previous.current = index;
     void play(from, index, () => run.current === token);
-  }, [index, ready]);
+  }, [index, ready, restarts]);
 
   const exit = async () => {
     run.current++;
@@ -799,6 +805,14 @@ export function GuidedTour() {
   const jump = (n: number) => {
     queued.current = 0;
     go(n);
+  };
+  /** A section picked from the index: its first stop, played afresh even if it is the one on stage. */
+  const pick = (n: number) => {
+    queued.current = 0;
+    hurry.current = false;
+    if (n !== index) return go(n);
+    anew.current = true;
+    setRestarts((r) => r + 1);
   };
 
   const onKey = useEffectEvent((key: string) => {
@@ -913,6 +927,8 @@ export function GuidedTour() {
         ))}
 
       {layout && <Notes placed={shownNotes} stageH={h} />}
+
+      {layout && <TourIndex at={index} onPick={pick} />}
 
       {cramped && (
         <div className="absolute inset-0 grid place-items-center px-8 text-center">

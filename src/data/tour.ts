@@ -1056,3 +1056,30 @@ export const tourStops: TourStop[] = [
   { id: "vision", cast: "vision" },
   { id: "finale", cast: "finale" },
 ];
+
+/**
+ * The tour's index: each section's name and the stop it begins with, in order.
+ * The presenter can jump straight to the start of any of them.
+ */
+export const tourSections: { title: string; start: string }[] = [
+  { title: "Opening", start: "title" },
+  { title: "The Smith family", start: "smiths" },
+  { title: "John's portfolio", start: "home" },
+  { title: "Adding assets", start: "add" },
+  { title: "Adding a vehicle", start: "vehicle" },
+  { title: "Notifications and DPOA", start: "notifications" },
+  { title: "Beneficiary and will reminders", start: "home-again" },
+  { title: "Writing the will", start: "will" },
+  { title: "John's and Maya's assets", start: "assets-again" },
+  { title: "Family dashboard", start: "dashboard" },
+  { title: "Sharing with David", start: "manage" },
+  { title: "John passes away", start: "gathered" },
+  { title: "After the loss", start: "passed" },
+  { title: "Advisor dashboard and estate", start: "advisor-home" },
+  { title: "Asking Findoe", start: "ask" },
+  { title: "Next steps and transfer", start: "process" },
+  { title: "Maya is notified", start: "handoff" },
+  { title: "Maya's claims", start: "maya" },
+  { title: "Maya asks Findoe", start: "maya-findoe" },
+  { title: "Finale", start: "circle" },
+];
