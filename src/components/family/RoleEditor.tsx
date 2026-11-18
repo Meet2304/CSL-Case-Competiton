@@ -134,19 +134,18 @@ export function RoleEditor({ role, onDone }: { role: FamilyRole | null; onDone: 
         <button type="button" onClick={onDone} className={secondaryButton}>
           {readOnly ? "Back" : "Cancel"}
         </button>
-        {role && !role.builtIn && (
+        {/* A role can be deleted once nobody holds it; until then there is nothing to offer. */}
+        {role && !role.builtIn && membersWithRole.length === 0 && (
           <button
             type="button"
-            disabled={membersWithRole.length > 0}
             onClick={() => {
               dispatch({ type: "deleteRole", roleId: role.id });
               onDone();
             }}
-            title={membersWithRole.length > 0 ? "Move members to another role first" : undefined}
             className={cn(linkButton, "ml-auto text-pnc-negative")}
           >
             <Trash2 className="size-4" aria-hidden="true" />
-            {membersWithRole.length > 0 ? `In use by ${membersWithRole.length}` : "Delete role"}
+            Delete role
           </button>
         )}
       </div>

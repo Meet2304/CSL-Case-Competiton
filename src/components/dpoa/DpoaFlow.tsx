@@ -75,7 +75,8 @@ export function DpoaFlow() {
 
   return (
     <div className={panel}>
-      <Stepper current={index} />
+      {/* Once it is signed, all that is left is sending it to PNC. */}
+      <Stepper current={signed ? index + 1 : index} />
 
       <div className="border-t border-pnc-line px-5 py-6 @2xl:px-8">
         {step === "people" && (

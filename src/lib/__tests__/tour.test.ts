@@ -46,7 +46,13 @@ describe("the tour's script", () => {
   });
 
   it("plays at most one click or typing per press, besides a run of quick clicks", () => {
+    // John sharing with David is one motion, played on one press: tick, tick, save.
+    const oneMotion = new Set(["share"]);
     for (const s of tourStops) {
+      if (oneMotion.has(s.id)) {
+        expect(pointerMoves(s), s.id).toBe(3);
+        continue;
+      }
       const clicks = (s.steps ?? []).filter(
         (x) => x.do === "click" && !("quick" in x && x.quick),
       ).length;

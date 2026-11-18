@@ -86,6 +86,22 @@ export type FrameView = {
    * camera) until the new one is ready, so the card never goes blank.
    */
   old?: { key: number; src: string; width: number; transform: string };
+  /**
+   * Still copies of the page as it looked (its width, camera and scroll),
+   * held over the live page while steps run beneath them out of sight, the
+   * last one drawn on top. A copy's `hole` (in page pixels) lets that part of
+   * the live page show through. They fade away (`fading`) to show where the
+   * steps ended.
+   */
+  covers?: {
+    key: number;
+    html: string;
+    width: number;
+    transform: string;
+    scroll: { x: number; y: number };
+    hole?: Rect;
+    fading: boolean;
+  }[];
   /** The new page is still loading: it is hidden, over the old one (or white if none). */
   veil: boolean;
   /** Move to the slot rather than appear there. */
@@ -144,6 +160,7 @@ export function Frame({
   rect: slot,
   register,
   onLoad,
+  onCover,
 }: {
   id: FrameId;
   view: FrameView;
@@ -151,6 +168,8 @@ export function Frame({
   rect: Rect;
   register: (id: FrameId, el: HTMLIFrameElement | null) => void;
   onLoad: (id: FrameId) => void;
+  /** The still copy over the page is drawn. */
+  onCover: (id: FrameId) => void;
 }) {
   const person = tourPeople[id];
   const { rect, width } = useGlide(slot, view.width, view.glide);
@@ -232,6 +251,42 @@ export function Frame({
                   onLoad={current ? () => onLoad(id) : undefined}
                   className="pointer-events-none block border-0 bg-white"
                   style={{ width: w, height: Math.round((page.h * w) / page.w) }}
+                />
+              </div>
+            );
+          })}
+          {view.covers?.map((c) => {
+            const h = Math.round((page.h * c.width) / page.w);
+            const hole = c.hole;
+            return (
+              <div
+                key={`cover-${c.key}`}
+                className="absolute left-0 top-0 size-full origin-top-left"
+                style={{
+                  transform: `scale(${page.w / c.width}) ${c.transform}`,
+                  opacity: c.fading ? 0 : 1,
+                  transition: `opacity ${VEIL_MS}ms ease-out`,
+                }}
+              >
+                <iframe
+                  srcDoc={c.html}
+                  title={`${person.name}'s screen`}
+                  tabIndex={-1}
+                  aria-hidden="true"
+                  onLoad={async (e) => {
+                    const win = e.currentTarget.contentWindow;
+                    win?.scrollTo(c.scroll.x, c.scroll.y);
+                    await win?.document.fonts.ready;
+                    onCover(id);
+                  }}
+                  className="pointer-events-none block border-0 bg-white"
+                  style={{
+                    width: c.width,
+                    height: h,
+                    clipPath: hole
+                      ? `path(evenodd, "M0 0H${c.width}V${h}H0Z M${hole.x} ${hole.y}h${hole.w}v${hole.h}h${-hole.w}Z")`
+                      : undefined,
+                  }}
                 />
               </div>
             );

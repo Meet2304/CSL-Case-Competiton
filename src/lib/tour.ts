@@ -76,7 +76,20 @@ export type TourScene = {
  * part of a run of clicks the viewer sees as one motion (a form's steps ticking
  * off one by one): no pointer travels to it and the camera stays where it is.
  */
-export type TourStep = (Action & { in: FrameId; quick?: boolean }) | { do: "pause"; ms: number };
+export type TourStep =
+  | (Action & { in: FrameId; quick?: boolean })
+  | {
+      /**
+       * Holds a still copy of the card's page over it, so the steps after run
+       * out of sight; only `except`, if given, stays live through it. Each
+       * copy goes under the ones already there, and they all fade away once
+       * the stop's steps are done, onto where the steps ended.
+       */
+      do: "hide";
+      in: FrameId;
+      except?: Target;
+    }
+  | { do: "pause"; ms: number };
 
 /**
  * What a card's camera frames once a stop's steps are done. Unless `spot` is

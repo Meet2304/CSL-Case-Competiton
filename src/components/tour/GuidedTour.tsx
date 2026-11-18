@@ -130,6 +130,32 @@ function prepareWorld(world: TourWorld, fresh: boolean) {
     bereavementActions.initiateTransfer(tourLoss.personId, new Date().toISOString());
 }
 
+/**
+ * A still copy of a page as it looks now: its markup and styles, with what was
+ * typed into its fields, and nothing that runs.
+ */
+function snapshot(page: Document) {
+  const copy = page.documentElement.cloneNode(true) as HTMLElement;
+  const fields = page.querySelectorAll<HTMLInputElement>("input, textarea, select");
+  copy.querySelectorAll<HTMLInputElement>("input, textarea, select").forEach((field, i) => {
+    const from = fields[i];
+    if (!from) return;
+    if (field instanceof HTMLTextAreaElement) field.textContent = from.value;
+    else field.setAttribute("value", from.value);
+    if (from.checked) field.setAttribute("checked", "");
+  });
+  copy.querySelectorAll("script, noscript, iframe").forEach((n) => n.remove());
+  const base = page.createElement("base");
+  base.href = page.location.href;
+  copy.querySelector("head")?.prepend(base);
+  return `<!doctype html>${copy.outerHTML}`;
+}
+
+/** Whether React has taken over an element, so it answers clicks and typing. */
+function awake(el: Element) {
+  return Object.keys(el).some((k) => k.startsWith("__reactProps"));
+}
+
 /** Scrolls a page so the element can be seen, and waits for the page to come to rest. */
 async function reveal(el: HTMLElement, smooth: boolean) {
   const view = el.ownerDocument.defaultView;
@@ -192,6 +218,10 @@ export function GuidedTour() {
 
   const iframes = useRef<Partial<Record<FrameId, HTMLIFrameElement | null>>>({});
   const loaded = useRef<Partial<Record<FrameId, () => void>>>({});
+  /** Waiting for a card's still copy (`cover`) to be drawn. */
+  const covered = useRef<Partial<Record<FrameId, () => void>>>({});
+  /** Lets a card's page scroll again once its still copy is lifted. */
+  const held = useRef<Partial<Record<FrameId, () => void>>>({});
   /** What each card's camera is framing, and how its page is laid out, as the run last set them. */
   const live = useRef<Views>(allHidden);
   const stage = useRef<StageLayout | null>(null);
@@ -302,6 +332,73 @@ export function GuidedTour() {
     return !f || (r.x >= f.x && r.y >= f.y && r.x + r.w <= f.x + f.w && r.y + r.h <= f.y + f.h);
   };
 
+  /**
+   * Holds a still copy of a card's page over it (under any already there), and
+   * waits until it is drawn. Only `except`, if found, stays live through it.
+   */
+  const hide = (id: FrameId, except?: Target) =>
+    new Promise<void>((resolve) => {
+      const page = doc(id)();
+      const old = freeze(id);
+      if (!page?.defaultView || !old) return resolve();
+      const keep = except ? find(page, except) : null;
+      const r = keep ? rectOf(keep) : null;
+      const view = page.defaultView;
+      const at = { x: view.scrollX, y: view.scrollY };
+      if (r && !held.current[id]) {
+        // What shows through stays where it is: the page may not scroll under the copy.
+        const still = () => {
+          if (view.scrollX !== at.x || view.scrollY !== at.y) view.scrollTo(at.x, at.y);
+        };
+        view.addEventListener("scroll", still);
+        held.current[id] = () => view.removeEventListener("scroll", still);
+      }
+      covered.current[id] = resolve;
+      patch(id, {
+        covers: [
+          {
+            key: ++pageKeys.current,
+            html: snapshot(page),
+            width: old.width,
+            transform: old.transform,
+            scroll: at,
+            hole: r ? { x: r.x - 8, y: r.y - 8, w: r.w + 16, h: r.h + 16 } : undefined,
+            fading: false,
+          },
+          ...(live.current[id].covers ?? []),
+        ],
+      });
+      setTimeout(resolve, 3000);
+    }).then(async () => {
+      await nextFrame();
+      await nextFrame();
+    });
+
+  /** Lifts a card's still copies away, now or once they have faded. */
+  const uncover = async (id: FrameId, fade: boolean) => {
+    held.current[id]?.();
+    held.current[id] = undefined;
+    const was = live.current[id].covers;
+    if (!was?.length) return;
+    if (fade) {
+      patch(id, { covers: was.map((c) => ({ ...c, fading: true })) });
+      await sleep(VEIL_MS + 80);
+    }
+    if (live.current[id].covers?.[0]?.key === was[0].key) patch(id, { covers: undefined });
+  };
+
+  /** Whether any card is holding a still copy over its page. */
+  const hiding = () => frameIds.some((id) => live.current[id].covers?.length);
+
+  /** Points the cameras at what the stop is about: straight there if a still copy is lifting. */
+  const land = async (target: TourStop, alive: () => boolean) => {
+    if (!hiding()) return aim(target, false, alive);
+    await aim(target, true, alive);
+    if (!alive()) return;
+    await nextFrame();
+    await Promise.all(frameIds.map((id) => uncover(id, true)));
+  };
+
   /** Runs a stop's steps: played out with the pointer, or at once when `fast` (or hurried). */
   const act = async (steps: TourStep[] | undefined, fast: boolean, alive: () => boolean) => {
     for (const step of steps ?? []) {
@@ -312,6 +409,11 @@ export function GuidedTour() {
         continue;
       }
       const id = step.in;
+      if (step.do === "hide") {
+        // A card that is not showing yet has nothing to hold still.
+        if (live.current[id].shown && !live.current[id].veil) await hide(id, step.except);
+        continue;
+      }
       if (step.do === "wait") {
         await waitFor(doc(id), step.for, 20_000);
         continue;
@@ -326,7 +428,13 @@ export function GuidedTour() {
         continue;
       }
       const target: Target = step.do === "click" ? step.on : step.into;
-      const el = await waitFor(doc(id), target, 12_000);
+      let el = await waitFor(doc(id), target, 12_000);
+      // A page that has just loaded shows its controls before React has taken them over; until
+      // then a click is lost (or a link reloads the whole page), so wait until they work.
+      for (let t = 0; el && !awake(el) && t < 100; t++) {
+        await sleep(50);
+        if (!el.isConnected) el = find(el.ownerDocument, target);
+      }
       if (!alive()) return;
       if (!el) continue;
       const quick = "quick" in step && step.quick;
@@ -492,9 +600,26 @@ export function GuidedTour() {
     staged.current = null;
   };
 
+  /** Fades the cards' new pages in over their old ones, then lets the old ones go. */
+  const unveil = async (ids: FrameId[]) => {
+    await nextFrame();
+    await nextFrame();
+    for (const id of ids) patch(id, { veil: false, shown: true });
+    setCastOn(null);
+    // Once the new page has faded in, the one it replaced can go.
+    const gone = Object.fromEntries(ids.map((id) => [id, live.current[id].old?.key]));
+    void sleep(VEIL_MS + 80).then(() => {
+      for (const id of ids)
+        if (gone[id] !== undefined && live.current[id].old?.key === gone[id])
+          patch(id, { old: undefined });
+    });
+  };
+
   const play = useEffectEvent(async (from: number | null, to: number, alive: () => boolean) => {
     const target = tourStops[to];
     setNotes(null);
+    // A still copy left over a card by a stop that was cut short.
+    for (const id of frameIds) void uncover(id, false);
     // Leaving a stop before its steps finished: the pages are in an unknown state, so start over.
     const interrupted = from !== null && !finished.current;
     const plan = planStop(tourStops, tourScenes, interrupted ? null : from, to);
@@ -596,40 +721,27 @@ export function GuidedTour() {
       }
       if (!alive()) return;
 
-      const unveil = async () => {
-        await nextFrame();
-        await nextFrame();
-        for (const id of ids) patch(id, { veil: false, shown: true });
-        setCastOn(null);
-        // Once the new page has faded in, the one it replaced can go.
-        const gone = Object.fromEntries(ids.map((id) => [id, live.current[id].old?.key]));
-        void sleep(VEIL_MS + 80).then(() => {
-          for (const id of ids)
-            if (gone[id] !== undefined && live.current[id].old?.key === gone[id])
-              patch(id, { old: undefined });
-        });
-      };
       if (plan.animate && target.steps?.length) {
         // Open on the pages as they are, then play the steps out.
         if (plan.replay.length) await aim(tourStops[plan.replay.at(-1)!], true, alive);
-        await unveil();
+        await unveil(ids);
         await sleep(hurry.current ? 0 : moves ? GLIDE_MS * 0.6 : 450);
         await act(target.steps, false, alive);
         if (!alive()) return;
-        await aim(target, false, alive);
+        await land(target, alive);
       } else {
         await act(target.steps, true, alive);
         if (!alive()) return;
         await aim(target, true, alive);
         if (!alive()) return;
-        await unveil();
+        await unveil(ids);
       }
     } else if (plan.kind === "refocus") {
       await aim(target, false, alive);
     } else {
       await act(target.steps, false, alive);
       if (!alive()) return;
-      await aim(target, false, alive);
+      await land(target, alive);
     }
     if (!alive()) return;
     for (const id of frameIds)
@@ -709,6 +821,11 @@ export function GuidedTour() {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, []);
+
+  const onCovered = (id: FrameId) => {
+    covered.current[id]?.();
+    covered.current[id] = undefined;
+  };
 
   /** Every page a card loads: tidy it for the stage and keep the tour's keys working inside it. */
   const onPageLoad = (id: FrameId) => {
@@ -791,6 +908,7 @@ export function GuidedTour() {
             rect={layout.slots[views[id].slot]}
             register={register}
             onLoad={onPageLoad}
+            onCover={onCovered}
           />
         ))}
 
