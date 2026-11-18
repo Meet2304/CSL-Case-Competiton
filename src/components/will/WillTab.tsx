@@ -278,7 +278,7 @@ function WillJourney({ underReview }: { underReview: boolean }) {
   }, []);
   const steps = [
     ...sections.map((s) => sectionMeta[s].short),
-    underReview ? "Under review" : "With PNC",
+    underReview ? "Being verified" : "With PNC",
   ];
   const last = steps.length - 1;
   return (
@@ -374,7 +374,7 @@ function WillOnFile({
             Your will
             {underReview ? (
               <span className="rounded-full bg-pnc-blue-50 px-2.5 py-0.5 font-sans text-xs font-semibold text-pnc-blue-800">
-                Under review by PNC
+                Being Verified by PNC
               </span>
             ) : (
               <span className="rounded-full bg-pnc-positive-bg px-2.5 py-0.5 font-sans text-xs font-semibold text-pnc-positive">

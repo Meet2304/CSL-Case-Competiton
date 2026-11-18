@@ -132,7 +132,8 @@ and mobile views stay in one design language.
   `spot: false`) washes the rest of the page back so only that one thing stays clear; `spot` on a
   stop fades the other cards; `notes` explain Findoe's working beside a card (`Notes.tsx`); John's
   name rises above three cards after his death (`Memorial.tsx`). **Nothing moves unless a key is
-  pressed, and a press plays at most one click** (a test checks it): the script is the list of
+  pressed, and a press plays at most one click** (a test checks it; John sharing with David is
+  the one press played as a single motion of three clicks): the script is the list of
   stops in `src/data/tour.ts`; a press plays one stop's steps (`click`, `type`, `wait`, `look`,
   found by visible words as in the film), with the pointer labelled with the person's name, and
   then rests. Never add a timer, loop or autoplay that advances the story by itself. A stop is

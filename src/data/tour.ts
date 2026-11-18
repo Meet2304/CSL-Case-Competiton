@@ -368,27 +368,34 @@ const advisorFindoe = 'aside[aria-label="Findoe"]';
 
 const ADVISOR_QUESTION = "What should I do next for Maya?";
 
-/** The DPOA's five steps across the top of its page. */
-const dpoaSteps: Target = { css: "ol", text: "Send to PNC" };
 /** A quick click: one of a run the viewer sees as a single motion. */
 const tick = (on: Target): TourStep => ({ in: "husband", do: "click", on, quick: true });
 const button = (text: string, exact = false): Target => ({ css: "button", text, exact });
-/** John's DPOA from its first step to its last, each step ticking off in turn. */
+/** The DPOA's five steps across the top of its page. */
+const dpoaSteps: Target = { css: "ol", text: "Send to PNC" };
+/**
+ * John's DPOA from its first step to its last. The page holds still and only
+ * the steps across its top stay live: the line runs from the first to the last,
+ * ticking off each one on the way. Then it is sent, out of sight.
+ */
 const dpoaRun: TourStep[] = [
+  { in: "husband", do: "hide", except: dpoaSteps },
   tick({ css: "button[aria-pressed]", text: "Maya Smith" }),
-  { do: "pause", ms: 350 },
+  { do: "pause", ms: 60 },
   tick(button("Continue", true)),
   { in: "husband", do: "wait", for: { text: "When it starts" } },
-  { do: "pause", ms: 450 },
+  { do: "pause", ms: 220 },
   tick(button("Continue", true)),
   { in: "husband", do: "wait", for: { text: "Review your DPOA" } },
-  { do: "pause", ms: 450 },
+  { do: "pause", ms: 220 },
   tick(button("Continue to signing")),
   { in: "husband", do: "wait", for: { text: "Sign online with a notary" } },
-  { do: "pause", ms: 450 },
+  { do: "pause", ms: 220 },
   tick(button("Sign online with a notary")),
   { in: "husband", do: "wait", for: { text: "Send to PNC for review" } },
-  { do: "pause", ms: 900 },
+  // The line reaches the last step before the page moves on.
+  { do: "pause", ms: 650 },
+  { in: "husband", do: "hide" },
   tick(button("Send to PNC for review")),
   { in: "husband", do: "wait", for: { text: "Your DPOA is with PNC for review" } },
 ];
@@ -397,8 +404,8 @@ const dpoaRun: TourStep[] = [
 const willSections: Target = { css: 'nav[aria-label="Will sections"]' };
 /**
  * How many screens each of the planner's sections has. John saves each one
- * with what the bank already knows filled in; the save that finishes a section
- * ticks it off, so those are spaced out and the rest pass quickly.
+ * with what the bank already knows filled in. Only the sections across the top
+ * are seen: they tick off one after another as the bar runs to the end.
  */
 const willScreens = {
   "About you": 2,
@@ -411,13 +418,14 @@ const willScreens = {
   Review: 1,
 };
 const willRun: TourStep[] = Object.values(willScreens).flatMap((n) =>
-  Array.from({ length: n }, (_, i): TourStep[] => [
+  Array.from({ length: n }, (): TourStep[] => [
     tick({ css: "button[type=submit]", text: "Save & Continue", exact: true }),
-    { do: "pause", ms: i === n - 1 ? 380 : 90 },
+    // Each save leaves the planner a moment to show the next screen.
+    { do: "pause", ms: 40 },
   ]).flat(),
 );
 
-/** John's will, from a blank start to signed and with PNC for review. */
+/** John's will, from a blank start to a preview and with PNC for review. */
 const willStops: TourStop[] = [
   {
     id: "will-start",
@@ -429,46 +437,44 @@ const willStops: TourStop[] = [
     ],
     focus: { husband: { on: willSections, fit: "width", maxZoom: 1.5, spot: false } },
   },
-  // Each section ticks off in turn; with the last, the draft is drawn up.
+  // The tracker runs from the first section to the last, every one ticked off: one motion.
   {
     id: "will-fill",
     scene: "john",
     product: "will",
     steps: [
+      { in: "husband", do: "hide", except: willSections },
       ...willRun,
       { in: "husband", do: "wait", for: { text: "Review your will" } },
-      { do: "pause", ms: 700 },
-      tick(button("Generate will (preview)")),
-      { in: "husband", do: "wait", for: button("Verify the will", true) },
+      // The bar reaches the end before the page moves on.
+      { do: "pause", ms: 600 },
+    ],
+    focus: { husband: { on: willSections, fit: "width", maxZoom: 1.5, spot: false } },
+  },
+  // John previews the will the planner has drawn up.
+  {
+    id: "will-preview",
+    scene: "john",
+    product: "will",
+    steps: [
+      { in: "husband", do: "click", on: button("Generate will (preview)") },
+      { in: "husband", do: "wait", for: { text: "Last Will and Testament of" } },
     ],
     focus: {
       husband: { on: { text: "Last Will and Testament of", closest: "div" }, spot: false },
     },
   },
-  // He reads it through to the end, where it asks him to verify it.
-  {
-    id: "will-read",
-    scene: "john",
-    product: "will",
-    focus: { husband: { on: { text: "Happy with the draft?", closest: "div" }, maxZoom: 1.3 } },
-  },
-  {
-    id: "will-verify",
-    scene: "john",
-    product: "will",
-    steps: [
-      { in: "husband", do: "click", on: button("Verify the will", true) },
-      { in: "husband", do: "wait", for: { text: "VERIFIED · PNC" } },
-      { do: "pause", ms: 1100 },
-    ],
-    focus: { husband: { on: { css: "[data-will-signature]" }, maxZoom: 1.45, spot: false } },
-  },
+  // He verifies it, and it is with PNC: signing and stamping happen out of sight.
   {
     id: "will-in-review",
     scene: "john",
     product: "will",
     steps: [
-      { in: "husband", do: "click", on: button("Go to will overview") },
+      { in: "husband", do: "look", at: { text: "Happy with the draft?", closest: "div" } },
+      { in: "husband", do: "hide" },
+      { in: "husband", do: "click", on: button("Verify the will", true) },
+      { in: "husband", do: "wait", for: { text: "VERIFIED · PNC" } },
+      tick(button("Go to will overview")),
       { in: "husband", do: "wait", for: { text: "Your will is with PNC for review" } },
     ],
   },
@@ -602,12 +608,12 @@ export const tourStops: TourStop[] = [
       { in: "husband", do: "wait", for: { text: "Who can act for you?" } },
     ],
   },
-  // From the first step to the last in one motion, each step ticking off in turn; then the last screen.
+  // The line runs from the first step to the last in one motion; then it is sent, with its check mark.
   {
     id: "dpoa-steps",
     scene: "john",
     product: "will",
-    steps: [{ in: "husband", do: "look", at: dpoaSteps }, ...dpoaRun],
+    steps: dpoaRun,
     focus: {
       husband: { on: { text: "Your DPOA is with PNC for review", closest: "div" }, maxZoom: 1.3 },
     },
@@ -710,8 +716,9 @@ export const tourStops: TourStop[] = [
       { in: "husband", do: "wait", for: { text: "What this role can see" } },
     ],
   },
+  // One motion: John lets the role see his Savings, scrolls down to the Cash Rewards Visa, and saves.
   {
-    id: "share-savings",
+    id: "share",
     scene: "access",
     spot: "husband",
     steps: [
@@ -720,31 +727,17 @@ export const tourStops: TourStop[] = [
         do: "click",
         on: { css: `${dialog} input[aria-label="Account and balances: Savings x0002"]` },
       },
-    ],
-    focus: { husband: { on: { text: "What this role can see", closest: "div" }, spot: false } },
-  },
-  {
-    id: "share-card",
-    scene: "access",
-    spot: "husband",
-    steps: [
       {
         in: "husband",
         do: "click",
         on: { css: `${dialog} input[aria-label="Account and balances: Cash Rewards Visa x0003"]` },
       },
-    ],
-    focus: { husband: { on: { text: "What this role can see", closest: "div" }, spot: false } },
-  },
-  // Saved: both screens come forward, David's whole view first...
-  {
-    id: "shared-with-david",
-    scene: "access",
-    steps: [
       { in: "husband", do: "click", on: inDialog("Save changes") },
       { in: "child1", do: "wait", for: { text: "Cash Rewards Visa" } },
     ],
   },
+  // Saved: both screens come forward, David's whole view first...
+  { id: "shared-with-david", scene: "access" },
   // ...then what is now shared with him.
   {
     id: "david-shared",
@@ -780,11 +773,6 @@ export const tourStops: TourStop[] = [
     id: "readiness",
     scene: "advisor",
     focus: { advisor: { on: card("How ready John was"), maxZoom: 1.4 } },
-  },
-  {
-    id: "next-steps",
-    scene: "advisor",
-    focus: { advisor: { on: card("Process John Smith's will"), maxZoom: 1.45 } },
   },
 
   // --- Findoe, for the advisor: an answer that shows its work ----------------------
@@ -909,7 +897,7 @@ export const tourStops: TourStop[] = [
     },
   },
 
-  // The whole of what to do for John's will, at once; then the advisor starts the transfer.
+  // Having asked Findoe, the next steps: the whole of what to do for John's will; then the transfer.
   {
     id: "process",
     scene: "advisor",
