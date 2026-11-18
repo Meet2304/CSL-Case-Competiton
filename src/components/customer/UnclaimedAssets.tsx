@@ -248,7 +248,9 @@ function ClaimRow({
       ? "Start claim"
       : s === "in-progress"
         ? "Continue claim"
-        : "View claim";
+        : s === "submitted"
+          ? "Processing"
+          : "View claim";
   const [a] = item.accounts;
   return (
     <li className="flex flex-wrap items-center gap-x-4 gap-y-3 rounded-lg bg-white p-4 shadow-card @2xl:px-5">
@@ -290,7 +292,10 @@ function ClaimRow({
           className="inline-flex items-center gap-1.5 rounded-full bg-pnc-orange px-4 py-2 text-sm font-semibold text-white hover:bg-pnc-orange-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pnc-link"
         >
           {cta}
-          <span className="sr-only"> for {item.title}</span>
+          {/* Screen readers hear "Processing claim for …", like the other labels. */}
+          <span className="sr-only">
+            {s === "submitted" ? " claim" : ""} for {item.title}
+          </span>
           <ArrowRight className="size-4" aria-hidden="true" />
         </button>
         <button

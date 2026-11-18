@@ -19,9 +19,11 @@ export type AdvisorContext = {
 const willLabel = (c: AdvisorCustomer) =>
   c.will.status === "on-file"
     ? `Will on file (${formatDate(c.will.updated!, "medium")})`
-    : c.will.status === "in-progress"
-      ? "Will in progress"
-      : "No will on file";
+    : c.will.status === "in-review"
+      ? "Will signed, under review by PNC"
+      : c.will.status === "in-progress"
+        ? "Will in progress"
+        : "No will on file";
 
 function clientRow(cite: Citations, c: AdvisorCustomer): string {
   const loss = openLoss(c);

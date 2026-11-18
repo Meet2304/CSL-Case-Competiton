@@ -1,6 +1,6 @@
 "use client";
 
-import { FileCheck2, FilePen, FileX } from "lucide-react";
+import { FileCheck2, FileClock, FilePen, FileX } from "lucide-react";
 import { HOUSEHOLD_ID } from "@/data/household";
 import type { AdvisorCustomer, WillStatus as Status } from "@/data/types";
 import { cn, formatDate } from "@/lib/format";
@@ -10,6 +10,7 @@ const JORDAN = "p-jordan";
 
 const statusStyle: Record<Status, { label: string; icon: typeof FileCheck2; className: string }> = {
   "on-file": { label: "Will on file", icon: FileCheck2, className: "text-pnc-positive" },
+  "in-review": { label: "Will under review", icon: FileClock, className: "text-pnc-blue-700" },
   "in-progress": { label: "Will in progress", icon: FilePen, className: "text-pnc-orange-600" },
   none: { label: "No will", icon: FileX, className: "text-pnc-muted" },
 };
@@ -40,7 +41,7 @@ export function WillStatus({
     >
       <Icon className="size-3.5 shrink-0" aria-hidden="true" />
       {label}
-      {status === "on-file" && updated && !compact && (
+      {(status === "on-file" || status === "in-review") && updated && !compact && (
         <span className="font-normal text-pnc-muted"> · {formatDate(updated, "monthDay")}</span>
       )}
     </span>

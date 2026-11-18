@@ -49,7 +49,7 @@ export const filmScenes: Record<string, FilmScene> = {
   "advisor-client": {
     as: "advisor",
     world: "after",
-    path: "/advisor/clients/c-sample",
+    path: "/advisor/clients/c-sample#next",
     ready: { text: "Where things stand" },
   },
   "wife-home": {

@@ -1,9 +1,16 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
-import { ChevronDown } from "lucide-react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Mrs_Saint_Delafield } from "next/font/google";
+import { BadgeCheck, ChevronDown } from "lucide-react";
 import { buttonClass } from "@/components/will/ui";
-import { cn } from "@/lib/format";
+import { cn, formatDate } from "@/lib/format";
+
+/** A handwriting face for the testator's signature, once the will is verified. */
+const signatureFont = Mrs_Saint_Delafield({ weight: "400", subsets: ["latin"] });
+
+/** Who signed the will and on what day (ISO date): draws their signature and PNC's stamp. */
+export type WillSignature = { by: string; on: string };
 
 /**
  * The will drawn as a sheet of paper: the one bold element of the will
@@ -86,12 +93,18 @@ export function WillDocument({
   text,
   collapsible = false,
   onFile = false,
+  underReview = false,
+  signed,
 }: {
   text: string;
   /** Show the opening of the will with a "Read the full will" toggle. */
   collapsible?: boolean;
   /** The copy kept with PNC once the will is signed, rather than a draft. */
   onFile?: boolean;
+  /** The signed copy PNC is still reviewing (with `onFile`). */
+  underReview?: boolean;
+  /** Signs the testator's line and stamps the will as verified by PNC. */
+  signed?: WillSignature;
 }) {
   const [open, setOpen] = useState(!collapsible);
   const blocks = parse(text);
@@ -107,12 +120,18 @@ export function WillDocument({
                   key={i}
                   className={cn(
                     "mb-8 rounded-md px-3 py-2 text-center text-xs font-semibold",
-                    onFile ? "bg-pnc-positive-bg text-pnc-positive" : "bg-mock-bg text-mock",
+                    !onFile
+                      ? "bg-mock-bg text-mock"
+                      : underReview
+                        ? "bg-pnc-blue-50 text-pnc-blue-800"
+                        : "bg-pnc-positive-bg text-pnc-positive",
                   )}
                 >
-                  {onFile
-                    ? "The copy on file with PNC. Your signed original is the legal document."
-                    : "Draft preview. Not a legal document until it's printed, signed and witnessed."}
+                  {!onFile
+                    ? "Draft preview. Not a legal document until it's printed, signed and witnessed."
+                    : underReview
+                      ? "The signed copy with PNC for review. Your signed original is the legal document."
+                      : "The copy on file with PNC. Your signed original is the legal document."}
                 </p>
               );
             case "title":
@@ -146,12 +165,7 @@ export function WillDocument({
                 </p>
               );
             case "signature":
-              return (
-                <div key={i} className="mt-10 w-64 max-w-full">
-                  <span className="block border-b border-pnc-ink/60 pb-6" />
-                  <span className="mt-1 block text-xs text-pnc-muted">{b.text}</span>
-                </div>
-              );
+              return <SignatureLine key={i} label={b.text} signed={signed} />;
             case "footer":
               return (
                 <p key={i} className="mt-10 text-center text-xs text-pnc-muted">
@@ -174,6 +188,82 @@ export function WillDocument({
           </div>
         )}
       </Sheet>
+    </div>
+  );
+}
+
+/**
+ * The testator's signature rule. Once the will is verified it is signed and
+ * stamped, played in when the line comes into view so the moment isn't missed.
+ */
+function SignatureLine({ label, signed }: { label: string; signed?: WillSignature }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [seen, setSeen] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!signed || seen || !el) return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) setSeen(true);
+      },
+      { threshold: 0.6 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [signed, seen]);
+  const show = signed && seen;
+  return (
+    <div ref={ref} data-will-signature className="mt-10 flex flex-wrap items-end gap-x-10 gap-y-6">
+      <div className="w-64 max-w-full">
+        <span className="relative block border-b border-pnc-ink/60 pb-6">
+          {show && <Signature name={signed.by} />}
+        </span>
+        <span className="mt-1 block text-xs text-pnc-muted">{label}</span>
+      </div>
+      {/* Until it plays, an invisible stamp holds its place so the page doesn't shift. */}
+      {signed && <VerifiedStamp key={show ? "stamp" : "space"} on={signed.on} hidden={!show} />}
+    </div>
+  );
+}
+
+/** The testator's name in a hand, written on from left to right as it appears. */
+function Signature({ name }: { name: string }) {
+  return (
+    <span
+      role="img"
+      aria-label={`Signed by ${name}`}
+      className={cn(
+        signatureFont.className,
+        "absolute -bottom-1 left-10 whitespace-nowrap text-[2.75rem] leading-none text-pnc-blue-900",
+        "[clip-path:inset(-40%_-12%_-40%_-12%)] starting:[clip-path:inset(-40%_100%_-40%_-12%)]",
+        "transition-[clip-path] delay-150 duration-700 ease-out motion-reduce:transition-none",
+      )}
+    >
+      {name}
+    </span>
+  );
+}
+
+/** PNC's verification stamp, pressed onto the page beside the signature. */
+function VerifiedStamp({ on, hidden = false }: { on: string; hidden?: boolean }) {
+  return (
+    <div
+      aria-hidden={hidden || undefined}
+      className={cn(
+        hidden && "invisible",
+        "-rotate-6 rounded-md border-[3px] border-pnc-orange-600 p-0.5 text-pnc-orange-600 mix-blend-multiply",
+        "transition-[opacity,scale] delay-700 duration-300 ease-out starting:scale-115 starting:opacity-0 motion-reduce:transition-none",
+      )}
+    >
+      <div className="rounded-[3px] border border-pnc-orange-600/70 px-4 py-1.5 text-center">
+        <p className="flex items-center justify-center gap-1.5 font-display text-base font-bold tracking-[0.18em]">
+          <BadgeCheck className="size-4" strokeWidth={2.5} aria-hidden="true" />
+          VERIFIED · PNC
+        </p>
+        <p className="mt-0.5 text-[0.6875rem] font-semibold tracking-[0.2em]">
+          {formatDate(on, "medium").toUpperCase()}
+        </p>
+      </div>
     </div>
   );
 }

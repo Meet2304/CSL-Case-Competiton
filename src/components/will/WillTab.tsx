@@ -6,6 +6,7 @@ import {
   BadgeCheck,
   Check,
   ChevronRight,
+  CircleCheck,
   Clock,
   CloudCheck,
   Download,
@@ -20,6 +21,7 @@ import { WillDocument } from "@/components/will/WillDocument";
 import { ProgressBar, StepDot, statusText } from "@/components/will/progress";
 import { sectionMeta } from "@/components/will/sections";
 import { WillPlanner } from "@/components/will/WillPlanner";
+import { MOCK_AS_OF } from "@/data/mock";
 import type { FamilyState } from "@/data/types";
 import { firstName } from "@/lib/family";
 import { cn, formatDate } from "@/lib/format";
@@ -71,12 +73,13 @@ export function WillSection() {
         />
       </div>
     );
-  } else if (status === "on-file" && saved) {
+  } else if ((status === "on-file" || status === "in-review") && saved) {
     body = (
       <div className={panel}>
         <WillOnFile
           draft={saved.draft}
           household={household}
+          underReview={status === "in-review"}
           onEdit={() => setPlanning("resume")}
         />
       </div>
@@ -265,15 +268,18 @@ function WillStart({
 /**
  * Every section of the will, done: the bar fills from the first section to the
  * last as the page opens, each section checks off in turn, and the will ends
- * on file with PNC.
+ * on file with PNC (or, while PNC reviews it, under review).
  */
-function WillJourney() {
+function WillJourney({ underReview }: { underReview: boolean }) {
   const [filled, setFilled] = useState(false);
   useEffect(() => {
     const id = requestAnimationFrame(() => setFilled(true));
     return () => cancelAnimationFrame(id);
   }, []);
-  const steps = [...sections.map((s) => sectionMeta[s].short), "With PNC"];
+  const steps = [
+    ...sections.map((s) => sectionMeta[s].short),
+    underReview ? "Under review" : "With PNC",
+  ];
   const last = steps.length - 1;
   return (
     <div className="rounded-lg border border-pnc-line px-4 py-5 @2xl:px-6">
@@ -288,33 +294,49 @@ function WillJourney() {
             style={{ transform: `scaleX(${filled ? 1 : 0})` }}
           />
         </span>
-        {steps.map((label, i) => (
-          <li key={label} className="relative flex flex-1 flex-col items-center gap-1.5">
-            <span
-              aria-hidden="true"
-              className={cn(
-                "grid size-8 place-items-center rounded-full text-xs font-semibold ring-[3px] transition-colors duration-500 motion-reduce:transition-none",
-                filled
-                  ? i === last
-                    ? "bg-pnc-positive text-white ring-pnc-positive"
-                    : "bg-pnc-blue-700 text-white ring-pnc-blue-700"
-                  : "bg-white text-pnc-muted ring-pnc-line",
-              )}
-              style={{ transitionDelay: filled ? `${150 + (i * 1450) / last}ms` : "0ms" }}
-            >
-              {filled ? <Check className="size-4" strokeWidth={3} /> : i + 1}
-            </span>
-            <span
-              className={cn(
-                "text-center text-xs",
-                i === last ? "font-semibold text-pnc-positive" : "text-pnc-muted",
-              )}
-            >
-              {label}
-              <span className="sr-only">, done</span>
-            </span>
-          </li>
-        ))}
+        {steps.map((label, i) => {
+          // While PNC reviews the will, its last step waits rather than checks off.
+          const waiting = underReview && i === last;
+          return (
+            <li key={label} className="relative flex flex-1 flex-col items-center gap-1.5">
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "grid size-8 place-items-center rounded-full text-xs font-semibold ring-[3px] transition-colors duration-500 motion-reduce:transition-none",
+                  !filled
+                    ? "bg-white text-pnc-muted ring-pnc-line"
+                    : waiting
+                      ? "bg-pnc-blue-50 text-pnc-blue-800 ring-pnc-blue-700"
+                      : i === last
+                        ? "bg-pnc-positive text-white ring-pnc-positive"
+                        : "bg-pnc-blue-700 text-white ring-pnc-blue-700",
+                )}
+                style={{ transitionDelay: filled ? `${150 + (i * 1450) / last}ms` : "0ms" }}
+              >
+                {!filled ? (
+                  i + 1
+                ) : waiting ? (
+                  <Clock className="size-4" strokeWidth={2.5} />
+                ) : (
+                  <Check className="size-4" strokeWidth={3} />
+                )}
+              </span>
+              <span
+                className={cn(
+                  "text-center text-xs",
+                  waiting
+                    ? "font-semibold text-pnc-blue-800"
+                    : i === last
+                      ? "font-semibold text-pnc-positive"
+                      : "text-pnc-muted",
+                )}
+              >
+                {label}
+                <span className="sr-only">{waiting ? ", with PNC now" : ", done"}</span>
+              </span>
+            </li>
+          );
+        })}
       </ol>
     </div>
   );
@@ -323,10 +345,13 @@ function WillJourney() {
 function WillOnFile({
   draft,
   household,
+  underReview,
   onEdit,
 }: {
   draft: WillDraft;
   household: FamilyState;
+  /** Signed and sent, but PNC hasn't finished reviewing it yet. */
+  underReview: boolean;
   onEdit: () => void;
 }) {
   const self = household.members.find((m) => m.id === household.selfId)!;
@@ -347,9 +372,15 @@ function WillOnFile({
         <div>
           <h2 className="flex flex-wrap items-center gap-2 font-display text-2xl font-medium text-pnc-ink">
             Your will
-            <span className="rounded-full bg-pnc-positive-bg px-2.5 py-0.5 font-sans text-xs font-semibold text-pnc-positive">
-              On file
-            </span>
+            {underReview ? (
+              <span className="rounded-full bg-pnc-blue-50 px-2.5 py-0.5 font-sans text-xs font-semibold text-pnc-blue-800">
+                Under review by PNC
+              </span>
+            ) : (
+              <span className="rounded-full bg-pnc-positive-bg px-2.5 py-0.5 font-sans text-xs font-semibold text-pnc-positive">
+                On file
+              </span>
+            )}
           </h2>
           {updated && (
             <p className="mt-1 text-sm text-pnc-muted">Saved {formatDate(updated, "medium")}</p>
@@ -365,21 +396,43 @@ function WillOnFile({
         </div>
       </div>
 
-      <WillJourney />
+      <WillJourney underReview={underReview} />
 
       <div className="grid items-start gap-6 @3xl:grid-cols-[minmax(0,1fr)_18rem]">
         <div className="min-w-0 rounded-lg bg-pnc-surface px-3 py-6 @3xl:px-6">
-          <WillDocument text={text} collapsible onFile />
+          <WillDocument
+            text={text}
+            collapsible
+            onFile
+            underReview={underReview}
+            signed={{ by: self.name, on: updated ?? MOCK_AS_OF }}
+          />
         </div>
 
         <aside className="space-y-4">
           <section className="rounded-lg border border-pnc-line p-4">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-pnc-positive-bg px-2.5 py-0.5 text-xs font-semibold text-pnc-positive">
-              <Check className="size-3.5" aria-hidden="true" /> Your will is on file
-            </span>
-            <h3 className="mt-3 font-display text-xl font-medium text-pnc-ink">
-              Signed, and with PNC
-            </h3>
+            {underReview ? (
+              <>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-pnc-blue-50 px-2.5 py-0.5 text-xs font-semibold text-pnc-blue-800">
+                  <CircleCheck className="size-3.5" aria-hidden="true" /> Sent to PNC
+                </span>
+                <h3 className="mt-3 font-display text-xl font-medium text-pnc-ink">
+                  Your will is with PNC for review
+                </h3>
+                <p className="mt-1 text-sm leading-relaxed text-pnc-muted">
+                  PNC checks it and keeps the copy on file, then lets you know.
+                </p>
+              </>
+            ) : (
+              <>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-pnc-positive-bg px-2.5 py-0.5 text-xs font-semibold text-pnc-positive">
+                  <Check className="size-3.5" aria-hidden="true" /> Your will is on file
+                </span>
+                <h3 className="mt-3 font-display text-xl font-medium text-pnc-ink">
+                  Signed, and with PNC
+                </h3>
+              </>
+            )}
             <dl className="mt-3 space-y-2.5 text-sm">
               {[
                 ["Signed", updated ? formatDate(updated, "medium") : "On file"],

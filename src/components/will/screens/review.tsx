@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
-import { Check, Copy, Download, FileCheck2 } from "lucide-react";
+import { useRef, useState, type ReactNode } from "react";
+import { BadgeCheck, Check, CircleCheck, Copy, Download, FileCheck2 } from "lucide-react";
 import { NavButtons, usePlanner } from "@/components/will/context";
-import { WillDocument } from "@/components/will/WillDocument";
+import { WillDocument, type WillSignature } from "@/components/will/WillDocument";
 import { genderOptions, SpouseNameFields } from "@/components/will/screens/basics";
 import { yesNoOptions } from "@/components/will/screens/nominees";
 import {
@@ -16,6 +16,7 @@ import {
   Question,
   QuestionCard,
 } from "@/components/will/ui";
+import { MOCK_AS_OF } from "@/data/mock";
 import { formatDate } from "@/lib/format";
 import {
   assetCategories,
@@ -39,7 +40,7 @@ import {
   spouseName,
 } from "@/lib/will/flow";
 import { generateWill } from "@/lib/will/generate";
-import { readWillStatus, setWillStatus } from "@/lib/will/storage";
+import { readWillStatus, readWillUpdated, setWillStatus } from "@/lib/will/storage";
 import type { Person, WillDraft } from "@/lib/will/types";
 
 export function MirrorWillsScreen() {
@@ -395,7 +396,12 @@ function reviewSections(d: WillDraft, accountHolder: string): { title: string; r
 export function ReviewScreen() {
   const { draft, goTo, previous, accountHolder, owner, exit } = usePlanner();
   const [wills, setWills] = useState<{ title: string; text: string }[] | null>(null);
-  const [onFile, setOnFile] = useState(() => readWillStatus(owner) === "on-file");
+  const [status, setStatus] = useState(() => readWillStatus(owner));
+  const previews = useRef<HTMLDivElement>(null);
+  const verified = status === "in-review" || status === "on-file";
+  const signature: WillSignature | undefined = verified
+    ? { by: accountHolder, on: readWillUpdated(owner) ?? MOCK_AS_OF }
+    : undefined;
   const incomplete = incompleteScreens(draft).filter((id) => id !== "review.summary");
   const edit = (screen: string) => goTo(screen, { returnToReview: true });
 
@@ -411,6 +417,18 @@ export function ReviewScreen() {
           ]
         : [];
     setWills([mine, ...mirror]);
+  }
+
+  /** Signs the will and sends it to PNC, then shows the signed line and PNC's stamp. */
+  function verify() {
+    setWillStatus(owner, "in-review");
+    setStatus("in-review");
+    requestAnimationFrame(() => {
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      previews.current
+        ?.querySelector("[data-will-signature]")
+        ?.scrollIntoView({ block: "center", behavior: reduce ? "auto" : "smooth" });
+    });
   }
 
   return (
@@ -490,12 +508,18 @@ export function ReviewScreen() {
       </div>
 
       {wills && (
-        <div className="space-y-6 pt-2">
-          {wills.map((w) => (
-            <WillPreview key={w.title} title={w.title} text={w.text} />
+        <div ref={previews} className="space-y-6 pt-2">
+          {wills.map((w, i) => (
+            // Only your own will carries your signature; a mirror will is your spouse's to sign.
+            <WillPreview
+              key={w.title}
+              title={w.title}
+              text={w.text}
+              signed={i === 0 ? signature : undefined}
+            />
           ))}
           <div className="flex flex-wrap items-center gap-4 rounded-md bg-pnc-blue-50 px-5 py-4">
-            {onFile ? (
+            {status === "on-file" ? (
               <>
                 <p className="flex flex-1 items-center gap-2 text-sm font-semibold text-pnc-positive">
                   <FileCheck2 className="size-5 shrink-0" aria-hidden="true" />
@@ -505,21 +529,31 @@ export function ReviewScreen() {
                   Go to will overview
                 </button>
               </>
+            ) : verified ? (
+              <>
+                <div className="min-w-0 flex-1 basis-64">
+                  <p className="flex items-center gap-2 text-sm font-semibold text-pnc-blue-800">
+                    <CircleCheck className="size-5 shrink-0" aria-hidden="true" />
+                    Your will is signed and with PNC for review.
+                  </p>
+                  <p className="mt-1 pl-7 text-sm leading-relaxed text-pnc-muted">
+                    PNC checks it and keeps the copy on file, then lets you know. Demo only: nothing
+                    was signed.
+                  </p>
+                </div>
+                <button type="button" onClick={exit} className={buttonClass.primary}>
+                  Go to will overview
+                </button>
+              </>
             ) : (
               <>
                 <p className="min-w-0 flex-1 basis-64 text-sm leading-relaxed">
-                  Happy with the draft? Print it and sign it with two witnesses, then add it to your
-                  account so your family and your PNC advisor know it&apos;s in place.
+                  Happy with the draft? Verify it to sign your will and send it to PNC for review,
+                  so your family and your PNC advisor know it&apos;s in place.
                 </p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setWillStatus(owner, "on-file");
-                    setOnFile(true);
-                  }}
-                  className={buttonClass.primary}
-                >
-                  Add will to my account
+                <button type="button" onClick={verify} className={buttonClass.primary}>
+                  <BadgeCheck className="size-4" aria-hidden="true" />
+                  Verify the will
                 </button>
               </>
             )}
@@ -530,7 +564,15 @@ export function ReviewScreen() {
   );
 }
 
-function WillPreview({ title, text }: { title: string; text: string }) {
+function WillPreview({
+  title,
+  text,
+  signed,
+}: {
+  title: string;
+  text: string;
+  signed?: WillSignature;
+}) {
   const [copied, setCopied] = useState(false);
   const download = () => {
     const url = URL.createObjectURL(new Blob([text], { type: "text/plain" }));
@@ -560,7 +602,7 @@ function WillPreview({ title, text }: { title: string; text: string }) {
         </span>
       </header>
       <div className="rounded-md bg-pnc-surface px-3 py-6 @2xl:px-8 @2xl:py-10">
-        <WillDocument text={text} />
+        <WillDocument text={text} signed={signed} />
       </div>
     </section>
   );

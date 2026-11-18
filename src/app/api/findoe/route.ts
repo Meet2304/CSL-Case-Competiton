@@ -11,7 +11,9 @@
  *    deployment's own OIDC token (VERCEL_OIDC_TOKEN, or the
  *    x-vercel-oidc-token request header), billed to the Vercel team.
  * With none of these it answers 503 { offline: true } and the browser falls
- * back to the simulated assistant.
+ * back to the simulated assistant. It answers the same way when the call to
+ * Claude fails before any words arrive (credentials rejected, rate limit, API
+ * or network error), so the advisor never sees an error in place of an answer.
  */
 import Anthropic from "@anthropic-ai/sdk";
 import { cookies, headers } from "next/headers";
@@ -75,6 +77,38 @@ async function connect(): Promise<Connection | null> {
 
 const isAdvisor = async () => parseRole((await cookies()).get(SESSION_COOKIE)?.value) === "advisor";
 
+type ReplyStream = ReturnType<Anthropic["messages"]["stream"]>;
+
+/** The words in one stream event, if it carries any. */
+const textOf = (event: Anthropic.MessageStreamEvent) =>
+  event.type === "content_block_delta" && event.delta.type === "text_delta" ? event.delta.text : "";
+
+/**
+ * Reads the stream up to Claude's first words and returns them. Throws if the call fails
+ * first, and also when the reply ends with no words at all (unless Claude declined, which
+ * the caller reports), so either way the advisor falls back to the rulebook.
+ */
+async function firstWords(
+  events: AsyncIterator<Anthropic.MessageStreamEvent>,
+  stream: ReplyStream,
+): Promise<string> {
+  for (let next = await events.next(); !next.done; next = await events.next()) {
+    const text = textOf(next.value);
+    if (text) return text;
+  }
+  // The iterator reports a failure between reads as done, so ask the stream how it ended.
+  const final = await stream.finalMessage();
+  if (final.stop_reason === "refusal") return "";
+  throw new Error(`Claude ended without a reply (${final.stop_reason})`);
+}
+
+/** A short reason for the server log; never includes credentials. */
+function describe(error: unknown): string {
+  if (error instanceof Anthropic.APIError)
+    return `${error.constructor.name} (${error.status ?? "network"})`;
+  return error instanceof Error ? error.message : String(error);
+}
+
 /** Whether Findoe can reach Claude, so the panel can say so before the first question. */
 export async function GET() {
   if (!(await isAdvisor())) return Response.json({ error: "Advisors only" }, { status: 401 });
@@ -98,52 +132,68 @@ export async function POST(request: Request) {
   const connection = await connect();
   if (!connection) return Response.json({ offline: true }, { status: 503 });
 
-  const stream = connection.client.messages.stream({
-    model: connection.model,
-    max_tokens: 16000,
-    // Conversational advice over a fixed context: low effort keeps replies quick. Sent only
-    // to the Claude API directly; AI Gateway gets the model's default.
-    ...(connection.via === "anthropic" && { output_config: { effort: "low" as const } }),
-    system: [
-      { type: "text", text: SYSTEM },
-      {
-        type: "text",
-        text: `CLIENT CONTEXT\n\n${context}`,
-        // The context is identical for every question about this client.
-        cache_control: { type: "ephemeral" },
-      },
-    ],
-    messages,
-  });
+  const stream = connection.client.messages.stream(
+    {
+      model: connection.model,
+      max_tokens: 16000,
+      // Conversational advice over a fixed context: low effort keeps replies quick. Sent only
+      // to the Claude API directly; AI Gateway gets the model's default.
+      ...(connection.via === "anthropic" && { output_config: { effort: "low" as const } }),
+      system: [
+        { type: "text", text: SYSTEM },
+        {
+          type: "text",
+          text: `CLIENT CONTEXT\n\n${context}`,
+          // The context is identical for every question about this client.
+          cache_control: { type: "ephemeral" },
+        },
+      ],
+      messages,
+    },
+    { signal: request.signal },
+  );
+  const events = stream[Symbol.asyncIterator]();
+
+  // Hold the response until Claude's first words arrive. If the call fails before then
+  // (credentials rejected, no permission, rate limit, API or network error), answer as if
+  // offline, so the advisor gets the rulebook's own answer instead of an error.
+  let opening: string;
+  try {
+    opening = await firstWords(events, stream);
+  } catch (error) {
+    stream.abort();
+    console.warn(`Findoe is answering from the rulebook: ${describe(error)}`);
+    return Response.json({ offline: true }, { status: 503 });
+  }
 
   const encoder = new TextEncoder();
+  let cancelled = false;
   const body$ = new ReadableStream<Uint8Array>({
     async start(controller) {
       try {
-        for await (const event of stream) {
-          if (event.type === "content_block_delta" && event.delta.type === "text_delta")
-            controller.enqueue(encoder.encode(event.delta.text));
+        if (opening) controller.enqueue(encoder.encode(opening));
+        for (let next = await events.next(); !next.done; next = await events.next()) {
+          const text = textOf(next.value);
+          if (text) controller.enqueue(encoder.encode(text));
         }
+        // Rejects if the stream failed between reads, which the iterator only reports as done.
         const final = await stream.finalMessage();
         if (final.stop_reason === "refusal")
           controller.enqueue(encoder.encode("\n\nI can't help with that one."));
         else if (final.stop_reason === "max_tokens")
           controller.enqueue(encoder.encode("\n\n(Reply cut short.)"));
-        controller.close();
       } catch (error) {
-        const message =
-          error instanceof Anthropic.AuthenticationError
-            ? "Findoe can't reach Claude: the API key was rejected."
-            : error instanceof Anthropic.RateLimitError
-              ? "Findoe is rate-limited right now. Try again in a moment."
-              : error instanceof Anthropic.APIError
-                ? `Findoe hit an API error (${error.status ?? "network"}). Try again.`
-                : "Findoe lost the connection. Try again.";
-        controller.enqueue(encoder.encode(`\n\n${message}`));
-        controller.close();
+        if (cancelled) return; // The advisor stopped the reply or left the page.
+        // Part of the reply is already on screen, so keep it and say so gently.
+        console.warn(`Findoe's reply was cut off: ${describe(error)}`);
+        controller.enqueue(
+          encoder.encode("\n\n(Findoe was cut off here. Ask again for the rest.)"),
+        );
       }
+      controller.close();
     },
     cancel() {
+      cancelled = true;
       stream.abort();
     },
   });

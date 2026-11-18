@@ -89,7 +89,8 @@ export function nudgesFor({
       });
   }
 
-  if (will !== "on-file")
+  // A signed will with PNC for review needs nothing more from the customer.
+  if (will !== "on-file" && will !== "in-review")
     out.push({
       id: "will",
       title: will === "in-progress" ? "Finish your will" : "Write your will",

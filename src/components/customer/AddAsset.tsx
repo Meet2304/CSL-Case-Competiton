@@ -64,7 +64,10 @@ export const optionIcons: Record<string, LucideIcon> = {
   portfolio: Network,
 };
 
-/** The manual entry that always leads the "Add your own" row, whatever the search. */
+/**
+ * The manual entry that always leads the "Manually Add Assets and Debts" row, whatever the
+ * search.
+ */
 const OWN = "value";
 
 const matches = (o: AddOption, q: string) => {
@@ -75,9 +78,9 @@ const matches = (o: AddOption, q: string) => {
 
 /**
  * Add an asset (`routes.addAsset`): the three classes of asset (PNC accounts,
- * external accounts, add your own) as three titled rows on one page, each a
- * horizontally scrolling strip of cards with arrow buttons. One search filters
- * every row. "Add your own asset" always leads the last row. Each card opens
+ * external accounts, manually added assets and debts) as three titled rows on
+ * one page, each a horizontally scrolling strip of cards with arrow buttons.
+ * One search filters every row. "Add your own asset" always leads the last row. Each card opens
  * a short demo flow.
  */
 export function AddAsset() {

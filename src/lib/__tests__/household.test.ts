@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { applyFamilyAction } from "@/components/family/FamilyProvider";
 import { people, seedFamilies } from "@/data/household";
+import type { WillStatus } from "@/data/types";
 import {
   accountsOf,
   currentAccounts,
@@ -112,6 +113,22 @@ describe("nudges", () => {
     const ids = nudges().map((n) => n.id);
     expect(ids).toContain("will");
     expect(ids.filter((id) => id.startsWith("add-"))).toHaveLength(2);
+  });
+
+  it("stops asking for a will once it is signed and with PNC for review", () => {
+    const ask = (will: WillStatus) =>
+      nudgesFor({
+        person: jordan,
+        accounts: currentAccounts(seed),
+        deceasedIds: [],
+        will,
+        willSectionsDone: 0,
+        totalSections: 6,
+        today: TODAY,
+      }).some((n) => n.id === "will");
+    expect(ask("in-progress")).toBe(true);
+    expect(ask("in-review")).toBe(false);
+    expect(ask("on-file")).toBe(false);
   });
 
   it("stops asking once a beneficiary is named", () => {

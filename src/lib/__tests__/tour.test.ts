@@ -18,6 +18,7 @@ import {
   stageLayout,
   viewportFor,
   worldOrder,
+  type TourScene,
   type TourStop,
 } from "@/lib/tour";
 import { incompleteScreens } from "@/lib/will/flow";
@@ -39,14 +40,16 @@ describe("the tour's script", () => {
     }
   });
 
-  it("opens on the family and closes on them, with the four parts of Findoe around them", () => {
+  it("opens on the ecosystem and closes on the family, the four parts of Findoe becoming one", () => {
     expect(tourStops[0].cast).toBe("title");
-    expect(tourStops.slice(-2).map((s) => s.cast)).toEqual(["circle", "vision"]);
+    expect(tourStops.slice(-3).map((s) => s.cast)).toEqual(["circle", "vision", "finale"]);
   });
 
-  it("plays at most one click or typing per press", () => {
+  it("plays at most one click or typing per press, besides a run of quick clicks", () => {
     for (const s of tourStops) {
-      const clicks = (s.steps ?? []).filter((x) => x.do === "click").length;
+      const clicks = (s.steps ?? []).filter(
+        (x) => x.do === "click" && !("quick" in x && x.quick),
+      ).length;
       expect(clicks, s.id).toBeLessThanOrEqual(1);
       // Filling a form is the one place two fields are typed in one press.
       if (clicks) expect(pointerMoves(s), s.id).toBe(1);
@@ -61,6 +64,9 @@ describe("the tour's script", () => {
   });
 
   it("acts only on screens that are on stage", () => {
+    for (const [id, scene] of Object.entries(tourScenes))
+      for (const step of scene.setup ?? [])
+        if ("in" in step) expect(scene.frames[step.in], id).toBeDefined();
     for (const s of tourStops) {
       const on = s.scene ? tourScenes[s.scene].frames : {};
       for (const step of s.steps ?? []) if ("in" in step) expect(on[step.in], s.id).toBeDefined();
@@ -85,14 +91,34 @@ describe("the tour's script", () => {
     expect(worlds).toEqual([...worlds].sort((a, b) => a - b));
     // The family hears only once the advisor starts passing on John's estate, on stage.
     const told = tourStops.findIndex((s) => s.scene && tourScenes[s.scene].world === "after");
-    expect(tourStops[told - 1].id).toBe("notified");
+    const notified = tourStops.findIndex((s) => s.id === "notified");
+    expect(notified).toBeLessThan(told);
+    expect(tourStops.slice(notified, told).every((s) => s.scene === "transfer")).toBe(true);
   });
 
   it("remembers John between his own act and the bank's", () => {
     const at = (id: string) => tourStops.findIndex((s) => s.id === id);
-    expect(at("will-on-file")).toBeLessThan(at("loss"));
-    expect(at("loss")).toBeLessThan(at("memorial"));
-    expect(at("memorial")).toBeLessThan(at("alert"));
+    expect(at("loss")).toBeGreaterThan(0);
+    expect(at("loss") + 1).toBe(at("passed"));
+    expect(at("passed")).toBeLessThan(at("alert"));
+  });
+
+  it("grows each scene that keeps people on stage out of the scene just before it", () => {
+    for (const [id, scene] of Object.entries(tourScenes)) {
+      for (const [who, f] of Object.entries(scene.frames))
+        if (f!.keep) expect(scene.from, `${id} ${who}`).toBeDefined();
+      if (!scene.from) continue;
+      expect(tourScenes[scene.from], id).toBeDefined();
+      const first = tourStops.findIndex((s) => s.scene === id);
+      expect(tourStops[first - 1].scene, id).toBe(scene.from);
+      for (const [leaving, into] of Object.entries(scene.merge ?? {})) {
+        expect(
+          tourScenes[scene.from].frames[leaving as keyof typeof scene.frames],
+          id,
+        ).toBeDefined();
+        expect(scene.frames[into as keyof typeof scene.frames], id).toBeDefined();
+      }
+    }
   });
 
   it("explains Findoe's answer with the rulebook's own decisions", () => {
@@ -110,29 +136,75 @@ describe("the tour's script", () => {
 });
 
 describe("moving through the tour", () => {
+  const frame = { slot: "solo" as const, path: "/", ready: { text: "x" }, width: 1280 };
+  const scenes: Record<string, TourScene> = {
+    one: { world: "before", product: null, frames: { husband: frame } },
+    two: {
+      world: "before",
+      product: null,
+      from: "one",
+      frames: { husband: { ...frame, keep: true }, wife: frame },
+    },
+    three: { world: "before", product: null, frames: { wife: frame } },
+  };
   const stops: TourStop[] = [
     { id: "a", scene: "one" },
-    { id: "b", scene: "one" },
+    { id: "b", scene: "one", steps: [{ do: "pause", ms: 1 }] },
     { id: "c", scene: "one" },
     { id: "d", scene: "two" },
     { id: "e", cast: "circle" },
+    { id: "f", scene: "three" },
   ];
 
   it("plays the next stop of the same scene on the pages already there", () => {
-    expect(planStop(stops, 0, 1)).toEqual({ kind: "continue" });
+    expect(planStop(stops, scenes, 0, 1)).toEqual({ kind: "continue" });
+  });
+
+  it("only moves the camera when stepping back over stops that changed nothing", () => {
+    expect(planStop(stops, scenes, 2, 1)).toEqual({ kind: "refocus" });
+  });
+
+  it("keeps the people already on stage when a scene grows out of the one before", () => {
+    expect(planStop(stops, scenes, 2, 3)).toEqual({
+      kind: "enter",
+      replay: [],
+      animate: true,
+      carry: ["husband"],
+    });
   });
 
   it("loads a new scene when moving into it, and plays its first stop out", () => {
-    expect(planStop(stops, 2, 3)).toEqual({ kind: "enter", replay: [], animate: true });
+    expect(planStop(stops, scenes, 4, 5)).toEqual({
+      kind: "enter",
+      replay: [],
+      animate: true,
+      carry: [],
+    });
   });
 
-  it("rebuilds a stop from its scene's start when stepping back or jumping in", () => {
-    expect(planStop(stops, 2, 1)).toEqual({ kind: "enter", replay: [0], animate: false });
-    expect(planStop(stops, null, 2)).toEqual({ kind: "enter", replay: [0, 1], animate: false });
+  it("rebuilds a stop from its scene's start when stepping back over a change, or jumping in", () => {
+    expect(planStop(stops, scenes, 2, 0)).toEqual({
+      kind: "enter",
+      replay: [],
+      animate: false,
+      carry: [],
+    });
+    expect(planStop(stops, scenes, null, 2)).toEqual({
+      kind: "enter",
+      replay: [0, 1],
+      animate: false,
+      carry: [],
+    });
+    expect(planStop(stops, scenes, 4, 3)).toEqual({
+      kind: "enter",
+      replay: [],
+      animate: false,
+      carry: [],
+    });
   });
 
   it("needs nothing loaded for a moment with the family", () => {
-    expect(planStop(stops, 3, 4)).toEqual({ kind: "cast" });
+    expect(planStop(stops, scenes, 3, 4)).toEqual({ kind: "cast" });
   });
 });
 

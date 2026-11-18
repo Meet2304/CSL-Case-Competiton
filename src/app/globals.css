@@ -209,6 +209,14 @@ html[data-scale] {
   --tour-note-law: #7a4fd6;
   --tour-note-cited: var(--color-pnc-positive);
   --tour-note-accent: var(--color-pnc-orange);
+  /* The opening diagram of Findoe's four parts, and the one bubble they become at the end. */
+  --tour-eco-ring: color-mix(in srgb, var(--color-pnc-blue-700) 14%, white);
+  --tour-eco-orange: color-mix(in srgb, var(--color-pnc-orange) 85%, white);
+  --tour-eco-cream: #fffbf8;
+  --tour-eco-halo: #fcede4;
+  --tour-eco-dash: #a6a6a6;
+  --tour-eco-zap: #fbbf24;
+  --tour-eco-lock: #e8b84a;
 }
 
 /* In development Next.js floats a badge in the corner. Keep it off the stage while presenting. */
@@ -355,4 +363,21 @@ html:has(.tour-stage) nextjs-portal {
 }
 .tour-frame[data-quiet="true"] .tour-name {
   opacity: 0.7;
+}
+
+/* The opening diagram's outlines: the dashed groups, and the advisor's arc. */
+.tour-eco-dash {
+  stroke: var(--tour-eco-dash);
+}
+.tour-eco-orange {
+  stroke: var(--tour-eco-orange);
+}
+
+/* With reduced motion, the parts of Findoe, the diagram and John's name change in place. */
+@media (prefers-reduced-motion: reduce) {
+  .tour-motion,
+  .tour-motion * {
+    transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
+  }
 }

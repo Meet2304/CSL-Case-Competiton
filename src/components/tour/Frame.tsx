@@ -1,6 +1,6 @@
 "use client";
 
-import type { UIEvent } from "react";
+import { useEffect, useRef, useState, type UIEvent } from "react";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
 import { tourGlow, tourPeople } from "@/data/tour";
 import type { Rect } from "@/lib/film";
@@ -11,10 +11,67 @@ import { cameraFor, viewportFor, type FrameId, type SlotId } from "@/lib/tour";
 export const GLIDE_MS = 1000;
 /** How long a card's camera takes to move. */
 export const MOVE_MS = 900;
-/** How long a card takes to go white, or come back, when its page is replaced. */
+/** How long a new page takes to fade in over the one it replaces. */
 export const VEIL_MS = 320;
+/** How long a card takes to fade back, or forward, when another one is picked out. */
+export const DIM_MS = 360;
 
 export type Pointer = { x: number; y: number; shown: boolean; down: boolean };
+
+/** The same curve as the camera's, cubic-bezier(0.65, 0, 0.35, 1), near enough. */
+const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
+
+type Placed = { rect: Rect; width: number };
+
+/**
+ * Where a card is drawn while it glides to a new place: its box and the width
+ * its page is laid out at move together, frame by frame, the way a window
+ * being resized reflows its page, so the page always fills the card.
+ */
+function useGlide(rect: Rect, width: number, glide: boolean): Placed {
+  const [moving, setMoving] = useState<Placed | null>(null);
+  const shown = moving ?? { rect, width };
+  const last = useRef(shown);
+  // Reads where the card was drawn before this change; the effect after it then records where it is now.
+  useEffect(() => {
+    const start = last.current;
+    const same =
+      start.width === width &&
+      start.rect.x === rect.x &&
+      start.rect.y === rect.y &&
+      start.rect.w === rect.w &&
+      start.rect.h === rect.h;
+    if (same) return;
+    let frame = 0;
+    if (!glide) {
+      frame = requestAnimationFrame(() => setMoving(null));
+      return () => cancelAnimationFrame(frame);
+    }
+    const t0 = performance.now();
+    const lerp = (a: number, b: number, e: number) => a + (b - a) * e;
+    const step = (now: number) => {
+      const t = Math.min(1, (now - t0) / GLIDE_MS);
+      const e = easeInOut(t);
+      if (t >= 1) return setMoving(null);
+      setMoving({
+        rect: {
+          x: lerp(start.rect.x, rect.x, e),
+          y: lerp(start.rect.y, rect.y, e),
+          w: lerp(start.rect.w, rect.w, e),
+          h: lerp(start.rect.h, rect.h, e),
+        },
+        width: Math.round(lerp(start.width, width, e)),
+      });
+      frame = requestAnimationFrame(step);
+    };
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+  }, [rect.x, rect.y, rect.w, rect.h, width, glide]);
+  useEffect(() => {
+    last.current = shown;
+  });
+  return shown;
+}
 
 /** Everything about one person's card that the player changes as the tour plays. */
 export type FrameView = {
@@ -24,7 +81,12 @@ export type FrameView = {
   width: number;
   /** The page in the card; a new key loads it afresh. */
   page: { key: number; src: string } | null;
-  /** White over the page, while it loads or is put in place. */
+  /**
+   * The page it replaces, kept on screen exactly as it was (its width and
+   * camera) until the new one is ready, so the card never goes blank.
+   */
+  old?: { key: number; src: string; width: number; transform: string };
+  /** The new page is still loading: it is hidden, over the old one (or white if none). */
   veil: boolean;
   /** Move to the slot rather than appear there. */
   glide: boolean;
@@ -34,6 +96,8 @@ export type FrameView = {
   fit?: "width";
   /** Fade everything but `focus` back, so only it stays clear. */
   spot?: boolean;
+  /** Room around `focus` inside the spotlight, in page pixels. */
+  pad?: number;
   /** Jump the camera rather than move it. */
   cut: boolean;
   pointer: Pointer;
@@ -43,6 +107,8 @@ export type FrameView = {
   dim: boolean;
   /** How long after the stop starts the card fades in, so several can arrive one by one. */
   delay: number;
+  /** Where the card comes from when it appears: up from below, or in from the right. */
+  from?: "below" | "right";
 };
 
 export const hiddenFrame: FrameView = {
@@ -75,8 +141,7 @@ const holdStill = (e: UIEvent<HTMLElement>) => e.currentTarget.scrollTo(0, 0);
 export function Frame({
   id,
   view,
-  rect,
-  years,
+  rect: slot,
   register,
   onLoad,
 }: {
@@ -84,16 +149,18 @@ export function Frame({
   view: FrameView;
   /** Where the card's slot is on the stage, in pixels. */
   rect: Rect;
-  /** The years the person lived, shown beside their name once their screen falls quiet. */
-  years?: string;
   register: (id: FrameId, el: HTMLIFrameElement | null) => void;
   onLoad: (id: FrameId) => void;
 }) {
   const person = tourPeople[id];
-  const page = viewportFor(rect, view.width);
+  const { rect, width } = useGlide(slot, view.width, view.glide);
+  const page = viewportFor(rect, width);
   const scale = rect.w / page.w;
   const camera = cameraFor(page, view.focus, { maxZoom: view.maxZoom, fit: view.fit });
-  const glide = view.glide ? `${GLIDE_MS}ms cubic-bezier(0.65, 0, 0.35, 1)` : "0ms";
+  const cameraTransform = `translate(${camera.x}px, ${camera.y}px) scale(${camera.scale})`;
+  const cameraMove = view.cut ? "none" : `transform ${MOVE_MS}ms cubic-bezier(0.65, 0, 0.35, 1)`;
+  const away = view.from === "right" ? "translateX(72px)" : "translateY(18px)";
+  const pages = [view.old, view.page].filter((p) => p !== null && p !== undefined);
 
   return (
     <div
@@ -107,8 +174,12 @@ export function Frame({
           width: rect.w,
           height: rect.h,
           opacity: view.shown ? (view.dim ? 0.28 : 1) : 0,
-          transform: view.dim ? "scale(0.97)" : "none",
-          transition: `left ${glide}, top ${glide}, width ${glide}, height ${glide}, opacity 700ms ease ${view.shown && !view.dim ? view.delay : 0}ms, transform 700ms ease`,
+          transform: !view.shown ? away : view.dim ? "scale(0.97)" : "none",
+          // Arriving takes its time (and may wait its turn); fading back and forward is quick.
+          // The card's place is moved frame by frame (useGlide); only its presence is a transition.
+          transition: view.dim
+            ? `opacity ${DIM_MS}ms ease, transform ${DIM_MS}ms ease`
+            : `opacity ${view.shown ? 600 : 450}ms ease ${view.shown ? view.delay : 0}ms, transform ${view.shown ? 700 : 450}ms cubic-bezier(0.22, 0.8, 0.3, 1) ${view.shown ? view.delay : 0}ms`,
           "--glow": tourGlow[id],
         } as React.CSSProperties
       }
@@ -118,7 +189,7 @@ export function Frame({
         <span className="font-display text-[0.9375rem] font-semibold text-pnc-navy">
           {person.name}
         </span>
-        <span className="text-sm text-pnc-muted">{view.quiet && years ? years : person.role}</span>
+        <span className="text-sm text-pnc-muted">{person.role}</span>
       </p>
 
       <div className="tour-glow" />
@@ -132,27 +203,43 @@ export function Frame({
           className="tour-page absolute left-0 top-0 origin-top-left overflow-hidden"
           style={{ width: page.w, height: page.h, transform: `scale(${scale})` }}
         >
+          {/*
+            Each page sits in its own layer, the new one over the old. A page keeps its layer
+            for as long as it is on screen (moving an iframe would reload it).
+          */}
+          {pages.map((p) => {
+            const current = p.key === view.page?.key;
+            const w = current ? page.w : (p as NonNullable<FrameView["old"]>).width;
+            return (
+              <div
+                key={p.key}
+                className="absolute left-0 top-0 size-full origin-top-left"
+                style={{
+                  transform: current
+                    ? cameraTransform
+                    : `scale(${page.w / w}) ${(p as NonNullable<FrameView["old"]>).transform}`,
+                  transition: current
+                    ? `${cameraMove === "none" ? "" : `${cameraMove}, `}opacity ${VEIL_MS}ms ease-out`
+                    : "none",
+                  opacity: current && view.veil ? 0 : 1,
+                }}
+              >
+                <iframe
+                  ref={current ? (el) => register(id, el) : undefined}
+                  src={p.src}
+                  title={`${person.name}'s screen`}
+                  tabIndex={-1}
+                  onLoad={current ? () => onLoad(id) : undefined}
+                  className="pointer-events-none block border-0 bg-white"
+                  style={{ width: w, height: Math.round((page.h * w) / page.w) }}
+                />
+              </div>
+            );
+          })}
           <div
-            className="size-full origin-top-left"
-            style={{
-              transform: `translate(${camera.x}px, ${camera.y}px) scale(${camera.scale})`,
-              transition: view.cut
-                ? "none"
-                : `transform ${MOVE_MS}ms cubic-bezier(0.65, 0, 0.35, 1)`,
-            }}
+            className="pointer-events-none absolute left-0 top-0 size-full origin-top-left"
+            style={{ transform: cameraTransform, transition: cameraMove }}
           >
-            {view.page && (
-              <iframe
-                key={view.page.key}
-                ref={(el) => register(id, el)}
-                src={view.page.src}
-                title={`${person.name}'s screen`}
-                tabIndex={-1}
-                onLoad={() => onLoad(id)}
-                className="pointer-events-none block border-0 bg-white"
-                style={{ width: page.w, height: page.h }}
-              />
-            )}
             {/* The spotlight: the rest of the page washes back to white around what matters. */}
             <span
               aria-hidden="true"
@@ -160,10 +247,10 @@ export function Frame({
               style={
                 view.focus
                   ? {
-                      left: view.focus.x - 10,
-                      top: view.focus.y - 10,
-                      width: view.focus.w + 20,
-                      height: view.focus.h + 20,
+                      left: view.focus.x - (view.pad ?? 10),
+                      top: view.focus.y - (view.pad ?? 10),
+                      width: view.focus.w + (view.pad ?? 10) * 2,
+                      height: view.focus.h + (view.pad ?? 10) * 2,
                       opacity: view.spot ? 1 : 0,
                       transitionDuration: view.cut ? "0ms" : undefined,
                     }
@@ -211,10 +298,14 @@ export function Frame({
             </span>
           </div>
         </div>
+        {/* White only while a card has no page to show yet. */}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 bg-white transition-opacity ease-out"
-          style={{ opacity: view.veil ? 1 : 0, transitionDuration: `${VEIL_MS}ms` }}
+          style={{
+            opacity: view.veil && !view.old ? 1 : 0,
+            transitionDuration: `${VEIL_MS}ms`,
+          }}
         />
       </div>
     </div>

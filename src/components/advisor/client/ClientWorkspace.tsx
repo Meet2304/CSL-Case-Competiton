@@ -36,6 +36,8 @@ const allTabs = [
 ] as const;
 type TabId = (typeof allTabs)[number]["id"];
 const tabIds = allTabs.map((t) => t.id);
+/** A client whose estate is being settled opens on it, as its tab comes first. */
+const estateTabIds: TabId[] = ["estate", "next", "client"];
 /** How long each working stage shows before the next one starts. */
 const STAGE_MS = 420;
 
@@ -64,7 +66,7 @@ export function ClientWorkspace({ customerId }: { customerId: string }) {
     () => (facts && guidance ? findoeContext(facts, guidance) : ""),
     [facts, guidance],
   );
-  const [tab, setTab] = useHashTab<TabId>(tabIds);
+  const [tab, setTab] = useHashTab<TabId>(customer && hasEstate(customer) ? estateTabIds : tabIds);
   const [items, setItems] = useState<ChatItem[]>([]);
   const [busy, setBusy] = useState(false);
   const [mode, setMode] = useState<FindoeMode>("unknown");
